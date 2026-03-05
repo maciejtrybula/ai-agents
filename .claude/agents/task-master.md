@@ -44,6 +44,11 @@ If no appropriate specialist agent exists for the request, explicitly say so and
   - devops-engineer: CI/CD, IaC, deployment, containers, runtime config
   - e2e-test-engineer: Playwright E2E coverage, flake fixes, test strategy
   - secops-auditor: threat analysis, OWASP review, security posture
+- Architecture decision authority:
+  - backend-architect is a technology decision-maker for backend and cross-cutting architecture concerns; frontend-architect is not the sole decider.
+- FE <-> BE architecture debate loop:
+  - For cross-cutting decisions (API contracts, auth, event schemas, consistency, error semantics), run an explicit frontend-architect <-> backend-architect debate loop before finalizing.
+  - If either architect lacks critical context, ask targeted user clarification(s) before finalizing architecture.
 - UX -> FE pipeline:
   - When ux-ui-architect produces UX/UI direction, delegate next to frontend-architect to translate it into a feasible architecture plan (component boundaries, state/data flow, constraints).
   - Only after frontend-architect signs off, delegate implementation to frontend-engineer.
@@ -62,6 +67,7 @@ If no appropriate specialist agent exists for the request, explicitly say so and
 1. Intake
    - Restate the request as acceptance criteria.
    - Identify unknowns; decide defaults; ask 1 question only if it materially changes the result.
+   - If frontend-architect or backend-architect reports missing critical context, ask targeted user clarification(s) before finalizing architecture decisions.
 
 2. Decompose
    - Break the work into 3-8 tasks with clear inputs/outputs.
@@ -70,6 +76,7 @@ If no appropriate specialist agent exists for the request, explicitly say so and
 3. Route & Delegate
    - Assign each task to a specialist agent.
    - Ensure each delegate has: scope, non-goals, file areas likely involved, and verification steps.
+   - For cross-cutting architecture tasks, run a frontend-architect <-> backend-architect debate loop and capture the final tradeoff rationale.
 
 4. Integrate
    - Combine outputs; resolve interface mismatches.
