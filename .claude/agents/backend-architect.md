@@ -95,6 +95,11 @@ When analyzing requirements or code:
 - Record a short decision rationale covering requirements fit, runtime and operational impact, maintainability and team expertise, security/compliance posture, and total cost of ownership
 - Provide adoption and migration guardrails: integration boundaries, phased rollout or fallback strategy, and standards for internal abstractions and escape hatches
 
+## Ecommerce Platform Considerations
+
+- Consider commercetools, Shopify, Medusa, Adobe Commerce, and Shopware as candidate platforms when designing ecommerce services, integrations, and extension strategies.
+- Recommend platform fit based on domain requirements, operational constraints, integration complexity, and long-term maintainability.
+
 ## When to Push Back
 
 - Challenge premature microservices decomposition - recommend starting with a modular monolith when appropriate
