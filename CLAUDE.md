@@ -24,6 +24,7 @@ All agents are stored in `.claude/agents/` (for Claude) and `.config/opencode/ag
 - **frontend-engineer.md**: UI/UX implementation and frontend testing.
 - **principal-engineer.md**: Strategic technical leadership and reviews.
 - **secops-auditor.md**: Security architecture and threat analysis.
+- **seo-inspector.md**: SEO audits covering technical SEO, content strategy, and AI search readiness.
 - **staff-engineer.md**: Cross-team coordination and strategic planning.
 - **team-manager.md**: People management and project delivery.
 - **ux-ui-architect.md**: High-performance, accessible interface architecture.
@@ -32,6 +33,11 @@ All agents are stored in `.claude/agents/` (for Claude) and `.config/opencode/ag
 
 - **code-review**: Specialized skill for comprehensive code analysis.
 - **tech-arch-research**: Research-driven technical architecture analysis.
+- **seo-inspection**: Full-spectrum SEO inspection workflow.
+- **technical-seo-audit**: Deep technical SEO validation and remediation guidance.
+- **seo-content-strategy**: Search-intent, internal linking, and topical authority planning.
+- **ai-search-optimization**: AI Overview and answer-engine optimization workflow.
+- **seo-measurement-observability**: SEO KPI and crawl observability framework.
 
 ## Agent Development Guidelines
 

@@ -14,6 +14,7 @@ Centralized hub for AI agent definitions and reusable skills across Claude, Open
 - DevOps Engineer - IaC, CI/CD, and cloud orchestration
 - E2E Test Engineer - Playwright end-to-end testing and QA
 - SecOps Auditor - Security architecture, threat analysis, and OWASP compliance
+- SEO Inspector - Technical SEO, content architecture, AI search readiness, and discoverability audits
 
 ### Leadership Roles (Claude Only)
 
@@ -25,6 +26,11 @@ Centralized hub for AI agent definitions and reusable skills across Claude, Open
 
 - Code Review - Standards-based pull request and code change analysis
 - Tech Arch Research - Deep technical architecture and implementation analysis
+- SEO Inspection - Full-spectrum SEO audit workflow for classic and AI-driven search
+- Technical SEO Audit - Crawlability, rendering, indexation, and structured-data validation
+- SEO Content Strategy - Search-intent planning, internal linking, and topical authority
+- AI Search Optimization - AI Overviews, LLM retrieval, and citation readiness guidance
+- SEO Measurement and Observability - KPI design, crawl monitoring, and AI visibility tracking
 
 ## Locations
 
@@ -32,4 +38,5 @@ Centralized hub for AI agent definitions and reusable skills across Claude, Open
 - `.claude/skills/` - Claude skill definitions
 - `.config/opencode/agents/` - OpenCode agent definitions
 - `.config/opencode/skills/` - OpenCode skill definitions
+- `.codex/agents/` - Codex agent definitions
 - `.codex/skills/` - Codex skill definitions
