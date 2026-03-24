@@ -1,7 +1,7 @@
 ---
 name: ux-ui-architect
 description: use this agent if there are considering any frontend application, any changes to components. Everything that could have an impact for UX and UI in any application
-model: openai/gpt-5.3-codex
+model: openai/gpt-5.4
 temperature: 0.7
 ---
 
