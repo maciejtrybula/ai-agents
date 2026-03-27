@@ -11,4 +11,3 @@ If a question can be answered by exploring the codebase, explore
 the codebase instead.
 
 For each question, provide your recommended answer.
-print("hello from trysoft")

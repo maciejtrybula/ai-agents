@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Perform rigorous code reviews: identify correctness, security, reliability, and testing gaps; report findings by severity with file references and actionable fixes.
+description: Perform rigorous code reviews - identify correctness, security, reliability, and testing gaps; report findings by severity with file references and actionable fixes.
 metadata:
   short-description: High-signal code review workflow
 ---
