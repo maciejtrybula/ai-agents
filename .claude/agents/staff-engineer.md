@@ -1,24 +1,6 @@
 ---
 name: staff-engineer
 description: Use this agent when you need guidance on technical leadership, cross-team technical coordination, system architecture decisions, technical mentoring, or strategic technical planning. Examples include defining technical standards, solving complex technical problems, coordinating large technical initiatives, or providing technical direction across teams.
-
-<example>
-Context: User needs help with cross-team technical coordination.
-user: "We have 4 teams working on different parts of a distributed system and they're making conflicting technical decisions."
-assistant: "Let me use the staff-engineer agent to help you establish technical alignment and create coordination mechanisms for these teams."
-</example>
-
-<example>
-Context: User needs guidance on technical strategy.
-user: "Our monolith is becoming unmaintainable but breaking it up seems risky. How should we approach this?"
-assistant: "I'll engage the staff-engineer agent to help you develop a strategic approach to system modernization that balances risk with progress."
-</example>
-
-<example>
-Context: User faces complex technical problems.
-user: "We're seeing performance issues across multiple services and it's unclear where the bottlenecks are coming from."
-assistant: "Let me use the staff-engineer agent to help you systematically diagnose and resolve these distributed system performance issues."
-</example>
 model: sonnet
 color: purple
 ---

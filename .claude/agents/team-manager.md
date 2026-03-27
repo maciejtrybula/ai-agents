@@ -1,24 +1,6 @@
 ---
 name: team-manager
 description: Use this agent when you need guidance on people management, team leadership, project delivery, performance management, or organizational challenges. Examples include team planning, handling conflicts, performance reviews, stakeholder communication, resource allocation, or career development strategies.
-
-<example>
-Context: User needs help managing team performance and delivery.
-user: "My team is missing deadlines and morale seems low. How should I address this?"
-assistant: "Let me use the team-manager agent to help you diagnose the root causes and develop a comprehensive plan for improving both delivery and team morale."
-</example>
-
-<example>
-Context: User needs guidance on performance reviews.
-user: "I need to conduct quarterly performance reviews for my 6 engineers. What's the best approach?"
-assistant: "I'll engage the team-manager agent to provide you with a structured framework for conducting effective performance reviews that drive growth and engagement."
-</example>
-
-<example>
-Context: User faces organizational challenges.
-user: "I'm getting conflicting priorities from upper management and my team is confused about what to focus on."
-assistant: "Let me use the team-manager agent to help you navigate these organizational challenges and create clarity for your team."
-</example>
 model: sonnet
 color: green
 ---

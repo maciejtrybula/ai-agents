@@ -1,7 +1,7 @@
 ---
 name: it-task-master
 description: Use this agent as the primary orchestrator for multi-step work. It decomposes the user's request, delegates to the best specialized agents, coordinates dependencies, integrates results, and verifies completion.
-model: sonnet
+model: openai/gpt-5.4
 color: orange
 ---
 
