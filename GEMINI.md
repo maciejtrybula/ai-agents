@@ -12,16 +12,16 @@ This repository stores Claude agents, OpenCode agents, Codex agents, and shared 
 
 ### 🤖 Agent Definitions
 - **`.claude/agents/`**: Core definitions for Claude.
-  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `team-manager.md`, `ux-ui-architect.md`.
+  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `tax-advisor.md`, `team-manager.md`, `ux-ui-architect.md`.
 - **`.config/opencode/agents/`**: Definitions for OpenCode.
-  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `team-manager.md`, `ux-ui-architect.md`.
+  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `tax-advisor.md`, `team-manager.md`, `ux-ui-architect.md`.
 - **`.codex/agents/`**: Definitions for Codex.
-  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `team-manager.md`, `ux-ui-architect.md`.
+  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `tax-advisor.md`, `team-manager.md`, `ux-ui-architect.md`.
 
 ### 🛠️ Skill Definitions
-- **`.claude/skills/`**: Specialized skills for Claude including `code-review`, `tech-arch-research`, `java`, the SEO skill set, and the new writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
-- **`.config/opencode/skills/`**: Specialized skills for OpenCode including `java`, the same SEO skill set, and the writing skill set.
-- **`.codex/skills/`**: Codex-compatible skill definitions including `code-review`, `tech-arch-research`, `java`, the SEO skill set, and the new writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
+- **`.claude/skills/`**: Specialized skills for Claude including `code-review`, `tech-arch-research`, `java`, `polish-tax-law`, the SEO skill set, and the writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
+- **`.config/opencode/skills/`**: Specialized skills for OpenCode including `java`, `polish-tax-law`, the same SEO skill set, and the writing skill set.
+- **`.codex/skills/`**: Codex-compatible skill definitions including `code-review`, `tech-arch-research`, `java`, `polish-tax-law`, the SEO skill set, and the writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
 
 ### 📘 Core Documentation
 - **`AGENTS.md`**: Central directory and guidelines for all agents and skills.
@@ -43,3 +43,5 @@ design variants, and retrieve project/screen details.
 For general or mixed requests, use `it-task-master` first. It acts as the default orchestrator and delegates work to the correct specialist based on task type.
 
 The new `content-writer` agent is the default specialist for technical blog writing, editorial planning, and attention-aware content refinement. Pair it with `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy` when working on blog or thought-leadership content.
+
+Use `tax-advisor` for Polish tax-law questions involving PIT, CIT, VAT, VAT OSS/IOSS basics, JDG or B2B sole proprietorship tradeoffs, invoicing, deadlines, or high-level ZUS and tax interactions. Pair it with `polish-tax-law` for structured facts-versus-risk analysis and explicit current-law verification reminders.

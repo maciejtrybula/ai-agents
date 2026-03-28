@@ -19,6 +19,7 @@ This repository serves as a centralized hub for AI agent definitions and special
 | **E2E Test Engineer** | Playwright-based end-to-end testing and quality assurance. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **SecOps Auditor** | Security architecture, threat analysis, and OWASP compliance. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **SEO Inspector** | Technical SEO, content architecture, AI search readiness, and discoverability audits. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Tax Advisor** | Polish tax law guidance for PIT, CIT, VAT, compliance, deadlines, and practical business-tax tradeoffs. | `.claude/`, `.config/opencode/`, `.codex/` |
 
 ### Content & Growth Roles
 | Agent | Primary Purpose | Location |
@@ -43,6 +44,7 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 - **SEO Content Strategy**: Search-intent mapping, internal linking, and topical authority planning.
 - **AI Search Optimization**: LLM retrieval, AI Overview readiness, and citation-friendly content design.
 - **SEO Measurement and Observability**: KPI frameworks, crawl monitoring, and discoverability reporting.
+- **Polish Tax Law**: Reusable guidance for Polish tax analysis, compliance boundaries, risk framing, and current-law verification.
 - **Technical Blog Writing**: Clear, credible, developer-focused article writing with strong structure and examples.
 - **Attention Retention Writing**: Hooks, pacing, transitions, and ethical engagement techniques for stronger read-through.
 - **Blog Editorial Strategy**: Topic framing, audience alignment, internal linking, and content-program planning for technical blogs.

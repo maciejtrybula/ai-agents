@@ -20,6 +20,7 @@ All current agents are shared across **Claude**, **OpenCode**, and **Codex**.
 | **e2e-test-engineer** | Playwright-based end-to-end testing and quality assurance. |
 | **secops-auditor** | Security architecture, threat analysis, and OWASP compliance. |
 | **seo-inspector** | Technical SEO, content architecture, AI search readiness, and discoverability audits. |
+| **tax-advisor** | Polish tax law guidance covering PIT, CIT, VAT, compliance, and practical business-tax tradeoffs. |
 | **content-writer** | Technical blog strategy and writing with strong hooks, retention techniques, SEO awareness, and conversion-minded execution. |
 
 ### Leadership Agents
@@ -60,6 +61,10 @@ Skills are shared across **Claude**, **OpenCode**, and **Codex**, and agents are
 - **technical-blog-writing**: Clear, credible, developer-focused article writing with strong structure and examples.
 - **attention-retention-writing**: Hooks, pacing, transitions, and ethical engagement techniques for stronger read-through.
 - **blog-editorial-strategy**: Topic framing, audience alignment, internal linking, and content-program planning.
+
+### Tax & Compliance
+
+- **polish-tax-law**: Reusable guidance for Polish PIT, CIT, VAT, OSS/IOSS basics, JDG/B2B issues, compliance, deadlines, and escalation-aware risk framing.
 
 ### Commerce Platform Expertise
 

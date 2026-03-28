@@ -23,6 +23,7 @@ This repository stores Claude, OpenCode, and Codex agents plus shared skills for
 - `it-task-master` is the default orchestrator agent. It evaluates task type and routes work to the right specialist.
 - Engineering agents cover backend, frontend, DevOps, E2E, UX/UI, security, and architecture roles.
 - `seo-inspector` handles SEO, discoverability, content architecture, and AI-search readiness.
+- `tax-advisor` handles Polish tax law questions across PIT, CIT, VAT, compliance, deadlines, and practical business-tax tradeoffs.
 - `content-writer` handles technical blog strategy and writing with strong hooks, attention retention techniques, SEO awareness, and conversion-minded editorial execution.
 
 ## Notable Skill Coverage
@@ -30,6 +31,7 @@ This repository stores Claude, OpenCode, and Codex agents plus shared skills for
 Skills are shared across platforms and should be checked before specialized work so agents can reuse the best available guidance instead of recreating it.
 
 - Engineering skills include reusable guidance such as `java` for application architecture, Spring-based services, testing, performance, and production reliability.
+- Tax skills include `polish-tax-law` for structured Polish tax analysis, compliance-aware reasoning, and escalation boundaries.
 - SEO skills include `seo-inspection`, `technical-seo-audit`, `seo-content-strategy`, `ai-search-optimization`, and `seo-measurement-observability`.
 - Writing skills include `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
 

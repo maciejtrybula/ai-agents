@@ -31,6 +31,7 @@ All agents are stored in `.claude/agents/` (for Claude), `.config/opencode/agent
 - **principal-engineer.md**: Strategic technical leadership and reviews.
 - **secops-auditor.md**: Security architecture and threat analysis.
 - **seo-inspector.md**: SEO audits covering technical SEO, content strategy, and AI search readiness.
+- **tax-advisor.md**: Polish tax law guidance covering PIT, CIT, VAT, OSS/IOSS basics, compliance, and practical business-tax tradeoffs.
 - **staff-engineer.md**: Cross-team coordination and strategic planning.
 - **team-manager.md**: People management and project delivery.
 - **ux-ui-architect.md**: High-performance, accessible interface architecture.
@@ -47,6 +48,7 @@ Check the available shared skills before starting specialized work, and use the 
 - **seo-content-strategy**: Search-intent, internal linking, and topical authority planning.
 - **ai-search-optimization**: AI Overview and answer-engine optimization workflow.
 - **seo-measurement-observability**: SEO KPI and crawl observability framework.
+- **polish-tax-law**: Reusable workflow for Polish tax questions with clarification discipline, compliance awareness, and escalation boundaries.
 - **technical-blog-writing**: Technical article structure, clarity, credibility, and developer-focused storytelling.
 - **attention-retention-writing**: Hooks, pacing, transitions, and ethical read-through optimization.
 - **blog-editorial-strategy**: Audience-fit content planning, positioning, and content-program design.
