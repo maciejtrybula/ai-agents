@@ -54,6 +54,17 @@ You will create, review, and optimize E2E tests that are:
 - Monitor test execution times and optimize slow tests
 - Configure appropriate resource allocation (workers, timeouts)
 
+## Skills Awareness
+
+- Before proceeding, check the available shared skills and use any that materially improve the task.
+- Prefer combining this agent with the most relevant skill modules instead of recreating specialized guidance from scratch.
+
+## Context7 MCP Guidance
+
+- When recommending patterns or implementing against a specific tool, library, framework, or platform, first check whether up-to-date documentation is available via Context7 MCP.
+- If available, use Context7 to verify current APIs, constraints, and usage before finalizing recommendations or implementation details.
+- Practical flow: resolve library ID -> query docs -> recommend or implement.
+
 ## Workflow Approach
 
 1. **Understanding Requirements**: Before writing tests, clarify:

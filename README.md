@@ -1,6 +1,6 @@
 # ai-agents
 
-Centralized hub for AI agent definitions and reusable skills across Claude, OpenCode, and Codex.
+Centralized hub for AI agent definitions and reusable skills across Claude, OpenCode, and Codex. Agents should check the shared skills before doing specialized work and use the relevant ones when they add depth, quality, or verification.
 
 ## 🤖 Available Agents
 
@@ -32,7 +32,7 @@ All current agents are shared across **Claude**, **OpenCode**, and **Codex**.
 
 ## 🛠️ Specialized Skills
 
-Skills are shared across **Claude**, **OpenCode**, and **Codex**.
+Skills are shared across **Claude**, **OpenCode**, and **Codex**, and agents are expected to check them before starting specialized work.
 
 ### Engineering & Architecture
 

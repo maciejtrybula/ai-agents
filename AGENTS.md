@@ -1,6 +1,6 @@
 # Agents & Skills Directory
 
-This repository serves as a centralized hub for AI agent definitions and specialized skills. It is organized to support multiple AI platforms (Claude, OpenCode, Codex) with consistent standards.
+This repository serves as a centralized hub for AI agent definitions and specialized skills. It is organized to support multiple AI platforms (Claude, OpenCode, Codex) with consistent standards. Shared skills are part of the core workflow: agents should check the available skills before proceeding with specialized work and use them when relevant.
 
 ## 🤖 Available Agents
 
@@ -34,7 +34,7 @@ This repository serves as a centralized hub for AI agent definitions and special
 
 ## 🛠️ Specialized Skills
 
-Skills are reusable logic modules located in `.claude/skills/`, `.config/opencode/skills/`, and `.codex/skills/`:
+Skills are reusable logic modules located in `.claude/skills/`, `.config/opencode/skills/`, and `.codex/skills/`. They are shared building blocks, so agents should check them before specialized work and use the relevant ones when they improve the outcome:
 - **Code Review**: Standards-based analysis of pull requests and code changes.
 - **Tech Arch Research**: Deep-dive analysis into technical architectures and patterns.
 - **Java**: Reusable Java engineering guidance for application architecture, Spring-based services, testing, performance, and production reliability.
@@ -62,18 +62,19 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 1. **Persona Consistency**: Every agent starts with YAML frontmatter (`name`, `description`, `model`, `color`).
 2. **Standard Headings**: Use `Core Principles`, `Technical Standards`, `Workflow`, and `Review Checklist`.
 3. **Task Routing**: Use `it-task-master` as the default orchestrator, then hand off to specialist agents by task type.
-4. **Tool/Library Documentation Verification (Context7 MCP)**:
+4. **Skills Awareness**: Before doing specialized work, check the available shared skills and use the relevant ones instead of recreating guidance that already exists.
+5. **Tool/Library Documentation Verification (Context7 MCP)**:
    - When implementing with a specific tool, library, or framework, first check whether its documentation is available via Context7 MCP.
    - If available, use Context7 docs to verify APIs and usage patterns, and rely on them during implementation decisions.
    - Practical flow: resolve library ID → query docs → implement.
-5. **UI Design & Prototyping (Stitch MCP)**:
+6. **UI Design & Prototyping (Stitch MCP)**:
    - Stitch MCP is available for UI design and prototyping workflows.
    - Use it to create/list projects, generate screens from text, edit screens,
      generate design variants, and retrieve project/screen details.
-6. **Verification**:
+7. **Verification**:
    - Run `markdownlint "**/*.md"` to ensure formatting consistency.
    - Use `rg --files .claude/agents | sort` to verify the agent pool.
-7. **Commits**: Use imperative summaries: `Add [agent-name]` or `Improve [agent-name]`.
+8. **Commits**: Use imperative summaries: `Add [agent-name]` or `Improve [agent-name]`.
 
 ### Security
 - Never embed secrets or sensitive company data in agent prompts.

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-This repository stores Claude, OpenCode, and Codex agents for different engineering and content purposes. Each agent is a specialized expert designed to handle specific domains and tasks.
+This repository stores Claude, OpenCode, and Codex agents for different engineering and content purposes. Each agent is a specialized expert designed to handle specific domains and tasks, and should check the available shared skills before proceeding with specialized work.
 
 ## Agent Structure
 
@@ -36,6 +36,8 @@ All agents are stored in `.claude/agents/` (for Claude), `.config/opencode/agent
 - **ux-ui-architect.md**: High-performance, accessible interface architecture.
 
 ## Available Claude Skills
+
+Check the available shared skills before starting specialized work, and use the relevant ones when they improve quality, depth, or verification.
 
 - **code-review**: Specialized skill for comprehensive code analysis.
 - **tech-arch-research**: Research-driven technical architecture analysis.

@@ -4,7 +4,7 @@ This file provides guidance to Warp when working with code and agent definitions
 
 ## Repository Purpose
 
-This repository stores Claude, OpenCode, and Codex agents plus shared skills for engineering, SEO, and technical content work.
+This repository stores Claude, OpenCode, and Codex agents plus shared skills for engineering, SEO, and technical content work. Agents should check the shared skills before proceeding with specialized work and use them when relevant.
 
 ## Key Agent Directories
 
@@ -26,6 +26,8 @@ This repository stores Claude, OpenCode, and Codex agents plus shared skills for
 - `content-writer` handles technical blog strategy and writing with strong hooks, attention retention techniques, SEO awareness, and conversion-minded editorial execution.
 
 ## Notable Skill Coverage
+
+Skills are shared across platforms and should be checked before specialized work so agents can reuse the best available guidance instead of recreating it.
 
 - Engineering skills include reusable guidance such as `java` for application architecture, Spring-based services, testing, performance, and production reliability.
 - SEO skills include `seo-inspection`, `technical-seo-audit`, `seo-content-strategy`, `ai-search-optimization`, and `seo-measurement-observability`.

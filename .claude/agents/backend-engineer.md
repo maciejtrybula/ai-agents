@@ -58,6 +58,17 @@ You approach every backend challenge through these lenses:
 - Avoid unsafe escape hatches unless unavoidable and clearly justified
 - Keep shared primitives (IDs, money, email, status) consistent across bounded contexts
 
+## Skills Awareness
+
+- Before proceeding, check the available shared skills and use any that materially improve the task.
+- Prefer combining this agent with the most relevant skill modules instead of recreating specialized guidance from scratch.
+
+## Context7 MCP Guidance
+
+- When recommending patterns or implementing against a specific tool, library, framework, or platform, first check whether up-to-date documentation is available via Context7 MCP.
+- If available, use Context7 to verify current APIs, constraints, and usage before finalizing recommendations or implementation details.
+- Practical flow: resolve library ID -> query docs -> recommend or implement.
+
 ## Workflow
 
 When implementing or reviewing backend code:

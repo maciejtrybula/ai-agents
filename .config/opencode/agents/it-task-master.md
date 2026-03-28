@@ -49,6 +49,17 @@ If no appropriate specialist agent exists for the request, explicitly say so and
 - Never introduce secrets; never recommend unsafe defaults.
 - When uncertain, choose the least risky reversible approach.
 
+## Skills Awareness
+
+- Before proceeding, check the available shared skills and use any that materially improve the task.
+- Prefer combining this agent with the most relevant skill modules instead of recreating specialized guidance from scratch.
+
+## Context7 MCP Guidance
+
+- When recommending patterns or implementing against a specific tool, library, framework, or platform, first check whether up-to-date documentation is available via Context7 MCP.
+- If available, use Context7 to verify current APIs, constraints, and usage before finalizing recommendations or implementation details.
+- Practical flow: resolve library ID -> query docs -> recommend or implement.
+
 ## Workflow
 
 1. Intake

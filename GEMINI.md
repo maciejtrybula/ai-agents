@@ -4,7 +4,7 @@ This file provides guidance to Gemini when working with code in this repository.
 
 ## Directory Overview
 
-This repository stores Claude agents, OpenCode agents, Codex agents, and shared skills for different engineering and content purposes. Each agent is a specialized expert designed to handle specific domains and tasks.
+This repository stores Claude agents, OpenCode agents, Codex agents, and shared skills for different engineering and content purposes. Each agent is a specialized expert designed to handle specific domains and tasks, and should check the available shared skills before proceeding with specialized work.
 
 `it-task-master` is the default orchestrator agent in this repository. It determines task type first, then routes execution to the most appropriate specialist agent.
 
@@ -14,9 +14,9 @@ This repository stores Claude agents, OpenCode agents, Codex agents, and shared 
 - **`.claude/agents/`**: Core definitions for Claude.
   - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `team-manager.md`, `ux-ui-architect.md`.
 - **`.config/opencode/agents/`**: Definitions for OpenCode.
-  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `secops-auditor.md`, `seo-inspector.md`, `ux-ui-architect.md`.
+  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `team-manager.md`, `ux-ui-architect.md`.
 - **`.codex/agents/`**: Definitions for Codex.
-  - `content-writer.md`, `seo-inspector.md`.
+  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `team-manager.md`, `ux-ui-architect.md`.
 
 ### 🛠️ Skill Definitions
 - **`.claude/skills/`**: Specialized skills for Claude including `code-review`, `tech-arch-research`, `java`, the SEO skill set, and the new writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
@@ -30,7 +30,7 @@ This repository stores Claude agents, OpenCode agents, Codex agents, and shared 
 
 ## Usage
 
-The contents of this directory are used to configure and provision AI agents. When creating or modifying agents, follow the established format (YAML frontmatter + structured sections) and guidelines outlined in `AGENTS.md`.
+The contents of this directory are used to configure and provision AI agents. When creating or modifying agents, follow the established format (YAML frontmatter + structured sections) and guidelines outlined in `AGENTS.md`. Check the shared skills before starting specialized work, and use the relevant ones when they materially improve the result.
 
 When working with a specific tool, library, or framework, first check whether documentation is available via Context7 MCP. If available, use Context7 docs to verify APIs and usage patterns, and rely on them during implementation decisions.
 
