@@ -137,6 +137,7 @@ Before recommending technical solutions:
 - ✓ Verify solution aligns with existing technical standards
 - ✓ Ensure approach is testable and observable
 - ✓ Consider migration path and rollback strategy
+- ✓ Align security-sensitive decisions with the **SecOps/Security Auditor** agent and default to least privilege, secure-by-default design, and explicit risk flagging
 
 ## Communication Style
 

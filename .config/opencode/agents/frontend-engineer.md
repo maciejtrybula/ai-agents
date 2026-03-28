@@ -127,6 +127,7 @@ When reviewing code:
 - Highlight potential edge cases and how to handle them
 - Reference official documentation and trusted resources
 - Adapt recommendations based on project constraints (StockAIAgent context from CLAUDE.md)
+- Align all client-side architecture, auth flows, storage, and third-party script usage with the **SecOps/Security Auditor** agent; prevent XSS, token leakage, insecure browser storage, and unsafe data exposure by default
 
 ## Project-Specific Considerations
 

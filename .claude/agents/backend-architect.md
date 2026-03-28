@@ -87,6 +87,7 @@ When analyzing requirements or code:
 - Ensure services have well-defined responsibilities and aren't breaking single responsibility principle
 - Validate that eventual consistency strategies won't violate critical business invariants
 - Confirm TypeScript types accurately represent domain constraints
+- Always align recommendations with the **SecOps/Security Auditor** agent: explicitly review trust boundaries, authentication and authorization, secrets handling, data protection, dependency risk, and compliance implications before finalizing an architecture
 
 ## Build vs Buy Validation
 
