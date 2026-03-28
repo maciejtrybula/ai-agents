@@ -9,15 +9,15 @@ This repository serves as a centralized hub for AI agent definitions and special
 ### Engineering Roles
 | Agent | Primary Purpose | Location |
 |-------|-----------------|----------|
-| **IT Task Master** | Default orchestrator that routes tasks to the most relevant specialist agent. | `.claude/`, `.config/opencode/` |
-| **Backend Architect** | DDD, Microservices design, and high-level backend strategy. | `.claude/`, `.config/opencode/` |
-| **Backend Engineer** | Implementation of services, APIs, and domain logic in Node.js/TS. | `.claude/`, `.config/opencode/` |
-| **Frontend Architect** | Technical leads for web architecture, data flow, and project structure. | `.claude/`, `.config/opencode/` |
-| **Frontend Engineer** | UI implementation, component development, and frontend testing. | `.claude/`, `.config/opencode/` |
-| **UX/UI Architect** | Design tokens, accessibility, and high-performance mobile-first interfaces. | `.claude/`, `.config/opencode/` |
-| **DevOps Engineer** | Infrastructure as Code, CI/CD, and cloud orchestration. | `.claude/`, `.config/opencode/` |
-| **E2E Test Engineer** | Playwright-based end-to-end testing and quality assurance. | `.claude/`, `.config/opencode/` |
-| **SecOps Auditor** | Security architecture, threat analysis, and OWASP compliance. | `.claude/`, `.config/opencode/` |
+| **IT Task Master** | Default orchestrator that routes tasks to the most relevant specialist agent. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Backend Architect** | DDD, Microservices design, and high-level backend strategy. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Backend Engineer** | Implementation of services, APIs, and domain logic in Node.js/TS. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Frontend Architect** | Technical leads for web architecture, data flow, and project structure. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Frontend Engineer** | UI implementation, component development, and frontend testing. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **UX/UI Architect** | Design tokens, accessibility, and high-performance mobile-first interfaces. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **DevOps Engineer** | Infrastructure as Code, CI/CD, and cloud orchestration. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **E2E Test Engineer** | Playwright-based end-to-end testing and quality assurance. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **SecOps Auditor** | Security architecture, threat analysis, and OWASP compliance. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **SEO Inspector** | Technical SEO, content architecture, AI search readiness, and discoverability audits. | `.claude/`, `.config/opencode/`, `.codex/` |
 
 ### Content & Growth Roles
@@ -25,12 +25,12 @@ This repository serves as a centralized hub for AI agent definitions and special
 |-------|-----------------|----------|
 | **Content Writer** | Technical blog strategy and writing with strong hooks, retention techniques, SEO awareness, and conversion-minded editorial execution. | `.claude/`, `.config/opencode/`, `.codex/` |
 
-### Leadership Roles (Claude Only)
+### Leadership Roles
 | Agent | Primary Purpose | Location |
 |-------|-----------------|----------|
-| **Principal Engineer** | Strategic technical leadership, mentoring, and cross-stack reviews. | `.claude/` |
-| **Staff Engineer** | Cross-team coordination and solving complex technical bottlenecks. | `.claude/` |
-| **Team Manager** | People management, project delivery, and organizational health. | `.claude/` |
+| **Principal Engineer** | Strategic technical leadership, mentoring, and cross-stack reviews. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Staff Engineer** | Cross-team coordination and solving complex technical bottlenecks. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Team Manager** | People management, project delivery, and organizational health. | `.claude/`, `.config/opencode/`, `.codex/` |
 
 ## 🛠️ Specialized Skills
 

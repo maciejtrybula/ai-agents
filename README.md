@@ -4,7 +4,7 @@ Centralized hub for AI agent definitions and reusable skills across Claude, Open
 
 ## 🤖 Available Agents
 
-Most agents are shared across **Claude**, **OpenCode**, and **Codex**. Leadership roles are **Claude-only**.
+All current agents are shared across **Claude**, **OpenCode**, and **Codex**.
 
 ### Shared Agents
 
@@ -22,7 +22,7 @@ Most agents are shared across **Claude**, **OpenCode**, and **Codex**. Leadershi
 | **seo-inspector** | Technical SEO, content architecture, AI search readiness, and discoverability audits. |
 | **content-writer** | Technical blog strategy and writing with strong hooks, retention techniques, SEO awareness, and conversion-minded execution. |
 
-### Claude-only Leadership Agents
+### Leadership Agents
 
 | Agent | Primary Purpose |
 |-------|-----------------|
