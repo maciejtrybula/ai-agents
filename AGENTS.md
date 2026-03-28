@@ -37,6 +37,7 @@ This repository serves as a centralized hub for AI agent definitions and special
 Skills are reusable logic modules located in `.claude/skills/`, `.config/opencode/skills/`, and `.codex/skills/`:
 - **Code Review**: Standards-based analysis of pull requests and code changes.
 - **Tech Arch Research**: Deep-dive analysis into technical architectures and patterns.
+- **Java**: Reusable Java engineering guidance for application architecture, Spring-based services, testing, performance, and production reliability.
 - **SEO Inspection**: Full-spectrum audits spanning technical SEO, content quality, and AI search readiness.
 - **Technical SEO Audit**: Crawlability, rendering, indexation, and structured-data validation.
 - **SEO Content Strategy**: Search-intent mapping, internal linking, and topical authority planning.

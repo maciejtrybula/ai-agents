@@ -19,9 +19,9 @@ This repository stores Claude agents, OpenCode agents, Codex agents, and shared 
   - `content-writer.md`, `seo-inspector.md`.
 
 ### 🛠️ Skill Definitions
-- **`.claude/skills/`**: Specialized skills for Claude including `code-review`, `tech-arch-research`, the SEO skill set, and the new writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
-- **`.config/opencode/skills/`**: Specialized skills for OpenCode including the same SEO and writing skill sets.
-- **`.codex/skills/`**: Codex-compatible skill definitions including `code-review`, `tech-arch-research`, the SEO skill set, and the new writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
+- **`.claude/skills/`**: Specialized skills for Claude including `code-review`, `tech-arch-research`, `java`, the SEO skill set, and the new writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
+- **`.config/opencode/skills/`**: Specialized skills for OpenCode including `java`, the same SEO skill set, and the writing skill set.
+- **`.codex/skills/`**: Codex-compatible skill definitions including `code-review`, `tech-arch-research`, `java`, the SEO skill set, and the new writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
 
 ### 📘 Core Documentation
 - **`AGENTS.md`**: Central directory and guidelines for all agents and skills.

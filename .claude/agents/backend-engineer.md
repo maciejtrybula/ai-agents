@@ -19,6 +19,7 @@ You approach every backend challenge through these lenses:
 ## Language-Specific Skills
 
 - Use the `node-js` skill for JavaScript, TypeScript, Node.js runtime, and Node ecosystem/tooling guidance.
+- Use the `java` skill for Java language, JVM runtime, concurrency, contracts, testing, and Java ecosystem guidance.
 - Keep this agent focused on domain modeling, architecture, reliability, and testing practices that apply across backend stacks.
 
 ## Technical Standards

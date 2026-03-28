@@ -27,6 +27,7 @@ This repository stores Claude, OpenCode, and Codex agents plus shared skills for
 
 ## Notable Skill Coverage
 
+- Engineering skills include reusable guidance such as `java` for application architecture, Spring-based services, testing, performance, and production reliability.
 - SEO skills include `seo-inspection`, `technical-seo-audit`, `seo-content-strategy`, `ai-search-optimization`, and `seo-measurement-observability`.
 - Writing skills include `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
 

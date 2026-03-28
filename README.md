@@ -42,6 +42,7 @@ Skills are shared across **Claude**, **OpenCode**, and **Codex**.
 - **grill-me**: Structured challenge mode to pressure-test plans, designs, and tradeoffs.
 - **fastify**: Best-practice guidance for Fastify application design and implementation.
 - **next-js**: Reusable guidance for Next.js App Router architecture, rendering, and deployment-safe behavior.
+- **java**: Reusable Java engineering guidance for application architecture, Spring-based services, testing, performance, and production reliability.
 - **node-js**: Reusable Node.js and TypeScript engineering guidance for reliability and maintainability.
 - **react**: Reusable React guidance for component patterns, state boundaries, testing, and performance.
 - **react-native**: Reusable React Native and Expo guidance for mobile architecture, performance, and release quality.
