@@ -91,9 +91,43 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
 ./sync-local-agents.sh
 ./sync-local-agents.sh --dry-run
 ./sync-local-agents.sh --delete
+./sync-local-agents.sh --platform claude --claude-model sonnet
 ./sync-local-agents.sh --platform opencode
+./sync-local-agents.sh --opencode-model openai/gpt-5.4
+./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
 ```
 
 - `--dry-run` previews changes without writing files.
 - `--delete` removes local files that no longer exist in this repository.
 - `--platform` limits the sync to `claude`, `opencode`, or `codex`.
+- `--claude-model` rewrites synced Claude agent `model:` frontmatter so one model can be used across all Claude agents locally.
+- `--opencode-model` rewrites synced OpenCode agent `model:` frontmatter so one model can be used across all OpenCode agents locally.
+- `--codex-model` rewrites synced Codex agent `model:` frontmatter so one model can be used across all Codex agents locally.
+
+To keep one model per platform without passing flags every time, create the local env files in this repository root, next to `sync-local-agents.sh`.
+
+Do not put them in the synced target directories such as `~/.claude/`, `~/.config/opencode/`, or `~/.codex/`.
+
+```bash
+# .claude.local.env
+CLAUDE_MODEL=sonnet
+
+# .opencode.local.env
+OPENCODE_MODEL=openai/gpt-5.4
+
+# .codex.local.env
+CODEX_MODEL=openai/gpt-5.4
+```
+
+Example files are included:
+
+- `.claude.local.env.example`
+- `.opencode.local.env.example`
+- `.codex.local.env.example`
+
+Precedence for each platform's model selection during sync is:
+
+1. Platform-specific CLI flag, for example `--claude-model`
+2. Platform-specific environment variable, for example `CLAUDE_MODEL`
+3. Platform-specific local env file, for example `.claude.local.env`
+4. The repo's per-agent defaults in that platform's `agents/` directory
