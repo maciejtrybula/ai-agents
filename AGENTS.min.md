@@ -2,7 +2,7 @@
 - Always use secure and latest version
 - For services, always use Fastify with TypeScript
 - If implementing/maintaining microservices, keep low coupling, high cohesion
-- When creating plan, after implementation remember about update
+- If there is a plan, remember about update after implementation
 
 ## Code Style & Simplicity
 - Write simple, readable code. Avoid over-engineering and excessive abstraction.
@@ -12,8 +12,9 @@
 - Inline simple logic and conditions. Don't create separate methods for trivial checks.
 - Use early returns to avoid deep nesting.
 - Remember about SOLID, KISS, DRY and YAGNI.
-- Never use polish wording in code, always use english.
+- Never use polish wording in code, always use english, polish and other only as translations.
 - Never use abbreviation for naming things.
+- Never create helpers, utils, always try to found a proper business naming for functions, classes, variables.
 
 ## Database & Queries
 - Minimize database round trips by fetching all needed data in one query when possible.
