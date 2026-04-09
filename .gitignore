@@ -2,3 +2,4 @@
 .claude.local.env
 .codex.local.env
 .opencode.local.env
+.DS_Store

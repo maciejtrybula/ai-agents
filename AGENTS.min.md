@@ -12,8 +12,13 @@
 - Never use `as any` type assertions. Use proper types or `as never` if absolutely necessary.
 - Inline simple logic and conditions. Don't create separate methods for trivial checks.
 - Use early returns to avoid deep nesting.
-- Remember about SOLID, KISS, DRY, and YAGNI.
 - Never use Polish wording in code, always use English, Polish, and others only as translations.
+- Remember about SOLID, KISS, DRY and YAGNI.
+- Never use abbreviation for naming things.
+- Never create helpers, utils, always try to found a proper business naming for functions, classes, variables.
+- Always looks for documentation starting from README.md, docs and spec folders.
+- After implementation always update README.md and docs/spec dedicated files. If there are no dedicated files create them.
+- Always use mermaid for diagrams documentations.
 
 ## Database & Queries
 - Minimize database round trips by fetching all necessary data in one query when possible.
