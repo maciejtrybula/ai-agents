@@ -91,15 +91,26 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
 ./sync-local-agents.sh
 ./sync-local-agents.sh --dry-run
 ./sync-local-agents.sh --delete
+./sync-local-agents.sh --sync agents
+./sync-local-agents.sh --sync skills --platform claude
+./sync-local-agents.sh --interactive
 ./sync-local-agents.sh --platform claude --claude-model sonnet
 ./sync-local-agents.sh --platform opencode
 ./sync-local-agents.sh --opencode-model openai/gpt-5.4
 ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
 ```
 
+- Default behavior syncs both `agents/` and `skills/` for all platforms.
 - `--dry-run` previews changes without writing files.
 - `--delete` removes local files that no longer exist in this repository.
+  - If you sync selected entries only (for example via interactive narrowing), deletion is scoped to those selected directories and does not remove unsynced sibling entries.
 - `--platform` limits the sync to `claude`, `opencode`, or `codex`.
+- `--sync` provides non-interactive scope selection: `both` (default), `agents`, or `skills`.
+- `--interactive` starts an interactive picker:
+  - prompts for scope (defaults to `both`, or to your `--sync` preset when provided),
+  - lists actual available agents/skills for each selected platform,
+  - defaults to syncing all entries, with optional narrowing to selected items.
+  - requires a TTY; otherwise it exits with a clear error.
 - `--claude-model` rewrites synced Claude agent `model:` frontmatter so one model can be used across all Claude agents locally.
 - `--opencode-model` rewrites synced OpenCode agent `model:` frontmatter so one model can be used across all OpenCode agents locally.
 - `--codex-model` rewrites synced Codex agent `model:` frontmatter so one model can be used across all Codex agents locally.

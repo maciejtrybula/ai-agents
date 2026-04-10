@@ -6,7 +6,11 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$script_dir"
 dry_run=false
 delete_extra=false
+interactive_mode=false
 selected_platforms=()
+sync_agents=true
+sync_skills=true
+sync_scope="both"
 cli_claude_model=""
 cli_opencode_model=""
 cli_codex_model=""
@@ -27,6 +31,12 @@ trim() {
   value="${value%"${value##*[![:space:]]}"}"
 
   printf '%s' "$value"
+}
+
+to_lower() {
+  local value="$1"
+
+  printf '%s' "$value" | tr '[:upper:]' '[:lower:]'
 }
 
 strip_wrapping_quotes() {
@@ -97,8 +107,8 @@ apply_model_override() {
   local model_value="$2"
   local file=""
 
-  [[ -n "$model_value" ]] || return
-  [[ -d "$target_dir" ]] || return
+  [[ -n "$model_value" ]] || return 0
+  [[ -d "$target_dir" ]] || return 0
 
   while IFS= read -r file; do
     MODEL_OVERRIDE="$model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$file"
@@ -110,8 +120,8 @@ preview_model_override() {
   local model_value="$2"
   local file=""
 
-  [[ -n "$model_value" ]] || return
-  [[ -d "$source_dir" ]] || return
+  [[ -n "$model_value" ]] || return 0
+  [[ -d "$source_dir" ]] || return 0
 
   while IFS= read -r file; do
     printf 'Would override model in synced copy of %s -> %s\n' "$file" "$model_value"
@@ -125,6 +135,7 @@ file_codex_model="$(load_model_from_file "$repo_root/.codex.local.env" "CODEX_MO
 usage() {
   cat <<'EOF'
 Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode|codex]
+	       [--sync both|agents|skills] [--interactive]
 	       [--claude-model MODEL]
 	       [--opencode-model MODEL]
 	       [--codex-model MODEL]
@@ -135,6 +146,12 @@ directories in your home folder.
 Options:
   --dry-run   Preview changes without writing files
   --delete    Remove local files that no longer exist in this repo
+              When syncing selected entries, deletion is scoped to those
+              selected directories only
+  --sync      Non-interactive scope: both (default), agents, or skills
+  --interactive
+              Prompt for sync scope and optional per-platform selection
+              of individual agents/skills (requires TTY)
   --claude-model
               Override the model used in synced Claude agent frontmatter
               Precedence: --claude-model > CLAUDE_MODEL env var >
@@ -152,11 +169,232 @@ Examples:
   ./sync-local-agents.sh
   ./sync-local-agents.sh --dry-run
   ./sync-local-agents.sh --delete
+  ./sync-local-agents.sh --sync agents
+  ./sync-local-agents.sh --sync skills --platform claude
+  ./sync-local-agents.sh --interactive
   ./sync-local-agents.sh --platform claude --claude-model sonnet
   ./sync-local-agents.sh --platform opencode
   ./sync-local-agents.sh --opencode-model openai/gpt-5.4
   ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
 EOF
+}
+
+set_sync_scope() {
+  local value="$1"
+
+  case "$value" in
+    both)
+      sync_agents=true
+      sync_skills=true
+      sync_scope="both"
+      ;;
+    agents)
+      sync_agents=true
+      sync_skills=false
+      sync_scope="agents"
+      ;;
+    skills)
+      sync_agents=false
+      sync_skills=true
+      sync_scope="skills"
+      ;;
+    *)
+      echo "Unsupported value for --sync: $value (expected: both|agents|skills)" >&2
+      exit 1
+      ;;
+  esac
+}
+
+list_top_level_entries() {
+  local source_dir="$1"
+
+  [[ -d "$source_dir" ]] || return 0
+
+  find "$source_dir" -mindepth 1 -maxdepth 1 -exec basename {} \; | sort
+}
+
+collect_selected_entries() {
+  local source_dir="$1"
+  local label="$2"
+  local platform="$3"
+  local __result_var="$4"
+  local all_entries=()
+  local selected_entries=()
+  local index=1
+  local answer=""
+  local input=""
+  local token=""
+  local -a tokens=()
+  local listed_entry=""
+
+  while IFS= read -r listed_entry; do
+    all_entries+=("$listed_entry")
+  done < <(list_top_level_entries "$source_dir")
+
+  if [[ ${#all_entries[@]} -eq 0 ]]; then
+    printf -v "$__result_var" '%s' ""
+    return
+  fi
+
+  printf 'Available %s for %s:\n' "$label" "$platform"
+  for entry in "${all_entries[@]}"; do
+    printf '  [%d] %s\n' "$index" "$entry"
+    ((index++))
+  done
+
+  read -r -p "Sync all $label for $platform? [Y/n]: " answer
+  answer="$(trim "$answer")"
+  answer="$(to_lower "$answer")"
+
+  if [[ -z "$answer" || "$answer" == "y" || "$answer" == "yes" ]]; then
+    printf -v "$__result_var" '*'
+    return
+  fi
+
+  read -r -p "Enter comma-separated numbers to sync (empty = skip $label): " input
+  input="${input// /}"
+
+  if [[ -z "$input" ]]; then
+    printf -v "$__result_var" '%s' ""
+    return
+  fi
+
+  IFS=',' read -r -a tokens <<< "$input"
+  for token in "${tokens[@]}"; do
+    if [[ "$token" =~ ^[0-9]+$ ]] && (( token >= 1 && token <= ${#all_entries[@]} )); then
+      selected_entries+=("${all_entries[token-1]}")
+    else
+      echo "Ignoring invalid selection: $token" >&2
+    fi
+  done
+
+  if [[ ${#selected_entries[@]} -eq 0 ]]; then
+    printf -v "$__result_var" '%s' ""
+    return
+  fi
+
+  printf -v "$__result_var" '%s' "$(IFS='|'; printf '%s' "${selected_entries[*]}")"
+}
+
+expand_selection() {
+  local source_dir="$1"
+  local selection="$2"
+  local __result_var="$3"
+  local entries=()
+  local listed_entry=""
+
+  if [[ "$selection" == "*" ]]; then
+    while IFS= read -r listed_entry; do
+      entries+=("$listed_entry")
+    done < <(list_top_level_entries "$source_dir")
+  elif [[ -n "$selection" ]]; then
+    IFS='|' read -r -a entries <<< "$selection"
+  fi
+
+  printf -v "$__result_var" '%s' "$(IFS='|'; printf '%s' "${entries[*]-}")"
+}
+
+run_rsync_entry() {
+  local source_path="$1"
+  local target_path="$2"
+  local args=()
+
+  mkdir -p "$(dirname "$target_path")"
+
+  if [[ -d "$source_path" ]]; then
+    args=(-a "$source_path/" "$target_path/")
+    if [[ "$delete_extra" == true ]]; then
+      args=(--delete "${args[@]}")
+    fi
+  else
+    args=(-a "$source_path" "$target_path")
+  fi
+
+  if [[ "$dry_run" == true ]]; then
+    args=(--dry-run -av "${args[@]}")
+  fi
+
+  rsync "${args[@]}"
+}
+
+preview_model_override_for_entries() {
+  local source_agents_dir="$1"
+  local selection="$2"
+  local model_value="$3"
+  local selected_joined=""
+  local selected=()
+  local entry=""
+  local file=""
+
+  [[ -n "$model_value" ]] || return 0
+
+  expand_selection "$source_agents_dir" "$selection" selected_joined
+  if [[ -z "${selected_joined:-}" ]]; then
+    return 0
+  fi
+
+  IFS='|' read -r -a selected <<< "$selected_joined"
+  for entry in "${selected[@]}"; do
+    if [[ -d "$source_agents_dir/$entry" ]]; then
+      while IFS= read -r file; do
+        printf 'Would override model in synced copy of %s -> %s\n' "$file" "$model_value"
+      done < <(find "$source_agents_dir/$entry" -type f -name '*.md' | sort)
+    elif [[ "$entry" == *.md ]]; then
+      printf 'Would override model in synced copy of %s -> %s\n' "$source_agents_dir/$entry" "$model_value"
+    fi
+  done
+}
+
+apply_model_override_for_entries() {
+  local source_agents_dir="$1"
+  local target_agents_dir="$2"
+  local selection="$3"
+  local model_value="$4"
+  local selected_joined=""
+  local selected=()
+  local entry=""
+  local file=""
+  local relative_path=""
+  local target_file=""
+
+  [[ -n "$model_value" ]] || return 0
+  [[ -d "$target_agents_dir" ]] || return 0
+
+  expand_selection "$source_agents_dir" "$selection" selected_joined
+  if [[ -z "${selected_joined:-}" ]]; then
+    return 0
+  fi
+
+  IFS='|' read -r -a selected <<< "$selected_joined"
+  for entry in "${selected[@]}"; do
+    if [[ -d "$source_agents_dir/$entry" ]]; then
+      while IFS= read -r file; do
+        relative_path="${file#"$source_agents_dir/"}"
+        target_file="$target_agents_dir/$relative_path"
+        [[ -f "$target_file" ]] || continue
+        MODEL_OVERRIDE="$model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$target_file"
+      done < <(find "$source_agents_dir/$entry" -type f -name '*.md' | sort)
+    elif [[ "$entry" == *.md ]]; then
+      target_file="$target_agents_dir/$entry"
+      [[ -f "$target_file" ]] || continue
+      MODEL_OVERRIDE="$model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$target_file"
+    fi
+  done
+}
+
+prompt_interactive_scope() {
+  local answer=""
+
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    echo "--interactive requires an interactive terminal (TTY stdin/stdout)." >&2
+    exit 1
+  fi
+
+  read -r -p "What do you want to sync? [both/agents/skills] (default: $sync_scope): " answer
+  answer="$(trim "$answer")"
+  answer="$(to_lower "$answer")"
+  [[ -z "$answer" ]] && answer="$sync_scope"
+  set_sync_scope "$answer"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -166,6 +404,17 @@ while [[ $# -gt 0 ]]; do
       ;;
     --delete)
       delete_extra=true
+      ;;
+    --interactive)
+      interactive_mode=true
+      ;;
+    --sync)
+      if [[ $# -lt 2 ]]; then
+        echo "Missing value for --sync" >&2
+        exit 1
+      fi
+      set_sync_scope "$2"
+      shift
       ;;
     --claude-model)
       if [[ $# -lt 2 ]]; then
@@ -225,6 +474,10 @@ if [[ ${#selected_platforms[@]} -eq 0 ]]; then
   selected_platforms=(claude opencode codex)
 fi
 
+if [[ "$interactive_mode" == true ]]; then
+  prompt_interactive_scope
+fi
+
 run_rsync() {
   local source_dir="$1"
   local target_dir="$2"
@@ -247,6 +500,11 @@ sync_platform() {
   local source_base=""
   local target_base=""
   local model_override=""
+  local agent_selection='*'
+  local skill_selection='*'
+  local selection_joined=""
+  local selected_entries=()
+  local entry=""
 
   case "$platform" in
     claude)
@@ -277,18 +535,47 @@ sync_platform() {
 
   echo "Syncing $platform"
 
-  if [[ -d "$source_base/agents" ]]; then
-    run_rsync "$source_base/agents" "$target_base/agents"
+  if [[ "$sync_agents" == true && -d "$source_base/agents" ]]; then
+    if [[ "$interactive_mode" == true ]]; then
+      collect_selected_entries "$source_base/agents" "agents" "$platform" agent_selection
+    fi
 
-    if [[ "$dry_run" == true ]]; then
-      preview_model_override "$source_base/agents" "$model_override"
-    else
-      apply_model_override "$target_base/agents" "$model_override"
+    if [[ "$agent_selection" == "*" ]]; then
+      run_rsync "$source_base/agents" "$target_base/agents"
+      if [[ "$dry_run" == true ]]; then
+        preview_model_override "$source_base/agents" "$model_override"
+      else
+        apply_model_override "$target_base/agents" "$model_override"
+      fi
+    elif [[ -n "$agent_selection" ]]; then
+      expand_selection "$source_base/agents" "$agent_selection" selection_joined
+      IFS='|' read -r -a selected_entries <<< "$selection_joined"
+      for entry in "${selected_entries[@]}"; do
+        run_rsync_entry "$source_base/agents/$entry" "$target_base/agents/$entry"
+      done
+
+      if [[ "$dry_run" == true ]]; then
+        preview_model_override_for_entries "$source_base/agents" "$agent_selection" "$model_override"
+      else
+        apply_model_override_for_entries "$source_base/agents" "$target_base/agents" "$agent_selection" "$model_override"
+      fi
     fi
   fi
 
-  if [[ -d "$source_base/skills" ]]; then
-    run_rsync "$source_base/skills" "$target_base/skills"
+  if [[ "$sync_skills" == true && -d "$source_base/skills" ]]; then
+    if [[ "$interactive_mode" == true ]]; then
+      collect_selected_entries "$source_base/skills" "skills" "$platform" skill_selection
+    fi
+
+    if [[ "$skill_selection" == "*" ]]; then
+      run_rsync "$source_base/skills" "$target_base/skills"
+    elif [[ -n "$skill_selection" ]]; then
+      expand_selection "$source_base/skills" "$skill_selection" selection_joined
+      IFS='|' read -r -a selected_entries <<< "$selection_joined"
+      for entry in "${selected_entries[@]}"; do
+        run_rsync_entry "$source_base/skills/$entry" "$target_base/skills/$entry"
+      done
+    fi
   fi
 }
 
