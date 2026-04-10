@@ -9,6 +9,9 @@
 - Write simple, readable code. Avoid overengineering and excessive abstraction.
 - Do not separate each small piece of logic into separate functions. Keep related logic together.
 - Methods should be readable but not over-granular. A method can be 30–50 lines if the logic flows clearly.
+- Keep services, classes not longer than 500 lines.
+- Before you will add new property/field to some business model, check if it more valuable to remodel current one, to don't overgrow current one.
+- Always try to find common patterns for same business domain or logic and extract it to underlying classes or services.
 - Never use `as any` type assertions. Use proper types or `as never` if absolutely necessary.
 - Inline simple logic and conditions. Don't create separate methods for trivial checks.
 - Use early returns to avoid deep nesting.
