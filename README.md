@@ -142,3 +142,78 @@ Precedence for each platform's model selection during sync is:
 2. Platform-specific environment variable, for example `CLAUDE_MODEL`
 3. Platform-specific local env file, for example `.claude.local.env`
 4. The repo's per-agent defaults in that platform's `agents/` directory
+
+### OpenCode API Key Configuration
+
+The `.config/opencode/opencode.json` file contains API key placeholders for security. These are substituted with actual values during sync.
+
+**Placeholder Variables:**
+
+- `${NVIDIA_NIM_API_KEY}` - NVIDIA NIM provider API key (format: `nvapi-...`)
+- `${STITCH_API_KEY}` - Google Stitch MCP API key (format: `AQ.xxx...`)
+- `${CONTEXT7_API_KEY}` - Context7 MCP API key (format: `ctx7sk-...`)
+
+**During sync, you will be prompted to configure these keys.**
+
+#### Automatic API Key Configuration
+
+Use the `--configure-api-keys` flag to automatically enter API key configuration mode:
+
+```bash
+# Configure API keys while syncing opencode
+./sync-local-agents.sh --platform opencode --configure-api-keys
+
+# Configure API keys while syncing all platforms
+./sync-local-agents.sh --configure-api-keys
+
+# Combine with interactive mode
+./sync-local-agents.sh --interactive --configure-api-keys
+```
+
+When this flag is set, the script will:
+1. Detect placeholder variables in `opencode.json`
+2. Prompt for each API key securely (input is hidden)
+3. Ask you to confirm each entry
+4. Substitute the values into `~/.config/opencode/opencode.json`
+
+#### Interactive API Key Configuration
+
+Without the flag, you'll be asked interactively when placeholders are detected:
+
+```bash
+./sync-local-agents.sh --platform opencode
+# Script detects placeholders and asks:
+# "opencode.json contains API key placeholders."
+# "Configure API keys now? [Y/n]:"
+```
+
+Type `Y` to enter configuration mode, or `n` to copy the file with placeholders.
+
+#### Getting API Keys
+
+**NVIDIA NIM API Key:**
+1. Visit [https://build.nvidia.com/](https://build.nvidia.com/)
+2. Sign in with your NVIDIA account
+3. Generate an API key from your profile/dashboard
+4. Format: `nvapi-xxxxxxxxxxxxxxxx`
+
+**Stitch MCP API Key:**
+1. Go to [Google AI Studio](https://ai.google.dev/aistudio)
+2. Create or access your project
+3. Generate an API key
+4. Format: `AQ.xxxxxxxxxxxxx`
+
+**Context7 MCP API Key:**
+1. Visit [https://context7.com](https://context7.com)
+2. Sign up for an account
+3. Generate an API key from your dashboard
+4. Format: `ctx7sk-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+
+#### Security Notes
+
+- API keys are **never stored in this git repository**
+- The repository only contains placeholder syntax
+- Actual keys are injected into your local config at `~/.config/opencode/opencode.json`
+- Input is hidden when typing (security best practice)
+- Keys are double-confirmed to prevent typos
+- Your local `~/.config/opencode/` directory is outside version control

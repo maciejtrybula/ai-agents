@@ -1,0 +1,98 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "plan",
+  "model": "openai/gpt-5.4",
+  "autoupdate": true,
+  "permission": {
+    "bash": "ask",
+    "curl": "ask",
+    "git status *": "allow",
+    "git diff*": "allow",
+    "ls*": "allow",
+    "pnpm test*": "allow",
+    "pnpm mobile:lint*": "allow"
+
+  },
+  "agent": {
+    "it-task-master": {
+      "mode": "primary",
+      "tools": {
+        "todowrite": true,
+        "question": true,
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "list": true,
+        "lsp": true
+      },
+      "permission": {
+        "edit": "ask",
+        "write": "ask"
+      }
+    }
+  },
+  "provider": {
+    "nvidia-nim": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "NVIDIA NIM",
+      "options": {
+        "baseURL": "https://integrate.api.nvidia.com/v1",
+        "apiKey": "${NVIDIA_NIM_API_KEY}"
+      },
+      "models": {
+        "moonshotai/kimi-k2.5": {
+          "name": "Kimi K2.5",
+          "limit": {"context": 131072, "output": 8192}
+        }
+      }
+    },
+    "ollama": {
+      "models": {
+        "deepseek-r1:7b": {
+          "_launch": true,
+          "name": "deepseek-r1:7b"
+        },
+        "llama3.2": {
+          "_launch": true,
+          "name": "llama3.2"
+        },
+        "gemma4:26b": {
+          "name": "gemma4 26b",
+          "tools": true
+        },
+        "qwen2.5-coder:14b": {
+          "name": "Qwen 2.5 coder",
+          "_launch": true
+        }
+      },
+      "name": "Ollama",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      }
+    }
+  },
+  "mcp": {
+    "stitch": {
+      "type": "remote",
+      "url": "https://stitch.googleapis.com/mcp",
+      "enabled": true,
+      "headers": {
+        "X-Goog-Api-Key": "${STITCH_API_KEY}"
+      }
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+      },
+      "enabled": true
+    },
+    "blender": {
+      "type": "local",
+      "command": ["uvx","blender-mcp"],
+      "enabled": true
+    }
+  }
+}

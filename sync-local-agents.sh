@@ -7,6 +7,7 @@ repo_root="$script_dir"
 dry_run=false
 delete_extra=false
 interactive_mode=false
+configure_api_keys=false
 selected_platforms=()
 sync_agents=true
 sync_skills=true
@@ -135,47 +136,53 @@ file_codex_model="$(load_model_from_file "$repo_root/.codex.local.env" "CODEX_MO
 usage() {
   cat <<'EOF'
 Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode|codex]
-	       [--sync both|agents|skills] [--interactive]
-	       [--claude-model MODEL]
-	       [--opencode-model MODEL]
-	       [--codex-model MODEL]
+[--sync both|agents|skills] [--interactive]
+[--configure-api-keys]
+[--claude-model MODEL]
+[--opencode-model MODEL]
+[--codex-model MODEL]
 
 Copies agents and skills from this repository into the matching local config
 directories in your home folder.
 
 Options:
-  --dry-run   Preview changes without writing files
-  --delete    Remove local files that no longer exist in this repo
-              When syncing selected entries, deletion is scoped to those
-              selected directories only
-  --sync      Non-interactive scope: both (default), agents, or skills
-  --interactive
-              Prompt for sync scope and optional per-platform selection
-              of individual agents/skills (requires TTY)
-  --claude-model
-              Override the model used in synced Claude agent frontmatter
-              Precedence: --claude-model > CLAUDE_MODEL env var >
-              ./.claude.local.env > repo defaults
-  --opencode-model
-              Override the model used in synced OpenCode agent frontmatter
-              Precedence: --opencode-model > OPENCODE_MODEL env var >
-              ./.opencode.local.env > repo defaults
-  --codex-model
-              Override the model used in synced Codex agent frontmatter
-              Precedence: --codex-model > CODEX_MODEL env var >
-              ./.codex.local.env > repo defaults
+--dry-run Preview changes without writing files
+--delete Remove local files that no longer exist in this repo
+When syncing selected entries, deletion is scoped to those
+selected directories only
+--sync Non-interactive scope: both (default), agents, or skills
+--interactive
+Prompt for sync scope and optional per-platform selection
+of individual agents/skills (requires TTY)
+--configure-api-keys
+Prompt to configure API keys for opencode.json during sync.
+Replaces ${NVIDIA_NIM_API_KEY}, ${STITCH_API_KEY}, and
+${CONTEXT7_API_KEY} placeholders with actual values.
+--claude-model
+Override the model used in synced Claude agent frontmatter
+Precedence: --claude-model > CLAUDE_MODEL env var >
+./.claude.local.env > repo defaults
+--opencode-model
+Override the model used in synced OpenCode agent frontmatter
+Precedence: --opencode-model > OPENCODE_MODEL env var >
+./.opencode.local.env > repo defaults
+--codex-model
+Override the model used in synced Codex agent frontmatter
+Precedence: --codex-model > CODEX_MODEL env var >
+./.codex.local.env > repo defaults
 
 Examples:
-  ./sync-local-agents.sh
-  ./sync-local-agents.sh --dry-run
-  ./sync-local-agents.sh --delete
-  ./sync-local-agents.sh --sync agents
-  ./sync-local-agents.sh --sync skills --platform claude
-  ./sync-local-agents.sh --interactive
-  ./sync-local-agents.sh --platform claude --claude-model sonnet
-  ./sync-local-agents.sh --platform opencode
-  ./sync-local-agents.sh --opencode-model openai/gpt-5.4
-  ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
+./sync-local-agents.sh
+./sync-local-agents.sh --dry-run
+./sync-local-agents.sh --delete
+./sync-local-agents.sh --sync agents
+./sync-local-agents.sh --sync skills --platform claude
+./sync-local-agents.sh --interactive
+./sync-local-agents.sh --interactive --configure-api-keys
+./sync-local-agents.sh --platform claude --claude-model sonnet
+./sync-local-agents.sh --platform opencode --configure-api-keys
+./sync-local-agents.sh --opencode-model openai/gpt-5.4
+./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
 EOF
 }
 
@@ -345,6 +352,111 @@ preview_model_override_for_entries() {
   done
 }
 
+# Function to prompt for API key securely
+prompt_for_api_key() {
+  local var_name="$1"
+  local description="$2"
+  local hint="$3"
+  local value=""
+
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "API Key: $description"
+  echo "Variable: $var_name"
+  if [[ -n "$hint" ]]; then
+    echo "Expected format: $hint"
+  fi
+  echo ""
+
+  # Check if already set in environment
+  if [[ -n "${!var_name:-}" ]]; then
+    echo "Found $var_name in environment (${#var_name} chars)"
+    read -rp "Use existing value? [Y/n]: " use_existing
+    if [[ ! "$use_existing" =~ ^[Nn]$ ]]; then
+      echo "${!var_name}"
+      return
+    fi
+  fi
+
+  # Prompt for value
+  while true; do
+    read -rsp "Enter $description (input hidden): " value
+    echo ""
+
+    if [[ -z "$value" ]]; then
+      echo "Error: Value cannot be empty." >&2
+      continue
+    fi
+
+    # Confirm the value
+    read -rsp "Confirm $description (type again): " confirm_value
+    echo ""
+
+    if [[ "$value" != "$confirm_value" ]]; then
+      echo "Error: Values do not match." >&2
+      continue
+    fi
+
+    break
+  done
+
+  echo "$value"
+}
+
+# Function to substitute API keys in opencode.json
+substitute_api_keys() {
+  local input_file="$1"
+  local output_file="$2"
+  local nvim_key=""
+  local stitch_key=""
+  local context7_key=""
+
+  echo ""
+  echo "╔════════════════════════════════════════════════════════════╗"
+  echo "║         OpenCode API Key Configuration                      ║"
+  echo "║     Securely configure API keys during sync                ║"
+  echo "╚════════════════════════════════════════════════════════════╝"
+  echo ""
+  echo "This will prompt you for API keys to embed in opencode.json"
+  echo "Your keys will NOT be stored in the git repository."
+  echo ""
+
+  # Prompt for NVIDIA NIM API Key
+  nvim_key=$(prompt_for_api_key "NVIDIA_NIM_API_KEY" \
+    "NVIDIA NIM API Key" \
+    "nvapi-... (get from https://build.nvidia.com/)" \
+    || true)
+
+  # Prompt for Stitch API Key
+  stitch_key=$(prompt_for_api_key "STITCH_API_KEY" \
+    "Stitch MCP API Key" \
+    "AQ.xxx... (get from Google AI Studio)" \
+    || true)
+
+  # Prompt for Context7 API Key
+  context7_key=$(prompt_for_api_key "CONTEXT7_API_KEY" \
+    "Context7 MCP API Key" \
+    "ctx7sk-... (get from https://context7.com)" \
+    || true)
+
+  # Copy and substitute values
+  if [[ -n "$nvim_key" || -n "$stitch_key" || -n "$context7_key" ]]; then
+    echo ""
+    echo "Applying API key substitutions..."
+
+    # Use sed to replace placeholders
+    sed -e "s|\\\${NVIDIA_NIM_API_KEY}|${nvim_key}|g" \
+        -e "s|\\\${STITCH_API_KEY}|${stitch_key}|g" \
+        -e "s|\\\${CONTEXT7_API_KEY}|${context7_key}|g" \
+        "$input_file" > "$output_file"
+
+    echo "✓ API keys substituted successfully"
+  else
+    # No keys provided, just copy the file
+    cp "$input_file" "$output_file"
+  fi
+}
+
 apply_model_override_for_entries() {
   local source_agents_dir="$1"
   local target_agents_dir="$2"
@@ -448,6 +560,9 @@ while [[ $# -gt 0 ]]; do
       cli_codex_model="$2"
       shift
       ;;
+    --configure-api-keys)
+      configure_api_keys=true
+      ;;
     --help|-h)
       usage
       exit 0
@@ -457,9 +572,9 @@ while [[ $# -gt 0 ]]; do
       usage >&2
       exit 1
       ;;
-  esac
-  shift
-done
+    esac
+    shift
+  done
 
 claude_model="$(resolve_model_override "$cli_claude_model" "$env_claude_model" "$file_claude_model")"
 opencode_model="$(resolve_model_override "$cli_opencode_model" "$env_opencode_model" "$file_opencode_model")"
@@ -579,6 +694,56 @@ sync_platform() {
   fi
 }
 
+# Special handling for opencode.json - prompt for API keys
+sync_opencode_json() {
+  local source_base="$1"
+  local target_base="$2"
+  local json_source="$source_base/opencode.json"
+  local json_target="$target_base/opencode.json"
+
+  if [[ ! -f "$json_source" ]]; then
+    return 0
+  fi
+
+  if [[ "$dry_run" == true ]]; then
+    echo "Would sync $json_source to $json_target with API key substitution"
+    return 0
+  fi
+
+  # Check if opencode.json contains placeholders that need substitution
+  if grep -q '\${NVIDIA_NIM_API_KEY}\|\${STITCH_API_KEY}\|\${CONTEXT7_API_KEY}' "$json_source" 2>/dev/null; then
+    echo ""
+    echo "opencode.json contains API key placeholders."
+
+    # If --configure-api-keys flag is set, automatically configure
+    if [[ "$configure_api_keys" == true ]]; then
+      substitute_api_keys "$json_source" "$json_target"
+      return 0
+    fi
+
+    # Otherwise, prompt interactively
+    read -rp "Configure API keys now? [Y/n]: " configure_keys
+    if [[ ! "$configure_keys" =~ ^[Nn]$ ]]; then
+      substitute_api_keys "$json_source" "$json_target"
+    else
+      # Just copy without substitution
+      mkdir -p "$(dirname "$json_target")"
+      cp "$json_source" "$json_target"
+      echo "Copied opencode.json without API key substitution (using placeholders)"
+    fi
+  else
+    # No placeholders, just copy
+    mkdir -p "$(dirname "$json_target")"
+    cp "$json_source" "$json_target"
+    echo "Copied opencode.json"
+  fi
+}
+
 for platform in "${selected_platforms[@]}"; do
   sync_platform "$platform"
+
+  # Sync opencode.json if syncing opencode platform
+  if [[ "$platform" == "opencode" ]]; then
+    sync_opencode_json "$repo_root/.config/opencode" "$HOME/.config/opencode"
+  fi
 done
