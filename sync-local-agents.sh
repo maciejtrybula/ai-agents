@@ -378,29 +378,36 @@ prompt_for_api_key() {
     fi
   fi
 
-  # Prompt for value
-  while true; do
-    read -rsp "Enter $description (input hidden): " value
-    echo ""
+	# Prompt for value
+	while true; do
+		read -rsp "Enter $description (input hidden): " value
+		echo ""
 
-    if [[ -z "$value" ]]; then
-      echo "Error: Value cannot be empty." >&2
-      continue
-    fi
+		# Strip CR/LF that read -rsp may leave on some terminals (macOS)
+		value="${value//$'\r'/}"
+		value="${value//$'\n'/}"
 
-    # Confirm the value
-    read -rsp "Confirm $description (type again): " confirm_value
-    echo ""
+		if [[ -z "$value" ]]; then
+			echo "Error: Value cannot be empty." >&2
+			continue
+		fi
 
-    if [[ "$value" != "$confirm_value" ]]; then
-      echo "Error: Values do not match." >&2
-      continue
-    fi
+		# Confirm the value
+		read -rsp "Confirm $description (type again): " confirm_value
+		echo ""
 
-    break
-  done
+		confirm_value="${confirm_value//$'\r'/}"
+		confirm_value="${confirm_value//$'\n'/}"
 
-  echo "$value"
+		if [[ "$value" != "$confirm_value" ]]; then
+			echo "Error: Values do not match." >&2
+			continue
+		fi
+
+		break
+	done
+
+	printf '%s' "$value"
 }
 
 # Function to substitute API keys in opencode.json
@@ -439,22 +446,31 @@ substitute_api_keys() {
     "ctx7sk-... (get from https://context7.com)" \
     || true)
 
-  # Copy and substitute values
-  if [[ -n "$nvim_key" || -n "$stitch_key" || -n "$context7_key" ]]; then
-    echo ""
-    echo "Applying API key substitutions..."
+	# Copy and substitute values
+	if [[ -n "$nvim_key" || -n "$stitch_key" || -n "$context7_key" ]]; then
+		echo ""
+		echo "Applying API key substitutions..."
 
-    # Use sed to replace placeholders
-    sed -e "s|\\\${NVIDIA_NIM_API_KEY}|${nvim_key}|g" \
-        -e "s|\\\${STITCH_API_KEY}|${stitch_key}|g" \
-        -e "s|\\\${CONTEXT7_API_KEY}|${context7_key}|g" \
-        "$input_file" > "$output_file"
+		# Copy source to output first, then apply substitutions in-place
+		cp "$input_file" "$output_file"
 
-    echo "✓ API keys substituted successfully"
-  else
-    # No keys provided, just copy the file
-    cp "$input_file" "$output_file"
-  fi
+		# Use perl for reliable ${...} placeholder replacement (macOS sed
+		# struggles with literal dollar-brace patterns in double quotes)
+		if [[ -n "$nvim_key" ]]; then
+			NVIDIA_NIM_API_KEY="$nvim_key" perl -pi -e 's/\$\{NVIDIA_NIM_API_KEY\}/$ENV{NVIDIA_NIM_API_KEY}/g' "$output_file"
+		fi
+		if [[ -n "$stitch_key" ]]; then
+			STITCH_API_KEY="$stitch_key" perl -pi -e 's/\$\{STITCH_API_KEY\}/$ENV{STITCH_API_KEY}/g' "$output_file"
+		fi
+		if [[ -n "$context7_key" ]]; then
+			CONTEXT7_API_KEY="$context7_key" perl -pi -e 's/\$\{CONTEXT7_API_KEY\}/$ENV{CONTEXT7_API_KEY}/g' "$output_file"
+		fi
+
+		echo "✓ API keys substituted successfully"
+	else
+		# No keys provided, just copy the file
+		cp "$input_file" "$output_file"
+	fi
 }
 
 apply_model_override_for_entries() {
@@ -721,16 +737,21 @@ sync_opencode_json() {
       return 0
     fi
 
-    # Otherwise, prompt interactively
-    read -rp "Configure API keys now? [Y/n]: " configure_keys
-    if [[ ! "$configure_keys" =~ ^[Nn]$ ]]; then
-      substitute_api_keys "$json_source" "$json_target"
-    else
-      # Just copy without substitution
-      mkdir -p "$(dirname "$json_target")"
-      cp "$json_source" "$json_target"
-      echo "Copied opencode.json without API key substitution (using placeholders)"
-    fi
+	# Otherwise, prompt interactively
+	read -rp "Configure API keys now? [Y/n]: " configure_keys
+	if [[ ! "$configure_keys" =~ ^[Nn]$ ]]; then
+		substitute_api_keys "$json_source" "$json_target"
+	else
+		# User declined — leave existing opencode.json untouched
+		if [[ -f "$json_target" ]]; then
+			echo "Skipped opencode.json sync — keeping existing API keys in $json_target"
+		else
+			# No existing target file; copy as-is so opencode at least has a config
+			mkdir -p "$(dirname "$json_target")"
+			cp "$json_source" "$json_target"
+			echo "Copied opencode.json with placeholders (no existing file to preserve)"
+		fi
+	fi
   else
     # No placeholders, just copy
     mkdir -p "$(dirname "$json_target")"
