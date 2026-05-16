@@ -44,6 +44,7 @@ Skills are shared across **Claude**, **OpenCode**, and **Codex**, and agents are
 - **fastify**: Best-practice guidance for Fastify application design and implementation.
 - **next-js**: Reusable guidance for Next.js App Router architecture, rendering, and deployment-safe behavior.
 - **java**: Reusable Java engineering guidance for application architecture, Spring-based services, testing, performance, and production reliability.
+- **konva**: Guidance for Konva-powered diagram and spatial editors with strict separation between renderer and shared editor logic.
 - **node-js**: Reusable Node.js and TypeScript engineering guidance for reliability and maintainability.
 - **react**: Reusable React guidance for component patterns, state boundaries, testing, and performance.
 - **react-native**: Reusable React Native and Expo guidance for mobile architecture, performance, and release quality.

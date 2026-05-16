@@ -39,6 +39,7 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 - **Code Review**: Standards-based analysis of pull requests and code changes.
 - **Tech Arch Research**: Deep-dive analysis into technical architectures and patterns.
 - **Java**: Reusable Java engineering guidance for application architecture, Spring-based services, testing, performance, and production reliability.
+- **Konva Diagram Editor**: Guidance for Konva-powered diagram and spatial editors with strict separation between renderer and shared editor logic.
 - **SEO Inspection**: Full-spectrum audits spanning technical SEO, content quality, and AI search readiness.
 - **Technical SEO Audit**: Crawlability, rendering, indexation, and structured-data validation.
 - **SEO Content Strategy**: Search-intent mapping, internal linking, and topical authority planning.

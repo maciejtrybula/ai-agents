@@ -30,7 +30,7 @@ This repository stores Claude, OpenCode, and Codex agents plus shared skills for
 
 Skills are shared across platforms and should be checked before specialized work so agents can reuse the best available guidance instead of recreating it.
 
-- Engineering skills include reusable guidance such as `java` for application architecture, Spring-based services, testing, performance, and production reliability.
+- Engineering skills include reusable guidance such as `java` for application architecture, Spring-based services, testing, performance, and production reliability, and `konva` for Konva-powered diagram and spatial editors with renderer/core separation.
 - Tax skills include `polish-tax-law` for structured Polish tax analysis, compliance-aware reasoning, and escalation boundaries.
 - SEO skills include `seo-inspection`, `technical-seo-audit`, `seo-content-strategy`, `ai-search-optimization`, and `seo-measurement-observability`.
 - Writing skills include `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.

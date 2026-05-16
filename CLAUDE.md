@@ -43,6 +43,7 @@ Check the available shared skills before starting specialized work, and use the 
 - **code-review**: Specialized skill for comprehensive code analysis.
 - **tech-arch-research**: Research-driven technical architecture analysis.
 - **java**: Reusable Java engineering guidance for application architecture, Spring-based services, testing, performance, and production reliability.
+- **konva**: Guidance for Konva-powered diagram and spatial editors with strict separation between renderer and shared editor logic.
 - **seo-inspection**: Full-spectrum SEO inspection workflow.
 - **technical-seo-audit**: Deep technical SEO validation and remediation guidance.
 - **seo-content-strategy**: Search-intent, internal linking, and topical authority planning.
