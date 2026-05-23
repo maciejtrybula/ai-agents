@@ -11,6 +11,7 @@ configure_api_keys=false
 selected_platforms=()
 sync_agents=true
 sync_skills=true
+sync_configs=false
 sync_scope="both"
 cli_claude_model=""
 cli_opencode_model=""
@@ -136,7 +137,7 @@ file_codex_model="$(load_model_from_file "$repo_root/.codex.local.env" "CODEX_MO
 usage() {
   cat <<'EOF'
 Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode|codex]
-[--sync both|agents|skills] [--interactive]
+[--sync both|agents|skills|config|all] [--interactive]
 [--configure-api-keys]
 [--claude-model MODEL]
 [--opencode-model MODEL]
@@ -150,10 +151,12 @@ Options:
 --delete Remove local files that no longer exist in this repo
 When syncing selected entries, deletion is scoped to those
 selected directories only
---sync Non-interactive scope: both (default), agents, or skills
+--sync Non-interactive scope: both (default), agents, skills,
+config, or all
 --interactive
-Prompt for sync scope and optional per-platform selection
-of individual agents/skills (requires TTY)
+Prompt for sync scope, optional per-platform selection
+of individual agents/skills, and config sync mode
+(requires TTY)
 --configure-api-keys
 Prompt to configure API keys for opencode.json during sync.
 Replaces ${NVIDIA_NIM_API_KEY}, ${STITCH_API_KEY}, and
@@ -176,7 +179,9 @@ Examples:
 ./sync-local-agents.sh --dry-run
 ./sync-local-agents.sh --delete
 ./sync-local-agents.sh --sync agents
+./sync-local-agents.sh --sync config --platform claude
 ./sync-local-agents.sh --sync skills --platform claude
+./sync-local-agents.sh --sync all --platform opencode
 ./sync-local-agents.sh --interactive
 ./sync-local-agents.sh --interactive --configure-api-keys
 ./sync-local-agents.sh --platform claude --claude-model sonnet
@@ -193,20 +198,35 @@ set_sync_scope() {
     both)
       sync_agents=true
       sync_skills=true
+      sync_configs=false
       sync_scope="both"
       ;;
     agents)
       sync_agents=true
       sync_skills=false
+      sync_configs=false
       sync_scope="agents"
       ;;
     skills)
       sync_agents=false
       sync_skills=true
+      sync_configs=false
       sync_scope="skills"
       ;;
+    config)
+      sync_agents=false
+      sync_skills=false
+      sync_configs=true
+      sync_scope="config"
+      ;;
+    all)
+      sync_agents=true
+      sync_skills=true
+      sync_configs=true
+      sync_scope="all"
+      ;;
     *)
-      echo "Unsupported value for --sync: $value (expected: both|agents|skills)" >&2
+      echo "Unsupported value for --sync: $value (expected: both|agents|skills|config|all)" >&2
       exit 1
       ;;
   esac
@@ -510,6 +530,267 @@ apply_model_override_for_entries() {
   done
 }
 
+require_node() {
+  if ! command -v node >/dev/null 2>&1; then
+    echo "node is required for MCP-only config sync but is not installed." >&2
+    exit 1
+  fi
+}
+
+list_json_object_keys() {
+  local json_file="$1"
+  local root_key="$2"
+
+  [[ -f "$json_file" ]] || return 0
+
+  require_node
+
+  node - "$json_file" "$root_key" <<'NODE'
+const fs = require("fs")
+
+const [jsonFile, rootKey] = process.argv.slice(2)
+const data = JSON.parse(fs.readFileSync(jsonFile, "utf8"))
+const value = data?.[rootKey]
+
+if (!value || typeof value !== "object" || Array.isArray(value)) {
+  process.exit(0)
+}
+
+for (const key of Object.keys(value).sort()) {
+  process.stdout.write(`${key}\n`)
+}
+NODE
+}
+
+collect_selected_json_keys() {
+  local json_file="$1"
+  local root_key="$2"
+  local label="$3"
+  local platform="$4"
+  local __result_var="$5"
+  local all_entries=()
+  local selected_entries=()
+  local index=1
+  local answer=""
+  local input=""
+  local token=""
+  local -a tokens=()
+  local listed_entry=""
+
+  while IFS= read -r listed_entry; do
+    all_entries+=("$listed_entry")
+  done < <(list_json_object_keys "$json_file" "$root_key")
+
+  if [[ ${#all_entries[@]} -eq 0 ]]; then
+    printf -v "$__result_var" '%s' ""
+    return
+  fi
+
+  printf 'Available %s for %s:\n' "$label" "$platform"
+  for entry in "${all_entries[@]}"; do
+    printf '  [%d] %s\n' "$index" "$entry"
+    ((index++))
+  done
+
+  read -r -p "Sync all $label for $platform? [Y/n]: " answer
+  answer="$(trim "$answer")"
+  answer="$(to_lower "$answer")"
+
+  if [[ -z "$answer" || "$answer" == "y" || "$answer" == "yes" ]]; then
+    printf -v "$__result_var" '*'
+    return
+  fi
+
+  read -r -p "Enter comma-separated numbers to sync (empty = skip $label): " input
+  input="${input// /}"
+
+  if [[ -z "$input" ]]; then
+    printf -v "$__result_var" '%s' ""
+    return
+  fi
+
+  IFS=',' read -r -a tokens <<< "$input"
+  for token in "${tokens[@]}"; do
+    if [[ "$token" =~ ^[0-9]+$ ]] && (( token >= 1 && token <= ${#all_entries[@]} )); then
+      selected_entries+=("${all_entries[token-1]}")
+    else
+      echo "Ignoring invalid selection: $token" >&2
+    fi
+  done
+
+  if [[ ${#selected_entries[@]} -eq 0 ]]; then
+    printf -v "$__result_var" '%s' ""
+    return
+  fi
+
+  printf -v "$__result_var" '%s' "$(IFS='|'; printf '%s' "${selected_entries[*]}")"
+}
+
+selected_json_object_contains_placeholders() {
+  local json_file="$1"
+  local root_key="$2"
+  local selection="$3"
+
+  require_node
+
+  node - "$json_file" "$root_key" "$selection" <<'NODE'
+const fs = require("fs")
+
+const [jsonFile, rootKey, selection] = process.argv.slice(2)
+const data = JSON.parse(fs.readFileSync(jsonFile, "utf8"))
+const sourceRoot = data?.[rootKey] ?? {}
+const selectedKeys = selection === "*" ? Object.keys(sourceRoot) : selection.split("|").filter(Boolean)
+const placeholderPattern = /^\$\{[A-Z0-9_]+\}$/
+
+function hasPlaceholder(value) {
+  if (typeof value === "string") {
+    return placeholderPattern.test(value)
+  }
+  if (Array.isArray(value)) {
+    return value.some(hasPlaceholder)
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value).some(hasPlaceholder)
+  }
+  return false
+}
+
+for (const key of selectedKeys) {
+  if (hasPlaceholder(sourceRoot[key])) {
+    process.exit(0)
+  }
+}
+
+process.exit(1)
+NODE
+}
+
+merge_selected_json_object_keys() {
+  local source_json="$1"
+  local target_json="$2"
+  local root_key="$3"
+  local selection="$4"
+
+  require_node
+
+  mkdir -p "$(dirname "$target_json")"
+
+  node - "$source_json" "$target_json" "$root_key" "$selection" <<'NODE'
+const fs = require("fs")
+const vm = require("vm")
+
+const [sourceJson, targetJson, rootKey, selection] = process.argv.slice(2)
+
+function parseConfigFile(filePath) {
+  const text = fs.readFileSync(filePath, "utf8")
+
+  try {
+    return JSON.parse(text)
+  } catch (_error) {
+    return vm.runInNewContext(`(${text})`, {})
+  }
+}
+
+const source = parseConfigFile(sourceJson)
+const target = fs.existsSync(targetJson)
+  ? parseConfigFile(targetJson)
+  : {}
+const sourceRoot = source?.[rootKey] ?? {}
+const selectedKeys = selection === "*" ? Object.keys(sourceRoot) : selection.split("|").filter(Boolean)
+const placeholderPattern = /^\$\{[A-Z0-9_]+\}$/
+
+function preservePlaceholderValues(sourceValue, targetValue) {
+  if (typeof sourceValue === "string") {
+    if (placeholderPattern.test(sourceValue) && typeof targetValue === "string" && targetValue.length > 0) {
+      return targetValue
+    }
+    return sourceValue
+  }
+
+  if (Array.isArray(sourceValue)) {
+    const targetArray = Array.isArray(targetValue) ? targetValue : []
+    return sourceValue.map((entry, index) => preservePlaceholderValues(entry, targetArray[index]))
+  }
+
+  if (sourceValue && typeof sourceValue === "object") {
+    const targetObject = targetValue && typeof targetValue === "object" && !Array.isArray(targetValue)
+      ? targetValue
+      : {}
+    const result = {}
+    for (const [key, value] of Object.entries(sourceValue)) {
+      result[key] = preservePlaceholderValues(value, targetObject[key])
+    }
+    return result
+  }
+
+  return sourceValue
+}
+
+if (!target[rootKey] || typeof target[rootKey] !== "object" || Array.isArray(target[rootKey])) {
+  target[rootKey] = {}
+}
+
+if (source.$schema && !target.$schema) {
+  target.$schema = source.$schema
+}
+
+for (const key of selectedKeys) {
+  if (!(key in sourceRoot)) {
+    continue
+  }
+  target[rootKey][key] = preservePlaceholderValues(sourceRoot[key], target[rootKey][key])
+}
+
+fs.writeFileSync(targetJson, `${JSON.stringify(target, null, 2)}\n`)
+NODE
+}
+
+preview_selected_json_keys_sync() {
+  local platform="$1"
+  local target_json="$2"
+  local label="$3"
+  local selection="$4"
+  local selected=()
+
+  if [[ "$selection" == "*" ]]; then
+    printf 'Would sync all %s for %s into %s\n' "$label" "$platform" "$target_json"
+    return 0
+  fi
+
+  IFS='|' read -r -a selected <<< "$selection"
+  printf 'Would sync %s for %s into %s:\n' "$label" "$platform" "$target_json"
+  for entry in "${selected[@]}"; do
+    printf '  - %s\n' "$entry"
+  done
+}
+
+prompt_config_sync_mode() {
+  local platform="$1"
+  local config_name="$2"
+  local __result_var="$3"
+  local answer=""
+
+  read -r -p "How do you want to sync $platform $config_name? [full/mcp/skip] (default: full): " answer
+  answer="$(trim "$answer")"
+  answer="$(to_lower "$answer")"
+
+  case "$answer" in
+    ""|full)
+      printf -v "$__result_var" '%s' "full"
+      ;;
+    mcp)
+      printf -v "$__result_var" '%s' "mcp"
+      ;;
+    skip)
+      printf -v "$__result_var" '%s' "skip"
+      ;;
+    *)
+      echo "Unsupported config sync mode: $answer (expected: full|mcp|skip)" >&2
+      exit 1
+      ;;
+  esac
+}
+
 prompt_interactive_scope() {
   local answer=""
 
@@ -518,7 +799,7 @@ prompt_interactive_scope() {
     exit 1
   fi
 
-  read -r -p "What do you want to sync? [both/agents/skills] (default: $sync_scope): " answer
+  read -r -p "What do you want to sync? [both/agents/skills/config/all] (default: $sync_scope): " answer
   answer="$(trim "$answer")"
   answer="$(to_lower "$answer")"
   [[ -z "$answer" ]] && answer="$sync_scope"
@@ -631,6 +912,9 @@ sync_platform() {
   local source_base=""
   local target_base=""
   local model_override=""
+  local config_source=""
+  local config_target=""
+  local mcp_root_key=""
   local agent_selection='*'
   local skill_selection='*'
   local selection_joined=""
@@ -642,11 +926,17 @@ sync_platform() {
       source_base="$repo_root/.claude"
       target_base="$HOME/.claude"
       model_override="$claude_model"
+      config_source="$source_base/settings.json"
+      config_target="$target_base/settings.json"
+      mcp_root_key="mcpServers"
       ;;
     opencode)
       source_base="$repo_root/.config/opencode"
       target_base="$HOME/.config/opencode"
       model_override="$opencode_model"
+      config_source="$source_base/opencode.json"
+      config_target="$target_base/opencode.json"
+      mcp_root_key="mcp"
       ;;
     codex)
       source_base="$repo_root/.codex"
@@ -708,6 +998,10 @@ sync_platform() {
       done
     fi
   fi
+
+  if [[ "$sync_configs" == true ]]; then
+    sync_platform_config "$platform" "$config_source" "$config_target" "$mcp_root_key"
+  fi
 }
 
 # Special handling for opencode.json - prompt for API keys
@@ -716,6 +1010,7 @@ sync_opencode_json() {
   local target_base="$2"
   local json_source="$source_base/opencode.json"
   local json_target="$target_base/opencode.json"
+  local configure_keys=""
 
   if [[ ! -f "$json_source" ]]; then
     return 0
@@ -737,21 +1032,15 @@ sync_opencode_json() {
       return 0
     fi
 
-	# Otherwise, prompt interactively
-	read -rp "Configure API keys now? [Y/n]: " configure_keys
-	if [[ ! "$configure_keys" =~ ^[Nn]$ ]]; then
-		substitute_api_keys "$json_source" "$json_target"
-	else
-		# User declined — leave existing opencode.json untouched
-		if [[ -f "$json_target" ]]; then
-			echo "Skipped opencode.json sync — keeping existing API keys in $json_target"
-		else
-			# No existing target file; copy as-is so opencode at least has a config
-			mkdir -p "$(dirname "$json_target")"
-			cp "$json_source" "$json_target"
-			echo "Copied opencode.json with placeholders (no existing file to preserve)"
-		fi
-	fi
+    # Otherwise, prompt interactively
+    read -rp "Configure API keys now? [Y/n]: " configure_keys
+    if [[ ! "$configure_keys" =~ ^[Nn]$ ]]; then
+      substitute_api_keys "$json_source" "$json_target"
+    else
+      merge_selected_json_object_keys "$json_source" "$json_target" "provider" "*"
+      merge_selected_json_object_keys "$json_source" "$json_target" "mcp" "*"
+      echo "Synced opencode.json while preserving any existing local API keys in $json_target"
+    fi
   else
     # No placeholders, just copy
     mkdir -p "$(dirname "$json_target")"
@@ -760,11 +1049,89 @@ sync_opencode_json() {
   fi
 }
 
+sync_selected_mcp_servers() {
+  local platform="$1"
+  local source_json="$2"
+  local target_json="$3"
+  local root_key="$4"
+  local selection="$5"
+  local prepared_source="$source_json"
+  local temp_source=""
+  local configure_keys=""
+
+  if [[ "$platform" == "opencode" ]] && selected_json_object_contains_placeholders "$source_json" "$root_key" "$selection"; then
+    echo ""
+    echo "Selected OpenCode MCP servers contain API key placeholders."
+
+    if [[ "$configure_api_keys" == true ]]; then
+      temp_source="$(mktemp)"
+      substitute_api_keys "$source_json" "$temp_source"
+      prepared_source="$temp_source"
+    elif [[ "$interactive_mode" == true ]]; then
+      read -rp "Configure API keys now? [Y/n]: " configure_keys
+      if [[ ! "$configure_keys" =~ ^[Nn]$ ]]; then
+        temp_source="$(mktemp)"
+        substitute_api_keys "$source_json" "$temp_source"
+        prepared_source="$temp_source"
+      else
+        echo "Keeping any existing API keys already present in $target_json"
+      fi
+    fi
+  fi
+
+  if [[ "$dry_run" == true ]]; then
+    preview_selected_json_keys_sync "$platform" "$target_json" "MCP servers" "$selection"
+  else
+    merge_selected_json_object_keys "$prepared_source" "$target_json" "$root_key" "$selection"
+    echo "Synced selected MCP servers for $platform"
+  fi
+
+  if [[ -n "$temp_source" && -f "$temp_source" ]]; then
+    rm -f "$temp_source"
+  fi
+}
+
+sync_platform_config() {
+  local platform="$1"
+  local config_source="$2"
+  local config_target="$3"
+  local mcp_root_key="$4"
+  local config_mode="full"
+  local mcp_selection="*"
+
+  if [[ -z "$config_source" || ! -f "$config_source" ]]; then
+    echo "Skipping $platform config: no repo-managed config file found in this repository" >&2
+    return 0
+  fi
+
+  if [[ "$interactive_mode" == true ]]; then
+    prompt_config_sync_mode "$platform" "$(basename "$config_source")" config_mode
+  fi
+
+  case "$config_mode" in
+    skip)
+      return 0
+      ;;
+    full)
+      if [[ "$platform" == "opencode" ]]; then
+        sync_opencode_json "$(dirname "$config_source")" "$(dirname "$config_target")"
+      else
+        run_rsync_entry "$config_source" "$config_target"
+      fi
+      ;;
+    mcp)
+      collect_selected_json_keys "$config_source" "$mcp_root_key" "MCP servers" "$platform" mcp_selection
+
+      if [[ -z "$mcp_selection" ]]; then
+        echo "Skipping MCP sync for $platform"
+        return 0
+      fi
+
+      sync_selected_mcp_servers "$platform" "$config_source" "$config_target" "$mcp_root_key" "$mcp_selection"
+      ;;
+  esac
+}
+
 for platform in "${selected_platforms[@]}"; do
   sync_platform "$platform"
-
-  # Sync opencode.json if syncing opencode platform
-  if [[ "$platform" == "opencode" ]]; then
-    sync_opencode_json "$repo_root/.config/opencode" "$HOME/.config/opencode"
-  fi
 done

@@ -93,7 +93,9 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
 ./sync-local-agents.sh --dry-run
 ./sync-local-agents.sh --delete
 ./sync-local-agents.sh --sync agents
+./sync-local-agents.sh --sync config --platform claude
 ./sync-local-agents.sh --sync skills --platform claude
+./sync-local-agents.sh --sync all --platform opencode
 ./sync-local-agents.sh --interactive
 ./sync-local-agents.sh --platform claude --claude-model sonnet
 ./sync-local-agents.sh --platform opencode
@@ -106,15 +108,24 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
 - `--delete` removes local files that no longer exist in this repository.
   - If you sync selected entries only (for example via interactive narrowing), deletion is scoped to those selected directories and does not remove unsynced sibling entries.
 - `--platform` limits the sync to `claude`, `opencode`, or `codex`.
-- `--sync` provides non-interactive scope selection: `both` (default), `agents`, or `skills`.
+- `--sync` provides non-interactive scope selection: `both` (default), `agents`, `skills`, `config`, or `all`.
 - `--interactive` starts an interactive picker:
   - prompts for scope (defaults to `both`, or to your `--sync` preset when provided),
   - lists actual available agents/skills for each selected platform,
+  - when syncing config files, lets you choose per platform between full config sync, MCP-only sync, or skip,
+  - when syncing MCP only, lists actual MCP server names from the source config so you can sync all or selected servers,
   - defaults to syncing all entries, with optional narrowing to selected items.
   - requires a TTY; otherwise it exits with a clear error.
 - `--claude-model` rewrites synced Claude agent `model:` frontmatter so one model can be used across all Claude agents locally.
 - `--opencode-model` rewrites synced OpenCode agent `model:` frontmatter so one model can be used across all OpenCode agents locally.
 - `--codex-model` rewrites synced Codex agent `model:` frontmatter so one model can be used across all Codex agents locally.
+
+Repo-managed config files currently supported by config sync are:
+
+- `.claude/settings.json` -> `~/.claude/settings.json`
+- `.config/opencode/opencode.json` -> `~/.config/opencode/opencode.json`
+
+Those repo-managed configs currently include MCP entries for `linear`, `blender`, and the existing OpenCode-only remote integrations like `stitch` and `context7`.
 
 To keep one model per platform without passing flags every time, create the local env files in this repository root, next to `sync-local-agents.sh`.
 
@@ -177,6 +188,8 @@ When this flag is set, the script will:
 3. Ask you to confirm each entry
 4. Substitute the values into `~/.config/opencode/opencode.json`
 
+This also applies when you choose MCP-only config sync for OpenCode and the selected MCP servers include placeholder-backed keys.
+
 #### Interactive API Key Configuration
 
 Without the flag, you'll be asked interactively when placeholders are detected:
@@ -188,7 +201,7 @@ Without the flag, you'll be asked interactively when placeholders are detected:
 # "Configure API keys now? [Y/n]:"
 ```
 
-Type `Y` to enter configuration mode, or `n` to copy the file with placeholders.
+Type `Y` to enter configuration mode, or `n` to sync the latest config while preserving existing local API key values anywhere the repo source still contains placeholders. The same preservation behavior applies during MCP-only sync.
 
 #### Getting API Keys
 

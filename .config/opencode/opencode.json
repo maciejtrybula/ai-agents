@@ -89,6 +89,11 @@
       },
       "enabled": true
     },
+    "linear": {
+      "type": "remote",
+      "url": "https://mcp.linear.app/mcp",
+      "enabled": true
+    },
     "blender": {
       "type": "local",
       "command": ["uvx","blender-mcp"],
