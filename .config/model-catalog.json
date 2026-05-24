@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "platforms": {
+    "claude": {
+      "providerOrder": ["anthropic"],
+      "favoriteProviders": ["anthropic"],
+      "recommendedAgents": {
+        "3d-modeling-artist": ["anthropic/sonnet"],
+        "backend-architect": ["anthropic/sonnet"],
+        "backend-engineer": ["anthropic/sonnet"],
+        "content-writer": ["anthropic/sonnet"],
+        "developer-tooling-engineer": ["anthropic/sonnet"],
+        "devops-engineer": ["anthropic/sonnet"],
+        "e2e-test-engineer": ["anthropic/sonnet"],
+        "frontend-architect": ["anthropic/sonnet"],
+        "frontend-engineer": ["anthropic/sonnet"],
+        "it-task-master": ["anthropic/sonnet"],
+        "principal-engineer": ["anthropic/sonnet"],
+        "secops-auditor": ["anthropic/sonnet"],
+        "seo-inspector": ["anthropic/sonnet"],
+        "staff-engineer": ["anthropic/sonnet"],
+        "tax-advisor": ["anthropic/sonnet"],
+        "team-manager": ["anthropic/sonnet"],
+        "ux-ui-architect": ["anthropic/sonnet"]
+      },
+      "providers": {
+        "anthropic": {
+          "models": [
+            {
+              "id": "anthropic/sonnet",
+              "target": "sonnet",
+              "description": "Balanced default for most Claude agents."
+            },
+            {
+              "id": "anthropic/opus",
+              "target": "opus",
+              "description": "Higher reasoning depth for complex work."
+            },
+            {
+              "id": "anthropic/haiku",
+              "target": "haiku",
+              "description": "Lower-latency option for lighter tasks."
+            }
+          ]
+        }
+      }
+    },
+    "opencode": {
+      "providerOrder": ["openai", "github-copilot", "ollama", "nvidia-nim"],
+      "favoriteProviders": ["openai", "github-copilot"],
+      "recommendedAgents": {
+        "3d-modeling-artist": ["openai/gpt-5.4"],
+        "backend-architect": ["openai/gpt-5.3-codex"],
+        "backend-engineer": ["openai/gpt-5.3-codex"],
+        "content-writer": ["openai/gpt-5.4"],
+        "developer-tooling-engineer": ["openai/gpt-5.4"],
+        "devops-engineer": ["openai/gpt-5.3-codex"],
+        "e2e-test-engineer": ["openai/gpt-5.3-codex"],
+        "frontend-architect": ["openai/gpt-5.3-codex"],
+        "frontend-engineer": ["openai/gpt-5.3-codex"],
+        "it-task-master": ["openai/gpt-5.4"],
+        "principal-engineer": ["openai/gpt-5.4"],
+        "secops-auditor": ["openai/gpt-5.3-codex"],
+        "seo-inspector": ["openai/gpt-5.4"],
+        "staff-engineer": ["openai/gpt-5.4"],
+        "tax-advisor": ["openai/gpt-5.4"],
+        "team-manager": ["openai/gpt-5.4"],
+        "ux-ui-architect": ["openai/gpt-5.4"]
+      },
+      "providers": {
+        "openai": {
+          "models": [
+            {
+              "id": "openai/gpt-5.4",
+              "target": "openai/gpt-5.4",
+              "description": "General-purpose default for shared local agents."
+            },
+            {
+              "id": "openai/gpt-5.3-codex",
+              "target": "openai/gpt-5.3-codex",
+              "description": "Code-focused option for implementation-heavy roles."
+            }
+          ]
+        },
+        "github-copilot": {
+          "models": [
+            {
+              "id": "github-copilot/auto",
+              "target": "github-copilot/auto",
+              "description": "Conservative Copilot cloud-agent auto-routing option."
+            },
+            {
+              "id": "github-copilot/gpt-5.2-codex",
+              "target": "github-copilot/gpt-5.2-codex",
+              "description": "Copilot code-focused model name supported by current GitHub docs."
+            }
+          ]
+        },
+        "ollama": {
+          "models": [
+            {
+              "id": "ollama/deepseek-r1:7b",
+              "target": "ollama/deepseek-r1:7b",
+              "description": "Local reasoning-oriented option when Ollama is available."
+            },
+            {
+              "id": "ollama/llama3.2",
+              "target": "ollama/llama3.2",
+              "description": "Local general-purpose fallback with lightweight setup."
+            },
+            {
+              "id": "ollama/gemma4:26b",
+              "target": "ollama/gemma4:26b",
+              "description": "Larger local model configured with tool support in repo config."
+            },
+            {
+              "id": "ollama/qwen2.5-coder:14b",
+              "target": "ollama/qwen2.5-coder:14b",
+              "description": "Local code-focused option from the repo's Ollama provider config."
+            }
+          ]
+        },
+        "nvidia-nim": {
+          "models": [
+            {
+              "id": "nvidia-nim/moonshotai/kimi-k2.5",
+              "target": "nvidia-nim/moonshotai/kimi-k2.5",
+              "description": "Hosted NVIDIA NIM option already defined in repo-local OpenCode config."
+            }
+          ]
+        }
+      }
+    },
+    "codex": {
+      "providerOrder": ["openai", "github-copilot"],
+      "favoriteProviders": ["openai"],
+      "recommendedAgents": {
+        "3d-modeling-artist": ["openai/gpt-5.4"],
+        "backend-architect": ["openai/gpt-5.4"],
+        "backend-engineer": ["openai/gpt-5.4"],
+        "content-writer": ["openai/gpt-5.4"],
+        "developer-tooling-engineer": ["openai/gpt-5.4"],
+        "devops-engineer": ["openai/gpt-5.4"],
+        "e2e-test-engineer": ["openai/gpt-5.4"],
+        "frontend-architect": ["openai/gpt-5.4"],
+        "frontend-engineer": ["openai/gpt-5.4"],
+        "it-task-master": ["openai/gpt-5.4"],
+        "principal-engineer": ["openai/gpt-5.4"],
+        "secops-auditor": ["openai/gpt-5.4"],
+        "seo-inspector": ["openai/gpt-5.4"],
+        "staff-engineer": ["openai/gpt-5.4"],
+        "tax-advisor": ["openai/gpt-5.4"],
+        "team-manager": ["openai/gpt-5.4"],
+        "ux-ui-architect": ["openai/gpt-5.4"]
+      },
+      "providers": {
+        "openai": {
+          "models": [
+            {
+              "id": "openai/gpt-5.4",
+              "target": "openai/gpt-5.4",
+              "description": "General-purpose default for Codex agents."
+            },
+            {
+              "id": "openai/gpt-5.3-codex",
+              "target": "openai/gpt-5.3-codex",
+              "description": "Code-focused alternative when preferred locally."
+            }
+          ]
+        },
+        "github-copilot": {
+          "models": [
+            {
+              "id": "github-copilot/auto",
+              "target": "github-copilot/auto",
+              "description": "Conservative Copilot cloud-agent auto-routing option."
+            },
+            {
+              "id": "github-copilot/gpt-5.2-codex",
+              "target": "github-copilot/gpt-5.2-codex",
+              "description": "Copilot code-focused model name supported by current GitHub docs."
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -4,6 +4,17 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$script_dir"
+model_catalog_file="$repo_root/.config/model-catalog.json"
+
+# Script map:
+# 1. Shared state and terminal formatting
+# 2. Small string and env parsing helpers
+# 3. Model catalog lookup and validation helpers
+# 4. Model override resolution and application helpers
+# 5. Interactive entry and model picker helpers
+# 6. Config sync and JSON merge helpers
+# 7. Argument parsing and main sync flow
+
 dry_run=false
 delete_extra=false
 interactive_mode=false
@@ -25,6 +36,64 @@ env_codex_model="${CODEX_MODEL:-}"
 claude_model=""
 opencode_model=""
 codex_model=""
+cli_agent_model_overrides=""
+file_agent_model_overrides=""
+env_agent_model_overrides=""
+interactive_agent_model_overrides=""
+interactive_claude_model=""
+interactive_opencode_model=""
+interactive_codex_model=""
+supports_color=false
+color_reset=""
+color_bold=""
+color_dim=""
+color_red=""
+color_green=""
+color_yellow=""
+color_blue=""
+color_magenta=""
+color_cyan=""
+
+if [[ -t 1 && "${TERM:-}" != "dumb" ]]; then
+  supports_color=true
+  color_reset=$'\033[0m'
+  color_bold=$'\033[1m'
+  color_dim=$'\033[2m'
+  color_red=$'\033[31m'
+  color_green=$'\033[32m'
+  color_yellow=$'\033[33m'
+  color_blue=$'\033[34m'
+  color_magenta=$'\033[35m'
+  color_cyan=$'\033[36m'
+fi
+
+print_heading() {
+  printf '%s%s%s\n' "$color_bold$color_cyan" "$1" "$color_reset"
+}
+
+print_success() {
+  printf '%s%s%s\n' "$color_green" "$1" "$color_reset"
+}
+
+print_warning() {
+  printf '%s%s%s\n' "$color_yellow" "$1" "$color_reset"
+}
+
+print_error() {
+  printf '%s%s%s\n' "$color_red" "$1" "$color_reset" >&2
+}
+
+print_note() {
+  printf '%s%s%s\n' "$color_dim" "$1" "$color_reset"
+}
+
+print_divider() {
+  printf '%s────────────────────────────────────────────────────────────%s\n' "$color_dim" "$color_reset"
+}
+
+# -----------------------------------------------------------------------------
+# Small string and env parsing helpers
+# -----------------------------------------------------------------------------
 
 trim() {
   local value="$1"
@@ -53,41 +122,368 @@ strip_wrapping_quotes() {
   printf '%s' "$value"
 }
 
-load_model_from_file() {
+normalize_agent_env_suffix() {
+  local value="$1"
+
+  value="$(to_lower "$value")"
+  printf '%s' "${value//_/-}"
+}
+
+normalize_model_catalog_value() {
+  local value="$1"
+
+  value="$(trim "$value")"
+  value="$(strip_wrapping_quotes "$value")"
+  printf '%s' "$value"
+}
+
+env_claude_model="$(normalize_model_catalog_value "$env_claude_model")"
+env_opencode_model="$(normalize_model_catalog_value "$env_opencode_model")"
+env_codex_model="$(normalize_model_catalog_value "$env_codex_model")"
+
+append_override_record() {
+  local current_value="$1"
+  local record="$2"
+
+  if [[ -z "$current_value" ]]; then
+    printf '%s' "$record"
+  else
+    printf '%s\n%s' "$current_value" "$record"
+  fi
+}
+
+require_node() {
+  if ! command -v node >/dev/null 2>&1; then
+    print_error "node is required for model catalog validation and MCP-only config sync but is not installed."
+    exit 1
+  fi
+}
+
+# -----------------------------------------------------------------------------
+# Model catalog lookup and validation helpers
+# -----------------------------------------------------------------------------
+
+parse_model_catalog_entry() {
+  local platform="$1"
+  local requested_value="$2"
+
+  require_node
+
+  node - "$model_catalog_file" "$platform" "$requested_value" <<'NODE'
+const fs = require("fs")
+
+const [catalogFile, platform, requestedValue] = process.argv.slice(2)
+const catalog = JSON.parse(fs.readFileSync(catalogFile, "utf8"))
+const platformConfig = catalog?.platforms?.[platform]
+
+if (!platformConfig) {
+  console.error(`Unsupported platform in model catalog: ${platform}`)
+  process.exit(1)
+}
+
+const models = []
+
+for (const [provider, providerConfig] of Object.entries(platformConfig.providers ?? {})) {
+  for (const model of providerConfig.models ?? []) {
+    models.push({
+      provider,
+      id: model.id,
+      target: model.target,
+      description: model.description ?? "",
+    })
+  }
+}
+
+const normalizedRequestedValue = requestedValue.trim()
+const match = models.find((model) => model.id === normalizedRequestedValue || model.target === normalizedRequestedValue)
+
+if (!match) {
+  console.error(`Unsupported model override for ${platform}: ${requestedValue}`)
+  console.error("Allowed values:")
+  for (const model of models) {
+    const suffix = model.id === model.target ? "" : ` -> ${model.target}`
+    console.error(`  - ${model.id}${suffix}`)
+  }
+  process.exit(1)
+}
+
+process.stdout.write(`${match.provider}\t${match.id}\t${match.target}\t${match.description}\n`)
+NODE
+}
+
+list_model_catalog_entries() {
+  local platform="$1"
+  local provider_filter="${2:-}"
+
+  require_node
+
+  node - "$model_catalog_file" "$platform" "$provider_filter" <<'NODE'
+const fs = require("fs")
+
+const [catalogFile, platform, providerFilter] = process.argv.slice(2)
+const catalog = JSON.parse(fs.readFileSync(catalogFile, "utf8"))
+const platformConfig = catalog?.platforms?.[platform]
+
+if (!platformConfig) {
+  process.exit(0)
+}
+
+for (const [provider, providerConfig] of Object.entries(platformConfig.providers ?? {})) {
+  if (providerFilter && provider !== providerFilter) {
+    continue
+  }
+  for (const model of providerConfig.models ?? []) {
+    const description = model.description ?? ""
+    process.stdout.write(`${provider}\t${model.id}\t${model.target}\t${description}\n`)
+  }
+}
+NODE
+}
+
+list_model_catalog_providers() {
+  local platform="$1"
+
+  require_node
+
+  node - "$model_catalog_file" "$platform" <<'NODE'
+const fs = require("fs")
+
+const [catalogFile, platform] = process.argv.slice(2)
+const catalog = JSON.parse(fs.readFileSync(catalogFile, "utf8"))
+const platformConfig = catalog?.platforms?.[platform]
+
+if (!platformConfig) {
+  process.exit(0)
+}
+
+const providers = platformConfig.providers ?? {}
+const providerOrder = Array.isArray(platformConfig.providerOrder) ? platformConfig.providerOrder : []
+const favoriteProviders = new Set(Array.isArray(platformConfig.favoriteProviders) ? platformConfig.favoriteProviders : [])
+const orderedProviders = []
+const seenProviders = new Set()
+
+for (const provider of providerOrder) {
+  if (provider in providers && !seenProviders.has(provider)) {
+    orderedProviders.push(provider)
+    seenProviders.add(provider)
+  }
+}
+
+for (const provider of Object.keys(providers)) {
+  if (!seenProviders.has(provider)) {
+    orderedProviders.push(provider)
+    seenProviders.add(provider)
+  }
+}
+
+for (const provider of orderedProviders) {
+  process.stdout.write(`${provider}\t${favoriteProviders.has(provider) ? "favorite" : ""}\n`)
+}
+NODE
+}
+
+list_recommended_model_ids_for_agent() {
+  local platform="$1"
+  local agent_slug="$2"
+
+  require_node
+
+  node - "$model_catalog_file" "$platform" "$agent_slug" <<'NODE'
+const fs = require("fs")
+
+const [catalogFile, platform, agentSlug] = process.argv.slice(2)
+const catalog = JSON.parse(fs.readFileSync(catalogFile, "utf8"))
+const recommendedModels = catalog?.platforms?.[platform]?.recommendedAgents?.[agentSlug]
+
+if (!Array.isArray(recommendedModels)) {
+  process.exit(0)
+}
+
+for (const modelId of recommendedModels) {
+  process.stdout.write(`${modelId}\n`)
+}
+NODE
+}
+
+resolve_catalog_model_target() {
+  local platform="$1"
+  local requested_value="$2"
+  local parsed_entry=""
+  local remaining=""
+
+  [[ -n "$requested_value" ]] || return 0
+
+  parsed_entry="$(parse_model_catalog_entry "$platform" "$requested_value")" || exit 1
+  remaining="${parsed_entry#*$'\t'}"
+  remaining="${remaining#*$'\t'}"
+  printf '%s' "${remaining%%$'\t'*}"
+}
+
+append_agent_model_override() {
+  local current_value="$1"
+  local platform="$2"
+  local agent_slug="$3"
+  local requested_value="$4"
+  local parsed_entry=""
+  local provider=""
+  local model_id=""
+  local target_value=""
+
+  parsed_entry="$(parse_model_catalog_entry "$platform" "$requested_value")" || exit 1
+  provider="${parsed_entry%%$'\t'*}"
+  parsed_entry="${parsed_entry#*$'\t'}"
+  model_id="${parsed_entry%%$'\t'*}"
+  parsed_entry="${parsed_entry#*$'\t'}"
+  target_value="${parsed_entry%%$'\t'*}"
+
+  append_override_record "$current_value" "$platform:$agent_slug:$model_id:$target_value:$provider"
+}
+
+find_agent_model_override_target() {
+  local overrides="$1"
+  local platform="$2"
+  local agent_slug="$3"
+  local record=""
+  local record_platform=""
+  local record_agent=""
+  local remaining=""
+  local target_value=""
+  local matched_value=""
+
+  [[ -n "$overrides" ]] || return 1
+
+  while IFS= read -r record || [[ -n "$record" ]]; do
+    [[ -n "$record" ]] || continue
+    record_platform="${record%%:*}"
+    remaining="${record#*:}"
+    record_agent="${remaining%%:*}"
+    remaining="${remaining#*:}"
+    remaining="${remaining#*:}"
+    target_value="${remaining%%:*}"
+
+    if [[ "$record_platform" == "$platform" && "$record_agent" == "$agent_slug" ]]; then
+      matched_value="$target_value"
+    fi
+  done <<< "$overrides"
+
+  if [[ -n "$matched_value" ]]; then
+    printf '%s' "$matched_value"
+    return 0
+  fi
+
+  return 1
+}
+
+overrides_include_platform() {
+  local overrides="$1"
+  local platform="$2"
+  local record=""
+
+  [[ -n "$overrides" ]] || return 1
+
+  while IFS= read -r record || [[ -n "$record" ]]; do
+    [[ -n "$record" ]] || continue
+    if [[ "${record%%:*}" == "$platform" ]]; then
+      return 0
+    fi
+  done <<< "$overrides"
+
+  return 1
+}
+
+resolve_agent_model_override() {
+  local platform="$1"
+  local agent_slug="$2"
+  local resolved_value=""
+
+  resolved_value="$(find_agent_model_override_target "$interactive_agent_model_overrides" "$platform" "$agent_slug" || true)"
+  if [[ -n "$resolved_value" ]]; then
+    printf '%s' "$resolved_value"
+    return 0
+  fi
+
+  resolved_value="$(find_agent_model_override_target "$cli_agent_model_overrides" "$platform" "$agent_slug" || true)"
+  if [[ -n "$resolved_value" ]]; then
+    printf '%s' "$resolved_value"
+    return 0
+  fi
+
+  resolved_value="$(find_agent_model_override_target "$env_agent_model_overrides" "$platform" "$agent_slug" || true)"
+  if [[ -n "$resolved_value" ]]; then
+    printf '%s' "$resolved_value"
+    return 0
+  fi
+
+  find_agent_model_override_target "$file_agent_model_overrides" "$platform" "$agent_slug" || true
+}
+
+load_model_settings_from_file() {
   local config_file="$1"
-  local expected_key="$2"
+  local platform="$2"
+  local expected_key="$3"
+  local __model_result_var="$4"
+  local __overrides_result_var="$5"
+  local agent_prefix="${expected_key%_MODEL}_AGENT_MODEL_"
   local line=""
   local key=""
   local value=""
+  local current_model_value="${!__model_result_var:-}"
+  local current_overrides_value="${!__overrides_result_var:-}"
+  local normalized_agent_slug=""
 
   [[ -f "$config_file" ]] || return 0
 
   while IFS= read -r line || [[ -n "$line" ]]; do
     line="$(trim "$line")"
     [[ -z "$line" || "$line" == \#* ]] && continue
+    [[ "$line" == *=* ]] || continue
 
     key="${line%%=*}"
     value="${line#*=}"
 
     key="$(trim "$key")"
-    value="$(trim "$value")"
+    value="$(normalize_model_catalog_value "$value")"
 
     case "$key" in
       "$expected_key")
-        value="$(strip_wrapping_quotes "$value")"
-
-        if [[ -n "$value" ]]; then
-          printf '%s' "$value"
-          return 0
-        fi
+        current_model_value="$value"
+        ;;
+      ${agent_prefix}*)
+        [[ -n "$value" ]] || continue
+        normalized_agent_slug="$(normalize_agent_env_suffix "${key#${agent_prefix}}")"
+        current_overrides_value="$(append_agent_model_override "$current_overrides_value" "$platform" "$normalized_agent_slug" "$value")"
         ;;
       *)
-        echo "Ignoring unsupported setting in $config_file: $key" >&2
+        print_warning "Ignoring unsupported setting in $config_file: $key"
         ;;
     esac
   done < "$config_file"
 
-  return 0
+  printf -v "$__model_result_var" '%s' "$current_model_value"
+  printf -v "$__overrides_result_var" '%s' "$current_overrides_value"
+}
+
+load_agent_model_overrides_from_environment() {
+  local platform="$1"
+  local prefix="$2"
+  local __result_var="$3"
+  local current_overrides_value="${!__result_var:-}"
+  local key=""
+  local value=""
+  local normalized_agent_slug=""
+
+  while IFS='=' read -r key value; do
+    case "$key" in
+      ${prefix}_AGENT_MODEL_*)
+        [[ -n "$value" ]] || continue
+        normalized_agent_slug="$(normalize_agent_env_suffix "${key#${prefix}_AGENT_MODEL_}")"
+        value="$(normalize_model_catalog_value "$value")"
+        current_overrides_value="$(append_agent_model_override "$current_overrides_value" "$platform" "$normalized_agent_slug" "$value")"
+        ;;
+    esac
+  done < <(env)
+
+  printf -v "$__result_var" '%s' "$current_overrides_value"
 }
 
 resolve_model_override() {
@@ -104,35 +500,195 @@ resolve_model_override() {
   fi
 }
 
-apply_model_override() {
-  local target_dir="$1"
-  local model_value="$2"
-  local file=""
+resolve_platform_model_override() {
+  local platform="$1"
+  local cli_value="$2"
+  local env_value="$3"
+  local file_value="$4"
+  local requested_value=""
 
-  [[ -n "$model_value" ]] || return 0
-  [[ -d "$target_dir" ]] || return 0
+  requested_value="$(resolve_model_override "$cli_value" "$env_value" "$file_value")"
+  [[ -n "$requested_value" ]] || return 0
+
+  resolve_catalog_model_target "$platform" "$requested_value"
+}
+
+parse_cli_agent_model_override() {
+  local argument_value="$1"
+  local platform=""
+  local remaining=""
+  local agent_slug=""
+  local requested_value=""
+
+  if [[ "$argument_value" != *:*:* ]]; then
+    print_error "Invalid --agent-model value: $argument_value"
+    print_note "Expected format: platform:agent-slug:provider/model"
+    exit 1
+  fi
+
+  platform="${argument_value%%:*}"
+  remaining="${argument_value#*:}"
+  agent_slug="${remaining%%:*}"
+  requested_value="${remaining#*:}"
+
+  case "$platform" in
+    claude|opencode|codex)
+      ;;
+    *)
+      print_error "Unsupported platform in --agent-model: $platform"
+      exit 1
+      ;;
+  esac
+
+  agent_slug="$(trim "$agent_slug")"
+  requested_value="$(normalize_model_catalog_value "$requested_value")"
+
+  if [[ -z "$agent_slug" || -z "$requested_value" ]]; then
+    print_error "Invalid --agent-model value: $argument_value"
+    print_note "Expected format: platform:agent-slug:provider/model"
+    exit 1
+  fi
+
+  cli_agent_model_overrides="$(append_agent_model_override "$cli_agent_model_overrides" "$platform" "$agent_slug" "$requested_value")"
+}
+
+# -----------------------------------------------------------------------------
+# Model override resolution and application helpers
+# -----------------------------------------------------------------------------
+
+iterate_agent_markdown_files() {
+  local source_agents_dir="$1"
+  local selection="$2"
+  local entry=""
+  local file=""
+  local expanded_selection=""
+  local selected_entries=()
+
+  if [[ "$selection" == "*" ]]; then
+    find "$source_agents_dir" -type f -name '*.md' | sort
+    return 0
+  fi
+
+  expand_selection "$source_agents_dir" "$selection" expanded_selection
+  [[ -n "$expanded_selection" ]] || return 0
+
+  IFS='|' read -r -a selected_entries <<< "$expanded_selection"
+  for entry in "${selected_entries[@]}"; do
+    if [[ -d "$source_agents_dir/$entry" ]]; then
+      while IFS= read -r file; do
+        printf '%s\n' "$file"
+      done < <(find "$source_agents_dir/$entry" -type f -name '*.md' | sort)
+    elif [[ "$entry" == *.md ]]; then
+      printf '%s\n' "$source_agents_dir/$entry"
+    fi
+  done
+}
+
+process_model_override_files() {
+  local mode="$1"
+  local platform="$2"
+  local source_agents_dir="$3"
+  local target_agents_dir="$4"
+  local selection="$5"
+  local platform_model_value="$6"
+  local file=""
+  local relative_path=""
+  local target_file=""
+  local output_file=""
+  local agent_slug=""
+  local effective_model_value=""
+
+  [[ "$mode" == "apply" || "$mode" == "preview" ]] || return 1
 
   while IFS= read -r file; do
-    MODEL_OVERRIDE="$model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$file"
-  done < <(find "$target_dir" -type f -name '*.md' | sort)
+    [[ -n "$file" ]] || continue
+
+    agent_slug="$(basename "$file" .md)"
+    effective_model_value="$(resolve_effective_model_override "$platform" "$agent_slug" "$platform_model_value")"
+    [[ -n "$effective_model_value" ]] || continue
+
+    if [[ "$selection" == "*" ]]; then
+      output_file="$file"
+    else
+      relative_path="${file#"$source_agents_dir/"}"
+      output_file="$target_agents_dir/$relative_path"
+      [[ "$mode" == "preview" || -f "$output_file" ]] || continue
+    fi
+
+    if [[ "$mode" == "preview" ]]; then
+      printf 'Would override model in synced copy of %s -> %s\n' "$output_file" "$effective_model_value"
+    else
+      MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$output_file"
+    fi
+  done < <(iterate_agent_markdown_files "$source_agents_dir" "$selection")
+}
+
+apply_model_override() {
+  local platform="$1"
+  local target_dir="$2"
+  local platform_model_value="$3"
+
+  [[ -d "$target_dir" ]] || return 0
+
+  process_model_override_files "apply" "$platform" "$target_dir" "$target_dir" "*" "$platform_model_value"
+}
+
+resolve_effective_model_override() {
+  local platform="$1"
+  local agent_slug="$2"
+  local platform_model_value="$3"
+  local agent_model_value=""
+
+  agent_model_value="$(resolve_agent_model_override "$platform" "$agent_slug" || true)"
+  if [[ -n "$agent_model_value" ]]; then
+    printf '%s' "$agent_model_value"
+  else
+    printf '%s' "$platform_model_value"
+  fi
+}
+
+validate_agent_override_targets_exist() {
+  local source_agents_dir="$1"
+  local platform="$2"
+  local overrides="$3"
+  local record=""
+  local record_platform=""
+  local remaining=""
+  local record_agent=""
+
+  [[ -n "$overrides" ]] || return 0
+
+  while IFS= read -r record || [[ -n "$record" ]]; do
+    [[ -n "$record" ]] || continue
+    record_platform="${record%%:*}"
+    remaining="${record#*:}"
+    record_agent="${remaining%%:*}"
+
+    [[ "$record_platform" == "$platform" ]] || continue
+
+    if [[ ! -f "$source_agents_dir/$record_agent.md" ]]; then
+      print_error "Unknown $platform agent in model override: $record_agent"
+      exit 1
+    fi
+  done <<< "$overrides"
 }
 
 preview_model_override() {
-  local source_dir="$1"
-  local model_value="$2"
-  local file=""
+  local platform="$1"
+  local source_dir="$2"
+  local platform_model_value="$3"
 
-  [[ -n "$model_value" ]] || return 0
   [[ -d "$source_dir" ]] || return 0
 
-  while IFS= read -r file; do
-    printf 'Would override model in synced copy of %s -> %s\n' "$file" "$model_value"
-  done < <(find "$source_dir" -type f -name '*.md' | sort)
+  process_model_override_files "preview" "$platform" "$source_dir" "$source_dir" "*" "$platform_model_value"
 }
 
-file_claude_model="$(load_model_from_file "$repo_root/.claude.local.env" "CLAUDE_MODEL")"
-file_opencode_model="$(load_model_from_file "$repo_root/.opencode.local.env" "OPENCODE_MODEL")"
-file_codex_model="$(load_model_from_file "$repo_root/.codex.local.env" "CODEX_MODEL")"
+load_model_settings_from_file "$repo_root/.claude.local.env" "claude" "CLAUDE_MODEL" file_claude_model file_agent_model_overrides
+load_model_settings_from_file "$repo_root/.opencode.local.env" "opencode" "OPENCODE_MODEL" file_opencode_model file_agent_model_overrides
+load_model_settings_from_file "$repo_root/.codex.local.env" "codex" "CODEX_MODEL" file_codex_model file_agent_model_overrides
+load_agent_model_overrides_from_environment "claude" "CLAUDE" env_agent_model_overrides
+load_agent_model_overrides_from_environment "opencode" "OPENCODE" env_agent_model_overrides
+load_agent_model_overrides_from_environment "codex" "CODEX" env_agent_model_overrides
 
 usage() {
   cat <<'EOF'
@@ -142,6 +698,7 @@ Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode
 [--claude-model MODEL]
 [--opencode-model MODEL]
 [--codex-model MODEL]
+[--agent-model platform:agent-slug:provider/model]
 
 Copies agents and skills from this repository into the matching local config
 directories in your home folder.
@@ -162,17 +719,21 @@ Prompt to configure API keys for opencode.json during sync.
 Replaces ${NVIDIA_NIM_API_KEY}, ${STITCH_API_KEY}, and
 ${CONTEXT7_API_KEY} placeholders with actual values.
 --claude-model
-Override the model used in synced Claude agent frontmatter
+Override the fallback model used in synced Claude agent frontmatter
 Precedence: --claude-model > CLAUDE_MODEL env var >
 ./.claude.local.env > repo defaults
 --opencode-model
-Override the model used in synced OpenCode agent frontmatter
+Override the fallback model used in synced OpenCode agent frontmatter
 Precedence: --opencode-model > OPENCODE_MODEL env var >
 ./.opencode.local.env > repo defaults
 --codex-model
-Override the model used in synced Codex agent frontmatter
+Override the fallback model used in synced Codex agent frontmatter
 Precedence: --codex-model > CODEX_MODEL env var >
 ./.codex.local.env > repo defaults
+--agent-model
+Repeatable per-agent override.
+Format: platform:agent-slug:provider/model
+Validated against ./.config/model-catalog.json
 
 Examples:
 ./sync-local-agents.sh
@@ -184,12 +745,17 @@ Examples:
 ./sync-local-agents.sh --sync all --platform opencode
 ./sync-local-agents.sh --interactive
 ./sync-local-agents.sh --interactive --configure-api-keys
-./sync-local-agents.sh --platform claude --claude-model sonnet
+./sync-local-agents.sh --platform claude --claude-model anthropic/sonnet
+./sync-local-agents.sh --agent-model claude:backend-engineer:anthropic/sonnet
 ./sync-local-agents.sh --platform opencode --configure-api-keys
 ./sync-local-agents.sh --opencode-model openai/gpt-5.4
 ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
 EOF
 }
+
+# -----------------------------------------------------------------------------
+# Interactive entry and model picker helpers
+# -----------------------------------------------------------------------------
 
 set_sync_scope() {
   local value="$1"
@@ -263,13 +829,15 @@ collect_selected_entries() {
     return
   fi
 
-  printf 'Available %s for %s:\n' "$label" "$platform"
+  print_heading "Available $label for $platform"
+  print_divider
   for entry in "${all_entries[@]}"; do
-    printf '  [%d] %s\n' "$index" "$entry"
+    printf '  %s[%d]%s %s\n' "$color_blue" "$index" "$color_reset" "$entry"
     ((index++))
   done
 
-  read -r -p "Sync all $label for $platform? [Y/n]: " answer
+  printf '%sSync all %s for %s? [Y/n]:%s ' "$color_magenta" "$label" "$platform" "$color_reset"
+  read -r answer
   answer="$(trim "$answer")"
   answer="$(to_lower "$answer")"
 
@@ -278,7 +846,8 @@ collect_selected_entries() {
     return
   fi
 
-  read -r -p "Enter comma-separated numbers to sync (empty = skip $label): " input
+  printf '%sEnter comma-separated numbers to sync (empty = skip %s):%s ' "$color_magenta" "$label" "$color_reset"
+  read -r input
   input="${input// /}"
 
   if [[ -z "$input" ]]; then
@@ -291,7 +860,7 @@ collect_selected_entries() {
     if [[ "$token" =~ ^[0-9]+$ ]] && (( token >= 1 && token <= ${#all_entries[@]} )); then
       selected_entries+=("${all_entries[token-1]}")
     else
-      echo "Ignoring invalid selection: $token" >&2
+      print_warning "Ignoring invalid selection: $token"
     fi
   done
 
@@ -301,6 +870,274 @@ collect_selected_entries() {
   fi
 
   printf -v "$__result_var" '%s' "$(IFS='|'; printf '%s' "${selected_entries[*]}")"
+}
+
+select_catalog_model_interactively() {
+  local platform="$1"
+  local prompt_label="$2"
+  local __result_var="$3"
+  local agent_slug="${4:-}"
+  local available_providers=()
+  local provider_entries=()
+  local model_entries=()
+  local filtered_model_entries=()
+  local selected_provider=""
+  local provider_index=""
+  local selected_index=""
+  local index=1
+  local listed_entry=""
+  local provider=""
+  local model_id=""
+  local target_value=""
+  local description=""
+  local remaining=""
+  local filter_input=""
+  local normalized_filter_input=""
+  local normalized_model_id=""
+  local normalized_description=""
+  local provider_status=""
+  local recommended_model_ids=()
+  local recommended_model_lookup=""
+  local recommended_summary=""
+  local recommended_badge=""
+
+  while IFS= read -r listed_entry; do
+    [[ -n "$listed_entry" ]] || continue
+    provider_entries+=("$listed_entry")
+    available_providers+=("${listed_entry%%$'\t'*}")
+  done < <(list_model_catalog_providers "$platform")
+
+  if [[ -n "$agent_slug" ]]; then
+    while IFS= read -r listed_entry; do
+      [[ -n "$listed_entry" ]] || continue
+      recommended_model_ids+=("$listed_entry")
+    done < <(list_recommended_model_ids_for_agent "$platform" "$agent_slug")
+
+    if [[ ${#recommended_model_ids[@]} -gt 0 ]]; then
+      recommended_model_lookup="|$(IFS='|'; printf '%s' "${recommended_model_ids[*]}")|"
+      recommended_summary="$(printf '%s' "${recommended_model_ids[0]}")"
+
+      if [[ ${#recommended_model_ids[@]} -gt 1 ]]; then
+        local recommended_index=1
+        while (( recommended_index < ${#recommended_model_ids[@]} )); do
+          recommended_summary="$recommended_summary, ${recommended_model_ids[recommended_index]}"
+          ((recommended_index++))
+        done
+      fi
+    fi
+  fi
+
+  if [[ ${#available_providers[@]} -eq 0 ]]; then
+    print_error "No catalog providers are defined for $platform"
+    exit 1
+  fi
+
+  if [[ ${#available_providers[@]} -eq 1 ]]; then
+    selected_provider="${available_providers[0]}"
+  else
+    print_heading "$prompt_label"
+    print_note "Choose a provider first."
+    print_divider
+
+    index=1
+    for listed_entry in "${provider_entries[@]}"; do
+      provider="${listed_entry%%$'\t'*}"
+      provider_status="${listed_entry#*$'\t'}"
+
+      if [[ "$provider_status" == "favorite" ]]; then
+        printf '  %s[%d]%s %s★%s %s%s%s\n' "$color_blue" "$index" "$color_reset" "$color_yellow" "$color_reset" "$color_bold" "$provider" "$color_reset"
+      else
+        printf '  %s[%d]%s %s%s%s\n' "$color_blue" "$index" "$color_reset" "$color_bold" "$provider" "$color_reset"
+      fi
+      ((index++))
+    done
+
+    while true; do
+      printf '%sChoose a provider number:%s ' "$color_magenta" "$color_reset"
+      read -r provider_index
+      provider_index="$(trim "$provider_index")"
+
+      if [[ "$provider_index" =~ ^[0-9]+$ ]] && (( provider_index >= 1 && provider_index <= ${#available_providers[@]} )); then
+        selected_provider="${available_providers[provider_index-1]}"
+        break
+      fi
+
+      print_warning "Please choose a valid number between 1 and ${#available_providers[@]}."
+    done
+  fi
+
+  while IFS= read -r listed_entry; do
+    [[ -n "$listed_entry" ]] || continue
+    model_entries+=("$listed_entry")
+  done < <(list_model_catalog_entries "$platform" "$selected_provider")
+
+  if [[ ${#model_entries[@]} -eq 0 ]]; then
+    print_error "No catalog models are defined for $platform provider $selected_provider"
+    exit 1
+  fi
+
+  while true; do
+    filtered_model_entries=()
+
+    print_heading "$prompt_label"
+    if [[ ${#available_providers[@]} -gt 1 ]]; then
+      print_note "Provider: $selected_provider"
+    fi
+    if [[ -n "$agent_slug" && ${#recommended_model_ids[@]} -gt 0 ]]; then
+      print_note "Recommended for $agent_slug: $recommended_summary"
+    fi
+    printf '%sFilter models (empty = show all):%s ' "$color_magenta" "$color_reset"
+    read -r filter_input
+    filter_input="$(trim "$filter_input")"
+    normalized_filter_input="$(to_lower "$filter_input")"
+
+    for listed_entry in "${model_entries[@]}"; do
+      remaining="${listed_entry#*$'\t'}"
+      model_id="${remaining%%$'\t'*}"
+      remaining="${remaining#*$'\t'}"
+      remaining="${remaining#*$'\t'}"
+      description="${remaining}"
+
+      if [[ -z "$normalized_filter_input" ]]; then
+        filtered_model_entries+=("$listed_entry")
+        continue
+      fi
+
+      normalized_model_id="$(to_lower "$model_id")"
+      normalized_description="$(to_lower "$description")"
+
+      if [[ "$normalized_model_id" == *"$normalized_filter_input"* || "$normalized_description" == *"$normalized_filter_input"* ]]; then
+        filtered_model_entries+=("$listed_entry")
+      fi
+    done
+
+    if [[ ${#filtered_model_entries[@]} -eq 0 ]]; then
+      print_warning "No models matched '$filter_input'. Try another filter."
+      continue
+    fi
+
+    print_divider
+    index=1
+
+    for listed_entry in "${filtered_model_entries[@]}"; do
+      provider="${listed_entry%%$'\t'*}"
+      remaining="${listed_entry#*$'\t'}"
+      model_id="${remaining%%$'\t'*}"
+      remaining="${remaining#*$'\t'}"
+      target_value="${remaining%%$'\t'*}"
+      description="${remaining#*$'\t'}"
+      recommended_badge=""
+
+      if [[ -n "$recommended_model_lookup" && "$recommended_model_lookup" == *"|$model_id|"* ]]; then
+        recommended_badge=" ${color_green}[recommended]${color_reset}"
+      fi
+
+      if [[ "$model_id" == "$target_value" ]]; then
+        printf '  %s[%d]%s %s%s%s%s\n' "$color_blue" "$index" "$color_reset" "$color_bold" "$model_id" "$color_reset" "$recommended_badge"
+      else
+        printf '  %s[%d]%s %s%s%s %s→%s %s%s\n' "$color_blue" "$index" "$color_reset" "$color_bold" "$model_id" "$color_reset" "$color_dim" "$color_reset" "$target_value" "$recommended_badge"
+      fi
+
+      if [[ -n "$description" ]]; then
+        printf '      %s%s%s\n' "$color_dim" "$description" "$color_reset"
+      fi
+
+      ((index++))
+    done
+
+    printf '%sChoose a model number:%s ' "$color_magenta" "$color_reset"
+    read -r selected_index
+    selected_index="$(trim "$selected_index")"
+
+    if [[ "$selected_index" =~ ^[0-9]+$ ]] && (( selected_index >= 1 && selected_index <= ${#filtered_model_entries[@]} )); then
+      listed_entry="${filtered_model_entries[selected_index-1]}"
+      printf -v "$__result_var" '%s' "${listed_entry#*$'\t'}"
+      return 0
+    fi
+
+    print_warning "Please choose a valid number between 1 and ${#filtered_model_entries[@]}."
+  done
+}
+
+prompt_interactive_model_overrides() {
+  local platform="$1"
+  local source_agents_dir="$2"
+  local agent_selection="$3"
+  local current_platform_model="$4"
+  local answer=""
+  local selected_joined=""
+  local selected_entries=()
+  local entry=""
+  local agent_slug=""
+  local chosen_entry=""
+  local requested_model=""
+  local target_value=""
+  local platform_cli_model=""
+
+  case "$platform" in
+    claude) platform_cli_model="$cli_claude_model" ;;
+    opencode) platform_cli_model="$cli_opencode_model" ;;
+    codex) platform_cli_model="$cli_codex_model" ;;
+  esac
+
+  if [[ -n "$platform_cli_model" ]] || overrides_include_platform "$cli_agent_model_overrides" "$platform"; then
+    return 0
+  fi
+
+  expand_selection "$source_agents_dir" "$agent_selection" selected_joined
+  [[ -n "$selected_joined" ]] || return 0
+
+  print_heading "Model overrides for $platform"
+  print_note "Current platform fallback: ${current_platform_model:-repo defaults}"
+  print_divider
+  printf '  %s[1]%s Keep current precedence\n' "$color_blue" "$color_reset"
+  printf '  %s[2]%s One catalog model for all selected agents\n' "$color_blue" "$color_reset"
+  printf '  %s[3]%s Choose per-agent catalog models\n' "$color_blue" "$color_reset"
+
+  while true; do
+    printf '%sChoose override mode [1-3]:%s ' "$color_magenta" "$color_reset"
+    read -r answer
+    answer="$(trim "$answer")"
+    [[ -z "$answer" ]] && answer="1"
+
+    case "$answer" in
+      1)
+        return 0
+        ;;
+      2)
+        select_catalog_model_interactively "$platform" "Pick the platform model for $platform" chosen_entry
+        requested_model="${chosen_entry%%$'\t'*}"
+        target_value="${chosen_entry#*$'\t'}"
+        target_value="${target_value%%$'\t'*}"
+        case "$platform" in
+          claude) interactive_claude_model="$target_value" ;;
+          opencode) interactive_opencode_model="$target_value" ;;
+          codex) interactive_codex_model="$target_value" ;;
+        esac
+        return 0
+        ;;
+      3)
+        IFS='|' read -r -a selected_entries <<< "$selected_joined"
+        for entry in "${selected_entries[@]}"; do
+          [[ "$entry" == *.md ]] || continue
+          agent_slug="$(basename "$entry" .md)"
+          print_divider
+          printf '%sAgent:%s %s%s%s\n' "$color_magenta" "$color_reset" "$color_bold" "$agent_slug" "$color_reset"
+          printf '%sOverride this agent? [y/N]:%s ' "$color_magenta" "$color_reset"
+          read -r answer
+          answer="$(to_lower "$(trim "$answer")")"
+          if [[ "$answer" == "y" || "$answer" == "yes" ]]; then
+            select_catalog_model_interactively "$platform" "Pick a model for $agent_slug" chosen_entry "$agent_slug"
+            requested_model="${chosen_entry%%$'\t'*}"
+            interactive_agent_model_overrides="$(append_agent_model_override "$interactive_agent_model_overrides" "$platform" "$agent_slug" "$requested_model")"
+          fi
+        done
+        return 0
+        ;;
+    esac
+
+    print_warning "Please choose 1, 2, or 3."
+  done
 }
 
 expand_selection() {
@@ -345,31 +1182,12 @@ run_rsync_entry() {
 }
 
 preview_model_override_for_entries() {
-  local source_agents_dir="$1"
-  local selection="$2"
-  local model_value="$3"
-  local selected_joined=""
-  local selected=()
-  local entry=""
-  local file=""
+  local platform="$1"
+  local source_agents_dir="$2"
+  local selection="$3"
+  local platform_model_value="$4"
 
-  [[ -n "$model_value" ]] || return 0
-
-  expand_selection "$source_agents_dir" "$selection" selected_joined
-  if [[ -z "${selected_joined:-}" ]]; then
-    return 0
-  fi
-
-  IFS='|' read -r -a selected <<< "$selected_joined"
-  for entry in "${selected[@]}"; do
-    if [[ -d "$source_agents_dir/$entry" ]]; then
-      while IFS= read -r file; do
-        printf 'Would override model in synced copy of %s -> %s\n' "$file" "$model_value"
-      done < <(find "$source_agents_dir/$entry" -type f -name '*.md' | sort)
-    elif [[ "$entry" == *.md ]]; then
-      printf 'Would override model in synced copy of %s -> %s\n' "$source_agents_dir/$entry" "$model_value"
-    fi
-  done
+  process_model_override_files "preview" "$platform" "$source_agents_dir" "$source_agents_dir" "$selection" "$platform_model_value"
 }
 
 # Function to prompt for API key securely
@@ -494,48 +1312,20 @@ substitute_api_keys() {
 }
 
 apply_model_override_for_entries() {
-  local source_agents_dir="$1"
-  local target_agents_dir="$2"
-  local selection="$3"
-  local model_value="$4"
-  local selected_joined=""
-  local selected=()
-  local entry=""
-  local file=""
-  local relative_path=""
-  local target_file=""
+  local platform="$1"
+  local source_agents_dir="$2"
+  local target_agents_dir="$3"
+  local selection="$4"
+  local platform_model_value="$5"
 
-  [[ -n "$model_value" ]] || return 0
   [[ -d "$target_agents_dir" ]] || return 0
 
-  expand_selection "$source_agents_dir" "$selection" selected_joined
-  if [[ -z "${selected_joined:-}" ]]; then
-    return 0
-  fi
-
-  IFS='|' read -r -a selected <<< "$selected_joined"
-  for entry in "${selected[@]}"; do
-    if [[ -d "$source_agents_dir/$entry" ]]; then
-      while IFS= read -r file; do
-        relative_path="${file#"$source_agents_dir/"}"
-        target_file="$target_agents_dir/$relative_path"
-        [[ -f "$target_file" ]] || continue
-        MODEL_OVERRIDE="$model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$target_file"
-      done < <(find "$source_agents_dir/$entry" -type f -name '*.md' | sort)
-    elif [[ "$entry" == *.md ]]; then
-      target_file="$target_agents_dir/$entry"
-      [[ -f "$target_file" ]] || continue
-      MODEL_OVERRIDE="$model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$target_file"
-    fi
-  done
+  process_model_override_files "apply" "$platform" "$source_agents_dir" "$target_agents_dir" "$selection" "$platform_model_value"
 }
 
-require_node() {
-  if ! command -v node >/dev/null 2>&1; then
-    echo "node is required for MCP-only config sync but is not installed." >&2
-    exit 1
-  fi
-}
+# -----------------------------------------------------------------------------
+# Config sync and JSON merge helpers
+# -----------------------------------------------------------------------------
 
 list_json_object_keys() {
   local json_file="$1"
@@ -586,13 +1376,15 @@ collect_selected_json_keys() {
     return
   fi
 
-  printf 'Available %s for %s:\n' "$label" "$platform"
+  print_heading "Available $label for $platform"
+  print_divider
   for entry in "${all_entries[@]}"; do
-    printf '  [%d] %s\n' "$index" "$entry"
+    printf '  %s[%d]%s %s\n' "$color_blue" "$index" "$color_reset" "$entry"
     ((index++))
   done
 
-  read -r -p "Sync all $label for $platform? [Y/n]: " answer
+  printf '%sSync all %s for %s? [Y/n]:%s ' "$color_magenta" "$label" "$platform" "$color_reset"
+  read -r answer
   answer="$(trim "$answer")"
   answer="$(to_lower "$answer")"
 
@@ -601,7 +1393,8 @@ collect_selected_json_keys() {
     return
   fi
 
-  read -r -p "Enter comma-separated numbers to sync (empty = skip $label): " input
+  printf '%sEnter comma-separated numbers to sync (empty = skip %s):%s ' "$color_magenta" "$label" "$color_reset"
+  read -r input
   input="${input// /}"
 
   if [[ -z "$input" ]]; then
@@ -614,7 +1407,7 @@ collect_selected_json_keys() {
     if [[ "$token" =~ ^[0-9]+$ ]] && (( token >= 1 && token <= ${#all_entries[@]} )); then
       selected_entries+=("${all_entries[token-1]}")
     else
-      echo "Ignoring invalid selection: $token" >&2
+      print_warning "Ignoring invalid selection: $token"
     fi
   done
 
@@ -770,7 +1563,10 @@ prompt_config_sync_mode() {
   local __result_var="$3"
   local answer=""
 
-  read -r -p "How do you want to sync $platform $config_name? [full/mcp/skip] (default: full): " answer
+  print_heading "Config sync for $platform"
+  print_note "Target file: $config_name"
+  printf '%sHow do you want to sync it? [full/mcp/skip] (default: full):%s ' "$color_magenta" "$color_reset"
+  read -r answer
   answer="$(trim "$answer")"
   answer="$(to_lower "$answer")"
 
@@ -785,8 +1581,8 @@ prompt_config_sync_mode() {
       printf -v "$__result_var" '%s' "skip"
       ;;
     *)
-      echo "Unsupported config sync mode: $answer (expected: full|mcp|skip)" >&2
-      exit 1
+    print_error "Unsupported config sync mode: $answer (expected: full|mcp|skip)"
+    exit 1
       ;;
   esac
 }
@@ -795,11 +1591,15 @@ prompt_interactive_scope() {
   local answer=""
 
   if [[ ! -t 0 || ! -t 1 ]]; then
-    echo "--interactive requires an interactive terminal (TTY stdin/stdout)." >&2
+    print_error "--interactive requires an interactive terminal (TTY stdin/stdout)."
     exit 1
   fi
 
-  read -r -p "What do you want to sync? [both/agents/skills/config/all] (default: $sync_scope): " answer
+  print_heading "Local agent sync"
+  print_note "Interactive mode lets you narrow scope, entries, config, and model overrides."
+  print_divider
+  printf '%sWhat do you want to sync? [both/agents/skills/config/all] (default: %s):%s ' "$color_magenta" "$sync_scope" "$color_reset"
+  read -r answer
   answer="$(trim "$answer")"
   answer="$(to_lower "$answer")"
   [[ -z "$answer" ]] && answer="$sync_scope"
@@ -827,10 +1627,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --claude-model)
       if [[ $# -lt 2 ]]; then
-        echo "Missing value for --claude-model" >&2
+        print_error "Missing value for --claude-model"
         exit 1
       fi
-      cli_claude_model="$2"
+      cli_claude_model="$(normalize_model_catalog_value "$2")"
       shift
       ;;
     --platform)
@@ -843,18 +1643,26 @@ while [[ $# -gt 0 ]]; do
       ;;
     --opencode-model)
       if [[ $# -lt 2 ]]; then
-        echo "Missing value for --opencode-model" >&2
+        print_error "Missing value for --opencode-model"
         exit 1
       fi
-      cli_opencode_model="$2"
+      cli_opencode_model="$(normalize_model_catalog_value "$2")"
       shift
       ;;
     --codex-model)
       if [[ $# -lt 2 ]]; then
-        echo "Missing value for --codex-model" >&2
+        print_error "Missing value for --codex-model"
         exit 1
       fi
-      cli_codex_model="$2"
+      cli_codex_model="$(normalize_model_catalog_value "$2")"
+      shift
+      ;;
+    --agent-model)
+      if [[ $# -lt 2 ]]; then
+        print_error "Missing value for --agent-model"
+        exit 1
+      fi
+      parse_cli_agent_model_override "$2"
       shift
       ;;
     --configure-api-keys)
@@ -865,7 +1673,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo "Unknown argument: $1" >&2
+      print_error "Unknown argument: $1"
       usage >&2
       exit 1
       ;;
@@ -873,9 +1681,9 @@ while [[ $# -gt 0 ]]; do
     shift
   done
 
-claude_model="$(resolve_model_override "$cli_claude_model" "$env_claude_model" "$file_claude_model")"
-opencode_model="$(resolve_model_override "$cli_opencode_model" "$env_opencode_model" "$file_opencode_model")"
-codex_model="$(resolve_model_override "$cli_codex_model" "$env_codex_model" "$file_codex_model")"
+claude_model="$(resolve_platform_model_override "claude" "$cli_claude_model" "$env_claude_model" "$file_claude_model")"
+opencode_model="$(resolve_platform_model_override "opencode" "$cli_opencode_model" "$env_opencode_model" "$file_opencode_model")"
+codex_model="$(resolve_platform_model_override "codex" "$cli_codex_model" "$env_codex_model" "$file_codex_model")"
 
 if ! command -v rsync >/dev/null 2>&1; then
   echo "rsync is required but not installed." >&2
@@ -889,6 +1697,10 @@ fi
 if [[ "$interactive_mode" == true ]]; then
   prompt_interactive_scope
 fi
+
+# -----------------------------------------------------------------------------
+# Main sync flow
+# -----------------------------------------------------------------------------
 
 run_rsync() {
   local source_dir="$1"
@@ -907,6 +1719,73 @@ run_rsync() {
   rsync "${args[@]}"
 }
 
+resolve_platform_settings() {
+  local platform="$1"
+  local __source_base_var="$2"
+  local __target_base_var="$3"
+  local __model_override_var="$4"
+  local __config_source_var="$5"
+  local __config_target_var="$6"
+  local __mcp_root_key_var="$7"
+  local source_base_value=""
+  local target_base_value=""
+  local model_override_value=""
+  local config_source_value=""
+  local config_target_value=""
+  local mcp_root_key_value=""
+
+  case "$platform" in
+    claude)
+      source_base_value="$repo_root/.claude"
+      target_base_value="$HOME/.claude"
+      model_override_value="$claude_model"
+      config_source_value="$source_base_value/settings.json"
+      config_target_value="$target_base_value/settings.json"
+      mcp_root_key_value="mcpServers"
+      ;;
+    opencode)
+      source_base_value="$repo_root/.config/opencode"
+      target_base_value="$HOME/.config/opencode"
+      model_override_value="$opencode_model"
+      config_source_value="$source_base_value/opencode.json"
+      config_target_value="$target_base_value/opencode.json"
+      mcp_root_key_value="mcp"
+      ;;
+    codex)
+      source_base_value="$repo_root/.codex"
+      target_base_value="$HOME/.codex"
+      model_override_value="$codex_model"
+      ;;
+    *)
+      print_error "Unsupported platform: $platform"
+      exit 1
+      ;;
+  esac
+
+  printf -v "$__source_base_var" '%s' "$source_base_value"
+  printf -v "$__target_base_var" '%s' "$target_base_value"
+  printf -v "$__model_override_var" '%s' "$model_override_value"
+  printf -v "$__config_source_var" '%s' "$config_source_value"
+  printf -v "$__config_target_var" '%s' "$config_target_value"
+  printf -v "$__mcp_root_key_var" '%s' "$mcp_root_key_value"
+}
+
+resolve_interactive_platform_model_override() {
+  local platform="$1"
+
+  case "$platform" in
+    claude)
+      printf '%s' "$interactive_claude_model"
+      ;;
+    opencode)
+      printf '%s' "$interactive_opencode_model"
+      ;;
+    codex)
+      printf '%s' "$interactive_codex_model"
+      ;;
+  esac
+}
+
 sync_platform() {
   local platform="$1"
   local source_base=""
@@ -920,53 +1799,38 @@ sync_platform() {
   local selection_joined=""
   local selected_entries=()
   local entry=""
+  local interactive_model_override=""
 
-  case "$platform" in
-    claude)
-      source_base="$repo_root/.claude"
-      target_base="$HOME/.claude"
-      model_override="$claude_model"
-      config_source="$source_base/settings.json"
-      config_target="$target_base/settings.json"
-      mcp_root_key="mcpServers"
-      ;;
-    opencode)
-      source_base="$repo_root/.config/opencode"
-      target_base="$HOME/.config/opencode"
-      model_override="$opencode_model"
-      config_source="$source_base/opencode.json"
-      config_target="$target_base/opencode.json"
-      mcp_root_key="mcp"
-      ;;
-    codex)
-      source_base="$repo_root/.codex"
-      target_base="$HOME/.codex"
-      model_override="$codex_model"
-      ;;
-    *)
-      echo "Unsupported platform: $platform" >&2
-      exit 1
-      ;;
-  esac
+  resolve_platform_settings "$platform" source_base target_base model_override config_source config_target mcp_root_key
 
   if [[ ! -d "$source_base/agents" && ! -d "$source_base/skills" ]]; then
     echo "Skipping $platform: no agents or skills found in $source_base" >&2
     return
   fi
 
-  echo "Syncing $platform"
+  print_heading "Syncing $platform"
 
   if [[ "$sync_agents" == true && -d "$source_base/agents" ]]; then
+    validate_agent_override_targets_exist "$source_base/agents" "$platform" "$cli_agent_model_overrides"
+    validate_agent_override_targets_exist "$source_base/agents" "$platform" "$env_agent_model_overrides"
+    validate_agent_override_targets_exist "$source_base/agents" "$platform" "$file_agent_model_overrides"
+
     if [[ "$interactive_mode" == true ]]; then
       collect_selected_entries "$source_base/agents" "agents" "$platform" agent_selection
+      prompt_interactive_model_overrides "$platform" "$source_base/agents" "$agent_selection" "$model_override"
+
+      interactive_model_override="$(resolve_interactive_platform_model_override "$platform")"
+      [[ -n "$interactive_model_override" ]] && model_override="$interactive_model_override"
+
+      validate_agent_override_targets_exist "$source_base/agents" "$platform" "$interactive_agent_model_overrides"
     fi
 
     if [[ "$agent_selection" == "*" ]]; then
       run_rsync "$source_base/agents" "$target_base/agents"
       if [[ "$dry_run" == true ]]; then
-        preview_model_override "$source_base/agents" "$model_override"
+        preview_model_override "$platform" "$source_base/agents" "$model_override"
       else
-        apply_model_override "$target_base/agents" "$model_override"
+        apply_model_override "$platform" "$target_base/agents" "$model_override"
       fi
     elif [[ -n "$agent_selection" ]]; then
       expand_selection "$source_base/agents" "$agent_selection" selection_joined
@@ -976,9 +1840,9 @@ sync_platform() {
       done
 
       if [[ "$dry_run" == true ]]; then
-        preview_model_override_for_entries "$source_base/agents" "$agent_selection" "$model_override"
+        preview_model_override_for_entries "$platform" "$source_base/agents" "$agent_selection" "$model_override"
       else
-        apply_model_override_for_entries "$source_base/agents" "$target_base/agents" "$agent_selection" "$model_override"
+        apply_model_override_for_entries "$platform" "$source_base/agents" "$target_base/agents" "$agent_selection" "$model_override"
       fi
     fi
   fi

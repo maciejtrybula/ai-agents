@@ -16,6 +16,7 @@ This repository serves as a centralized hub for AI agent definitions and special
 | **Frontend Engineer** | UI implementation, component development, and frontend testing. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **UX/UI Architect** | Design tokens, accessibility, and high-performance mobile-first interfaces. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **DevOps Engineer** | Infrastructure as Code, CI/CD, and cloud orchestration. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Developer Tooling Engineer** | Shell tooling, local developer automation, config sync scripts, CLI UX, provider and model catalogs, and Claude/OpenCode/Codex local tooling integration. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **E2E Test Engineer** | Playwright-based end-to-end testing and quality assurance. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **SecOps Auditor** | Security architecture, threat analysis, and OWASP compliance. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **SEO Inspector** | Technical SEO, content architecture, AI search readiness, and discoverability audits. | `.claude/`, `.config/opencode/`, `.codex/` |

@@ -17,6 +17,7 @@ All current agents are shared across **Claude**, **OpenCode**, and **Codex**.
 | **frontend-engineer** | UI implementation, component development, and frontend testing. |
 | **ux-ui-architect** | Design systems, accessibility, and high-performance mobile-first interfaces. |
 | **devops-engineer** | Infrastructure as Code, CI/CD, and cloud orchestration. |
+| **developer-tooling-engineer** | Shell tooling, local developer automation, config sync scripts, CLI UX, provider and model catalogs, and Claude/OpenCode/Codex local tooling integration. |
 | **e2e-test-engineer** | Playwright-based end-to-end testing and quality assurance. |
 | **secops-auditor** | Security architecture, threat analysis, and OWASP compliance. |
 | **seo-inspector** | Technical SEO, content architecture, AI search readiness, and discoverability audits. |
@@ -97,9 +98,12 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
 ./sync-local-agents.sh --sync skills --platform claude
 ./sync-local-agents.sh --sync all --platform opencode
 ./sync-local-agents.sh --interactive
-./sync-local-agents.sh --platform claude --claude-model sonnet
+./sync-local-agents.sh --platform claude --claude-model anthropic/sonnet
+./sync-local-agents.sh --agent-model claude:backend-engineer:anthropic/opus
+./sync-local-agents.sh --agent-model opencode:backend-engineer:openai/gpt-5.3-codex
 ./sync-local-agents.sh --platform opencode
 ./sync-local-agents.sh --opencode-model openai/gpt-5.4
+./sync-local-agents.sh --platform codex --codex-model github-copilot/gpt-5.2-codex
 ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
 ```
 
@@ -112,13 +116,21 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
 - `--interactive` starts an interactive picker:
   - prompts for scope (defaults to `both`, or to your `--sync` preset when provided),
   - lists actual available agents/skills for each selected platform,
+  - lets you keep current model precedence, choose one catalog model for all selected agents, or pick catalog-backed per-agent overrides,
+  - when a platform has multiple catalog providers, asks you to choose the provider first, shows favorite providers first, and then shows only that provider's models,
+  - lets you enter a plain-text model filter before choosing from the visible catalog models,
+  - when choosing per-agent models, visibly marks catalog entries recommended for that specific agent,
   - when syncing config files, lets you choose per platform between full config sync, MCP-only sync, or skip,
   - when syncing MCP only, lists actual MCP server names from the source config so you can sync all or selected servers,
   - defaults to syncing all entries, with optional narrowing to selected items.
   - requires a TTY; otherwise it exits with a clear error.
-- `--claude-model` rewrites synced Claude agent `model:` frontmatter so one model can be used across all Claude agents locally.
-- `--opencode-model` rewrites synced OpenCode agent `model:` frontmatter so one model can be used across all OpenCode agents locally.
-- `--codex-model` rewrites synced Codex agent `model:` frontmatter so one model can be used across all Codex agents locally.
+- `--claude-model`, `--opencode-model`, and `--codex-model` set per-platform fallback models for synced agent frontmatter.
+- `--agent-model platform:agent-slug:provider/model` is repeatable and applies a catalog-validated per-agent override for that platform.
+
+Allowed overrides come from the repo-managed catalog at `.config/model-catalog.json`.
+
+- Claude accepts provider-scoped catalog entries such as `anthropic/sonnet` and writes the matching Claude frontmatter value such as `sonnet`.
+- OpenCode and Codex use provider-prefixed values directly, for example `openai/gpt-5.4` or `github-copilot/gpt-5.2-codex`.
 
 Repo-managed config files currently supported by config sync are:
 
@@ -127,19 +139,22 @@ Repo-managed config files currently supported by config sync are:
 
 Those repo-managed configs currently include MCP entries for `linear`, `blender`, and the existing OpenCode-only remote integrations like `stitch` and `context7`.
 
-To keep one model per platform without passing flags every time, create the local env files in this repository root, next to `sync-local-agents.sh`.
+To keep one model per platform, or set readable per-agent overrides without passing flags every time, create the local env files in this repository root, next to `sync-local-agents.sh`.
 
 Do not put them in the synced target directories such as `~/.claude/`, `~/.config/opencode/`, or `~/.codex/`.
 
 ```bash
 # .claude.local.env
-CLAUDE_MODEL=sonnet
+CLAUDE_MODEL=anthropic/sonnet
+CLAUDE_AGENT_MODEL_BACKEND_ENGINEER=anthropic/opus
 
 # .opencode.local.env
 OPENCODE_MODEL=openai/gpt-5.4
+OPENCODE_AGENT_MODEL_BACKEND_ENGINEER=openai/gpt-5.3-codex
 
 # .codex.local.env
 CODEX_MODEL=openai/gpt-5.4
+CODEX_AGENT_MODEL_DEVELOPER_TOOLING_ENGINEER=openai/gpt-5.3-codex
 ```
 
 Example files are included:
@@ -148,12 +163,17 @@ Example files are included:
 - `.opencode.local.env.example`
 - `.codex.local.env.example`
 
-Precedence for each platform's model selection during sync is:
+Per-agent environment keys use the pattern `<PLATFORM>_AGENT_MODEL_<AGENT_NAME_IN_UPPER_SNAKE_CASE>`.
 
-1. Platform-specific CLI flag, for example `--claude-model`
-2. Platform-specific environment variable, for example `CLAUDE_MODEL`
-3. Platform-specific local env file, for example `.claude.local.env`
-4. The repo's per-agent defaults in that platform's `agents/` directory
+Precedence for model selection during sync is:
+
+1. Per-agent CLI flag, for example `--agent-model claude:backend-engineer:anthropic/opus`
+2. Per-agent environment variable, for example `CLAUDE_AGENT_MODEL_BACKEND_ENGINEER`
+3. Per-agent local env file entry, for example in `.claude.local.env`
+4. Platform-specific CLI flag, for example `--claude-model`
+5. Platform-specific environment variable, for example `CLAUDE_MODEL`
+6. Platform-specific local env file, for example `.claude.local.env`
+7. The repo's per-agent defaults in that platform's `agents/` directory
 
 ### OpenCode API Key Configuration
 
