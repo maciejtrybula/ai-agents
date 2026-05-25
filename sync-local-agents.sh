@@ -37,12 +37,15 @@ claude_model=""
 opencode_model=""
 codex_model=""
 cli_agent_model_overrides=""
+generated_agent_model_overrides=""
 file_agent_model_overrides=""
 env_agent_model_overrides=""
 interactive_agent_model_overrides=""
 interactive_claude_model=""
 interactive_opencode_model=""
 interactive_codex_model=""
+use_recommended_models=false
+use_recommended_fallback_models=false
 supports_color=false
 color_reset=""
 color_bold=""
@@ -305,6 +308,59 @@ for (const modelId of recommendedModels) {
 NODE
 }
 
+resolve_recommended_model_id_for_agent() {
+  local platform="$1"
+  local agent_slug="$2"
+  local recommendation_index="$3"
+
+  require_node
+
+  node - "$model_catalog_file" "$platform" "$agent_slug" "$recommendation_index" <<'NODE'
+const fs = require("fs")
+
+const [catalogFile, platform, agentSlug, recommendationIndex] = process.argv.slice(2)
+const catalog = JSON.parse(fs.readFileSync(catalogFile, "utf8"))
+const recommendedModels = catalog?.platforms?.[platform]?.recommendedAgents?.[agentSlug]
+const index = Number.parseInt(recommendationIndex, 10)
+
+if (!Array.isArray(recommendedModels) || Number.isNaN(index) || index < 0 || index >= recommendedModels.length) {
+  process.exit(0)
+}
+
+process.stdout.write(`${recommendedModels[index]}\n`)
+NODE
+}
+
+build_recommended_agent_model_overrides() {
+  local platform="$1"
+  local source_agents_dir="$2"
+  local selection="$3"
+  local recommendation_index="$4"
+  local missing_label="$5"
+  local __result_var="$6"
+  local current_overrides=""
+  local file=""
+  local agent_slug=""
+  local recommended_model_id=""
+
+  while IFS= read -r file; do
+    [[ -n "$file" ]] || continue
+
+    agent_slug="$(basename "$file" .md)"
+    recommended_model_id="$(resolve_recommended_model_id_for_agent "$platform" "$agent_slug" "$recommendation_index")"
+
+    if [[ -z "$recommended_model_id" ]]; then
+      print_error "Missing $missing_label for $platform agent: $agent_slug"
+      print_note "Expected platforms.$platform.recommendedAgents.$agent_slug[$((recommendation_index + 1))] in ./.config/model-catalog.json"
+      exit 1
+    fi
+
+    current_overrides="$(append_agent_model_override "$current_overrides" "$platform" "$agent_slug" "$recommended_model_id")"
+  done < <(iterate_agent_markdown_files "$source_agents_dir" "$selection")
+
+  printf -v "$__result_var" '%s' "$current_overrides"
+}
+
 resolve_catalog_model_target() {
   local platform="$1"
   local requested_value="$2"
@@ -403,6 +459,12 @@ resolve_agent_model_override() {
   fi
 
   resolved_value="$(find_agent_model_override_target "$cli_agent_model_overrides" "$platform" "$agent_slug" || true)"
+  if [[ -n "$resolved_value" ]]; then
+    printf '%s' "$resolved_value"
+    return 0
+  fi
+
+  resolved_value="$(find_agent_model_override_target "$generated_agent_model_overrides" "$platform" "$agent_slug" || true)"
   if [[ -n "$resolved_value" ]]; then
     printf '%s' "$resolved_value"
     return 0
@@ -699,6 +761,8 @@ Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode
 [--opencode-model MODEL]
 [--codex-model MODEL]
 [--agent-model platform:agent-slug:provider/model]
+[--use-recommended-models]
+[--use-recommended-fallback-models]
 
 Copies agents and skills from this repository into the matching local config
 directories in your home folder.
@@ -734,6 +798,15 @@ Precedence: --codex-model > CODEX_MODEL env var >
 Repeatable per-agent override.
 Format: platform:agent-slug:provider/model
 Validated against ./.config/model-catalog.json
+--use-recommended-models
+Requires explicit --platform and supports opencode/codex only.
+Uses the first model from platforms.<platform>.recommendedAgents
+for each selected agent and expands it into per-agent overrides.
+--use-recommended-fallback-models
+Requires explicit --platform and supports opencode/codex only.
+Uses the second model from platforms.<platform>.recommendedAgents
+for each selected agent and expands it into per-agent overrides.
+Fails if any selected agent does not define a second recommendation.
 
 Examples:
 ./sync-local-agents.sh
@@ -747,6 +820,8 @@ Examples:
 ./sync-local-agents.sh --interactive --configure-api-keys
 ./sync-local-agents.sh --platform claude --claude-model anthropic/sonnet
 ./sync-local-agents.sh --agent-model claude:backend-engineer:anthropic/sonnet
+./sync-local-agents.sh --platform opencode --use-recommended-models
+./sync-local-agents.sh --platform codex --use-recommended-fallback-models
 ./sync-local-agents.sh --platform opencode --configure-api-keys
 ./sync-local-agents.sh --opencode-model openai/gpt-5.4
 ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
@@ -1829,6 +1904,12 @@ while [[ $# -gt 0 ]]; do
       parse_cli_agent_model_override "$2"
       shift
       ;;
+    --use-recommended-models)
+      use_recommended_models=true
+      ;;
+    --use-recommended-fallback-models)
+      use_recommended_fallback_models=true
+      ;;
     --configure-api-keys)
       configure_api_keys=true
       ;;
@@ -1844,6 +1925,29 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
   done
+
+if [[ "$use_recommended_models" == true && "$use_recommended_fallback_models" == true ]]; then
+  print_error "Choose either --use-recommended-models or --use-recommended-fallback-models, not both."
+  exit 1
+fi
+
+if [[ "$use_recommended_models" == true || "$use_recommended_fallback_models" == true ]]; then
+  if [[ ${#selected_platforms[@]} -eq 0 ]]; then
+    print_error "--use-recommended-models and --use-recommended-fallback-models require explicit --platform."
+    exit 1
+  fi
+
+  for platform in "${selected_platforms[@]}"; do
+    case "$platform" in
+      opencode|codex)
+        ;;
+      *)
+        print_error "Recommended model flags support only opencode and codex: $platform"
+        exit 1
+        ;;
+    esac
+  done
+fi
 
 claude_model="$(resolve_platform_model_override "claude" "$cli_claude_model" "$env_claude_model" "$file_claude_model")"
 opencode_model="$(resolve_platform_model_override "opencode" "$cli_opencode_model" "$env_opencode_model" "$file_opencode_model")"
@@ -1967,6 +2071,7 @@ sync_platform() {
   local selected_entries=()
   local entry=""
   local interactive_model_override=""
+  local recommended_overrides=""
 
   resolve_platform_settings "$platform" source_base target_base model_override config_source config_target mcp_root_key
 
@@ -1990,6 +2095,14 @@ sync_platform() {
       [[ -n "$interactive_model_override" ]] && model_override="$interactive_model_override"
 
       validate_agent_override_targets_exist "$source_base/agents" "$platform" "$interactive_agent_model_overrides"
+    fi
+
+    if [[ "$use_recommended_models" == true ]]; then
+      build_recommended_agent_model_overrides "$platform" "$source_base/agents" "$agent_selection" 0 "recommended model" recommended_overrides
+      generated_agent_model_overrides="$(append_override_record "$generated_agent_model_overrides" "$recommended_overrides")"
+    elif [[ "$use_recommended_fallback_models" == true ]]; then
+      build_recommended_agent_model_overrides "$platform" "$source_base/agents" "$agent_selection" 1 "recommended fallback model" recommended_overrides
+      generated_agent_model_overrides="$(append_override_record "$generated_agent_model_overrides" "$recommended_overrides")"
     fi
 
     if [[ "$agent_selection" == "*" ]]; then

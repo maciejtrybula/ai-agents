@@ -103,6 +103,8 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
 ./sync-local-agents.sh --agent-model opencode:backend-engineer:openai/gpt-5.3-codex
 ./sync-local-agents.sh --platform opencode
 ./sync-local-agents.sh --opencode-model openai/gpt-5.4
+./sync-local-agents.sh --platform opencode --use-recommended-models
+./sync-local-agents.sh --platform codex --use-recommended-fallback-models
 ./sync-local-agents.sh --platform codex --codex-model github-copilot/gpt-5.2-codex
 ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
 ```
@@ -126,6 +128,8 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
   - requires a TTY; otherwise it exits with a clear error.
 - `--claude-model`, `--opencode-model`, and `--codex-model` set per-platform fallback models for synced agent frontmatter.
 - `--agent-model platform:agent-slug:provider/model` is repeatable and applies a catalog-validated per-agent override for that platform.
+- `--use-recommended-models` requires explicit `--platform`, supports `opencode` and `codex` only, and expands the first entry from `platforms.<platform>.recommendedAgents` into per-agent overrides for the selected agents.
+- `--use-recommended-fallback-models` requires explicit `--platform`, supports `opencode` and `codex` only, and expands the second entry from `platforms.<platform>.recommendedAgents` into per-agent overrides for the selected agents. It fails if any selected agent does not have a second recommendation.
 
 Allowed overrides come from the repo-managed catalog at `.config/model-catalog.json`.
 
@@ -206,12 +210,13 @@ Per-agent environment keys use the pattern `<PLATFORM>_AGENT_MODEL_<AGENT_NAME_I
 Precedence for model selection during sync is:
 
 1. Per-agent CLI flag, for example `--agent-model claude:backend-engineer:anthropic/opus`
-2. Per-agent environment variable, for example `CLAUDE_AGENT_MODEL_BACKEND_ENGINEER`
-3. Per-agent local env file entry, for example in `.claude.local.env`
-4. Platform-specific CLI flag, for example `--claude-model`
-5. Platform-specific environment variable, for example `CLAUDE_MODEL`
-6. Platform-specific local env file, for example `.claude.local.env`
-7. The repo's per-agent defaults in that platform's `agents/` directory
+2. Generated recommended per-agent override from `--use-recommended-models` or `--use-recommended-fallback-models`
+3. Per-agent environment variable, for example `CLAUDE_AGENT_MODEL_BACKEND_ENGINEER`
+4. Per-agent local env file entry, for example in `.claude.local.env`
+5. Platform-specific CLI flag, for example `--claude-model`
+6. Platform-specific environment variable, for example `CLAUDE_MODEL`
+7. Platform-specific local env file, for example `.claude.local.env`
+8. The repo's per-agent defaults in that platform's `agents/` directory
 
 ### OpenCode API Key Configuration
 
