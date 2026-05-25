@@ -1324,7 +1324,7 @@ apply_model_override_for_entries() {
 }
 
 # -----------------------------------------------------------------------------
-# Config sync and JSON merge helpers
+# Config sync and config merge helpers
 # -----------------------------------------------------------------------------
 
 list_json_object_keys() {
@@ -1352,12 +1352,50 @@ for (const key of Object.keys(value).sort()) {
 NODE
 }
 
-collect_selected_json_keys() {
-  local json_file="$1"
+list_toml_table_keys() {
+  local toml_file="$1"
+  local root_key="$2"
+
+  [[ -f "$toml_file" ]] || return 0
+
+  require_node
+
+  node - "$toml_file" "$root_key" <<'NODE'
+const fs = require("fs")
+
+const [tomlFile, rootKey] = process.argv.slice(2)
+const text = fs.readFileSync(tomlFile, "utf8")
+const headerPattern = /^\[([^\]\r\n]+)\][ \t]*$/gm
+const keys = new Set()
+let match
+
+while ((match = headerPattern.exec(text)) !== null) {
+  const headerName = match[1]
+  if (!headerName.startsWith(`${rootKey}.`)) {
+    continue
+  }
+
+  const key = headerName.slice(rootKey.length + 1)
+  if (key.length === 0 || key.includes(".")) {
+    continue
+  }
+
+  keys.add(key)
+}
+
+for (const key of [...keys].sort()) {
+  process.stdout.write(`${key}\n`)
+}
+NODE
+}
+
+collect_selected_config_keys() {
+  local config_file="$1"
   local root_key="$2"
   local label="$3"
   local platform="$4"
-  local __result_var="$5"
+  local config_format="$5"
+  local __result_var="$6"
   local all_entries=()
   local selected_entries=()
   local index=1
@@ -1367,9 +1405,15 @@ collect_selected_json_keys() {
   local -a tokens=()
   local listed_entry=""
 
-  while IFS= read -r listed_entry; do
-    all_entries+=("$listed_entry")
-  done < <(list_json_object_keys "$json_file" "$root_key")
+  if [[ "$config_format" == "toml" ]]; then
+    while IFS= read -r listed_entry; do
+      all_entries+=("$listed_entry")
+    done < <(list_toml_table_keys "$config_file" "$root_key")
+  else
+    while IFS= read -r listed_entry; do
+      all_entries+=("$listed_entry")
+    done < <(list_json_object_keys "$config_file" "$root_key")
+  fi
 
   if [[ ${#all_entries[@]} -eq 0 ]]; then
     printf -v "$__result_var" '%s' ""
@@ -1417,6 +1461,15 @@ collect_selected_json_keys() {
   fi
 
   printf -v "$__result_var" '%s' "$(IFS='|'; printf '%s' "${selected_entries[*]}")"
+}
+
+collect_selected_json_keys() {
+  local json_file="$1"
+  local root_key="$2"
+  local label="$3"
+  local platform="$4"
+  local __result_var="$5"
+  collect_selected_config_keys "$json_file" "$root_key" "$label" "$platform" "json" "$__result_var"
 }
 
 selected_json_object_contains_placeholders() {
@@ -1535,6 +1588,117 @@ for (const key of selectedKeys) {
 }
 
 fs.writeFileSync(targetJson, `${JSON.stringify(target, null, 2)}\n`)
+NODE
+}
+
+merge_selected_toml_tables() {
+  local source_toml="$1"
+  local target_toml="$2"
+  local root_key="$3"
+  local selection="$4"
+
+  require_node
+
+  mkdir -p "$(dirname "$target_toml")"
+
+  node - "$source_toml" "$target_toml" "$root_key" "$selection" <<'NODE'
+const fs = require("fs")
+
+const [sourceToml, targetToml, rootKey, selection] = process.argv.slice(2)
+const sourceText = fs.readFileSync(sourceToml, "utf8")
+const targetText = fs.existsSync(targetToml)
+  ? fs.readFileSync(targetToml, "utf8")
+  : ""
+
+function parseBlocks(text, tableRoot) {
+  const headerPattern = /^\[([^\]\r\n]+)\][ \t]*$/gm
+  const headers = []
+  let match
+
+  while ((match = headerPattern.exec(text)) !== null) {
+    headers.push({
+      headerName: match[1],
+      index: match.index,
+    })
+  }
+
+  const blocks = new Map()
+  const tablePrefix = `${tableRoot}.`
+
+  for (let index = 0; index < headers.length; index += 1) {
+    const currentHeader = headers[index]
+    const blockStart = currentHeader.index
+    const blockEnd = index + 1 < headers.length ? headers[index + 1].index : text.length
+
+    if (!currentHeader.headerName.startsWith(tablePrefix)) {
+      continue
+    }
+
+    const key = currentHeader.headerName.slice(tablePrefix.length)
+    if (key.length === 0 || key.includes(".")) {
+      continue
+    }
+
+    blocks.set(key, text.slice(blockStart, blockEnd).trimEnd())
+  }
+
+  return blocks
+}
+
+function removeSelectedBlocks(text, tableRoot, selectedKeys) {
+  const headerPattern = /^\[([^\]\r\n]+)\][ \t]*$/gm
+  const headers = []
+  let match
+
+  while ((match = headerPattern.exec(text)) !== null) {
+    headers.push({
+      headerName: match[1],
+      index: match.index,
+    })
+  }
+
+  const tablePrefix = `${tableRoot}.`
+  let result = ""
+  let cursor = 0
+
+  for (let index = 0; index < headers.length; index += 1) {
+    const currentHeader = headers[index]
+    const blockStart = currentHeader.index
+    const blockEnd = index + 1 < headers.length ? headers[index + 1].index : text.length
+
+    if (!currentHeader.headerName.startsWith(tablePrefix)) {
+      continue
+    }
+
+    const key = currentHeader.headerName.slice(tablePrefix.length)
+    if (!selectedKeys.has(key) || key.includes(".")) {
+      continue
+    }
+
+    result += text.slice(cursor, blockStart)
+    cursor = blockEnd
+  }
+
+  result += text.slice(cursor)
+  return result.trimEnd()
+}
+
+const sourceBlocks = parseBlocks(sourceText, rootKey)
+const selectedKeys = selection === "*"
+  ? [...sourceBlocks.keys()]
+  : selection.split("|").filter(Boolean)
+const existingKeys = new Set(selectedKeys.filter((key) => sourceBlocks.has(key)))
+const mergedBody = removeSelectedBlocks(targetText, rootKey, existingKeys)
+const appendedBlocks = selectedKeys
+  .filter((key) => sourceBlocks.has(key))
+  .map((key) => sourceBlocks.get(key))
+  .join("\n\n")
+
+const output = [mergedBody, appendedBlocks]
+  .filter((value) => value.length > 0)
+  .join("\n\n")
+
+fs.writeFileSync(targetToml, output.length > 0 ? `${output}\n` : "")
 NODE
 }
 
@@ -1755,6 +1919,9 @@ resolve_platform_settings() {
       source_base_value="$repo_root/.codex"
       target_base_value="$HOME/.codex"
       model_override_value="$codex_model"
+      config_source_value="$source_base_value/config.toml"
+      config_target_value="$target_base_value/config.toml"
+      mcp_root_key_value="mcp_servers"
       ;;
     *)
       print_error "Unsupported platform: $platform"
@@ -1979,19 +2146,39 @@ sync_platform_config() {
     full)
       if [[ "$platform" == "opencode" ]]; then
         sync_opencode_json "$(dirname "$config_source")" "$(dirname "$config_target")"
+      elif [[ "$platform" == "codex" ]]; then
+        if [[ "$dry_run" == true ]]; then
+          preview_selected_json_keys_sync "$platform" "$config_target" "repo-managed Codex MCP servers" "*"
+        else
+          merge_selected_toml_tables "$config_source" "$config_target" "$mcp_root_key" "*"
+          echo "Synced repo-managed Codex MCP config into $config_target"
+        fi
       else
         run_rsync_entry "$config_source" "$config_target"
       fi
       ;;
     mcp)
-      collect_selected_json_keys "$config_source" "$mcp_root_key" "MCP servers" "$platform" mcp_selection
+      if [[ "$platform" == "codex" ]]; then
+        collect_selected_config_keys "$config_source" "$mcp_root_key" "MCP servers" "$platform" "toml" mcp_selection
+      else
+        collect_selected_json_keys "$config_source" "$mcp_root_key" "MCP servers" "$platform" mcp_selection
+      fi
 
       if [[ -z "$mcp_selection" ]]; then
         echo "Skipping MCP sync for $platform"
         return 0
       fi
 
-      sync_selected_mcp_servers "$platform" "$config_source" "$config_target" "$mcp_root_key" "$mcp_selection"
+      if [[ "$platform" == "codex" ]]; then
+        if [[ "$dry_run" == true ]]; then
+          preview_selected_json_keys_sync "$platform" "$config_target" "MCP servers" "$mcp_selection"
+        else
+          merge_selected_toml_tables "$config_source" "$config_target" "$mcp_root_key" "$mcp_selection"
+          echo "Synced selected MCP servers for $platform"
+        fi
+      else
+        sync_selected_mcp_servers "$platform" "$config_source" "$config_target" "$mcp_root_key" "$mcp_selection"
+      fi
       ;;
   esac
 }

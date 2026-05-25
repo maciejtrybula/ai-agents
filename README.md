@@ -136,8 +136,46 @@ Repo-managed config files currently supported by config sync are:
 
 - `.claude/settings.json` -> `~/.claude/settings.json`
 - `.config/opencode/opencode.json` -> `~/.config/opencode/opencode.json`
+- `.codex/config.toml` -> `~/.codex/config.toml`
 
-Those repo-managed configs currently include MCP entries for `linear`, `blender`, and the existing OpenCode-only remote integrations like `stitch` and `context7`.
+Those repo-managed configs currently include MCP entries for:
+
+- `github` across Claude, OpenCode, and Codex via the official `ghcr.io/github/github-mcp-server` Docker image
+- `linear` and `blender` across Claude and OpenCode
+- `stitch` and `context7` in OpenCode
+
+Codex config sync is merge-based for repo-managed MCP entries, so syncing `.codex/config.toml` preserves unrelated local Codex settings already present in `~/.codex/config.toml`.
+
+### GitHub MCP Setup
+
+GitHub MCP is configured conservatively for read-only inspection with Actions support enabled.
+
+- Transport: local `docker run ... stdio`
+- Image: `ghcr.io/github/github-mcp-server`
+- Flags: `--read-only --toolsets repos,issues,pull_requests,actions`
+- Authentication variable: `GITHUB_PERSONAL_ACCESS_TOKEN`
+- Local requirement: Docker installed and available on your PATH
+
+This setup is intended for:
+
+- inspecting pull requests and review state,
+- reading issues,
+- reading repository metadata,
+- inspecting GitHub Actions workflows, runs, jobs, failures, and logs.
+
+The repository does **not** store any GitHub token value. The MCP server forwards `GITHUB_PERSONAL_ACCESS_TOKEN` from your local shell environment when the tool launches Docker.
+
+Example setup:
+
+```bash
+export GITHUB_PERSONAL_ACCESS_TOKEN=github_pat_your_token_here
+docker pull ghcr.io/github/github-mcp-server
+./sync-local-agents.sh --sync config --platform claude
+./sync-local-agents.sh --sync config --platform opencode
+./sync-local-agents.sh --sync config --platform codex
+```
+
+Use a token with the minimum GitHub scopes needed for the repositories and Actions data you want to inspect.
 
 To keep one model per platform, or set readable per-agent overrides without passing flags every time, create the local env files in this repository root, next to `sync-local-agents.sh`.
 
@@ -251,3 +289,10 @@ Type `Y` to enter configuration mode, or `n` to sync the latest config while pre
 - Input is hidden when typing (security best practice)
 - Keys are double-confirmed to prevent typos
 - Your local `~/.config/opencode/` directory is outside version control
+- GitHub MCP uses `GITHUB_PERSONAL_ACCESS_TOKEN` from your local environment and does not write the token into repo-managed config
+
+## Restart Requirements
+
+- **Claude**: restart Claude after syncing `.claude/settings.json` so the new MCP server is loaded.
+- **OpenCode**: quit and restart OpenCode after syncing `opencode.json`; config is not hot-reloaded.
+- **Codex**: restart Codex after syncing `~/.codex/config.toml`.

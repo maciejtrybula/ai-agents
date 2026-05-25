@@ -2,6 +2,21 @@
   "model": "sonnet",
   "agent": "it-task-master",
   "mcpServers": {
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server",
+        "stdio",
+        "--read-only",
+        "--toolsets",
+        "repos,issues,pull_requests,actions"
+      ]
+    },
     "linear": {
       "type": "http",
       "url": "https://mcp.linear.app/mcp"

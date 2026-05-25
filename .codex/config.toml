@@ -1,0 +1,4 @@
+[mcp_servers.github]
+command = "docker"
+args = ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server", "stdio", "--read-only", "--toolsets", "repos,issues,pull_requests,actions"]
+env_vars = ["GITHUB_PERSONAL_ACCESS_TOKEN"]
