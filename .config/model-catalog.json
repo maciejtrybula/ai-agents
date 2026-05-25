@@ -90,9 +90,19 @@
               "description": "Conservative Copilot cloud-agent auto-routing option."
             },
             {
+              "id": "github-copilot/gpt-5.4",
+              "target": "github-copilot/gpt-5.4",
+              "description": "Repo-consistent Copilot runtime model naming for GPT-5.4."
+            },
+            {
               "id": "github-copilot/gpt-5.2-codex",
               "target": "github-copilot/gpt-5.2-codex",
               "description": "Copilot code-focused model name supported by current GitHub docs."
+            },
+            {
+              "id": "github-copilot/gpt-5.3-codex",
+              "target": "github-copilot/gpt-5.3-codex",
+              "description": "Copilot code-focused model name aligned with documented GPT-5.3-Codex availability."
             }
           ]
         },
@@ -176,9 +186,19 @@
               "description": "Conservative Copilot cloud-agent auto-routing option."
             },
             {
+              "id": "github-copilot/gpt-5.4",
+              "target": "github-copilot/gpt-5.4",
+              "description": "Repo-consistent Copilot runtime model naming for GPT-5.4."
+            },
+            {
               "id": "github-copilot/gpt-5.2-codex",
               "target": "github-copilot/gpt-5.2-codex",
               "description": "Copilot code-focused model name supported by current GitHub docs."
+            },
+            {
+              "id": "github-copilot/gpt-5.3-codex",
+              "target": "github-copilot/gpt-5.3-codex",
+              "description": "Copilot code-focused model name aligned with documented GPT-5.3-Codex availability."
             }
           ]
         }
