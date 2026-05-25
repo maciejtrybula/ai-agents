@@ -95,14 +95,39 @@
               "description": "Repo-consistent Copilot runtime model naming for GPT-5.4."
             },
             {
-              "id": "github-copilot/gpt-5.2-codex",
-              "target": "github-copilot/gpt-5.2-codex",
-              "description": "Copilot code-focused model name supported by current GitHub docs."
+              "id": "github-copilot/gpt-5.4-mini",
+              "target": "github-copilot/gpt-5.4-mini",
+              "description": "Repo-consistent Copilot runtime model naming for GPT-5.4 mini."
+            },
+            {
+              "id": "github-copilot/gpt-5-mini",
+              "target": "github-copilot/gpt-5-mini",
+              "description": "Repo-consistent Copilot runtime model naming for GPT-5 mini."
             },
             {
               "id": "github-copilot/gpt-5.3-codex",
               "target": "github-copilot/gpt-5.3-codex",
               "description": "Copilot code-focused model name aligned with documented GPT-5.3-Codex availability."
+            },
+            {
+              "id": "github-copilot/claude-sonnet-4.5",
+              "target": "github-copilot/claude-sonnet-4.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 4.5 support."
+            },
+            {
+              "id": "github-copilot/claude-sonnet-4.6",
+              "target": "github-copilot/claude-sonnet-4.6",
+              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 4.6 support."
+            },
+            {
+              "id": "github-copilot/claude-opus-4.7",
+              "target": "github-copilot/claude-opus-4.7",
+              "description": "Conservative Copilot Anthropic naming for Claude Opus 4.7 support."
+            },
+            {
+              "id": "github-copilot/claude-haiku-4.5",
+              "target": "github-copilot/claude-haiku-4.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Haiku 4.5 support."
             }
           ]
         },
@@ -191,14 +216,39 @@
               "description": "Repo-consistent Copilot runtime model naming for GPT-5.4."
             },
             {
-              "id": "github-copilot/gpt-5.2-codex",
-              "target": "github-copilot/gpt-5.2-codex",
-              "description": "Copilot code-focused model name supported by current GitHub docs."
+              "id": "github-copilot/gpt-5.4-mini",
+              "target": "github-copilot/gpt-5.4-mini",
+              "description": "Repo-consistent Copilot runtime model naming for GPT-5.4 mini."
+            },
+            {
+              "id": "github-copilot/gpt-5-mini",
+              "target": "github-copilot/gpt-5-mini",
+              "description": "Repo-consistent Copilot runtime model naming for GPT-5 mini."
             },
             {
               "id": "github-copilot/gpt-5.3-codex",
               "target": "github-copilot/gpt-5.3-codex",
               "description": "Copilot code-focused model name aligned with documented GPT-5.3-Codex availability."
+            },
+            {
+              "id": "github-copilot/claude-sonnet-4.5",
+              "target": "github-copilot/claude-sonnet-4.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 4.5 support."
+            },
+            {
+              "id": "github-copilot/claude-sonnet-4.6",
+              "target": "github-copilot/claude-sonnet-4.6",
+              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 4.6 support."
+            },
+            {
+              "id": "github-copilot/claude-opus-4.7",
+              "target": "github-copilot/claude-opus-4.7",
+              "description": "Conservative Copilot Anthropic naming for Claude Opus 4.7 support."
+            },
+            {
+              "id": "github-copilot/claude-haiku-4.5",
+              "target": "github-copilot/claude-haiku-4.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Haiku 4.5 support."
             }
           ]
         }
