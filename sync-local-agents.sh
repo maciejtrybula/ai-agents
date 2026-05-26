@@ -41,6 +41,7 @@ generated_agent_model_overrides=""
 file_agent_model_overrides=""
 env_agent_model_overrides=""
 interactive_agent_model_overrides=""
+repo_default_agent_model_overrides=""
 interactive_claude_model=""
 interactive_opencode_model=""
 interactive_codex_model=""
@@ -514,6 +515,11 @@ append_agent_model_override() {
   append_override_record "$current_value" "$platform:$agent_slug:$model_id:$target_value:$provider"
 }
 
+# Keep OpenCode's orchestrator on the lighter Copilot Haiku default unless the
+# caller overrides it via CLI, interactive mode, env, local env file, or
+# recommended-model expansion.
+repo_default_agent_model_overrides="$(append_agent_model_override "$repo_default_agent_model_overrides" "opencode" "it-task-master" "github-copilot/claude-haiku-4.5")"
+
 find_agent_model_override_target() {
   local overrides="$1"
   local platform="$2"
@@ -595,7 +601,13 @@ resolve_agent_model_override() {
     return 0
   fi
 
-  find_agent_model_override_target "$file_agent_model_overrides" "$platform" "$agent_slug" || true
+  resolved_value="$(find_agent_model_override_target "$file_agent_model_overrides" "$platform" "$agent_slug" || true)"
+  if [[ -n "$resolved_value" ]]; then
+    printf '%s' "$resolved_value"
+    return 0
+  fi
+
+  find_agent_model_override_target "$repo_default_agent_model_overrides" "$platform" "$agent_slug" || true
 }
 
 load_model_settings_from_file() {
