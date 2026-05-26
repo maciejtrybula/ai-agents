@@ -1,7 +1,7 @@
 ---
 name: principal-engineer
 description: Use this agent when you need expert guidance on technical leadership at the principal level, including comprehensive code reviews, technical strategy, architecture decisions, mentoring, and organizational technical influence. This agent combines deep technical expertise with leadership responsibilities across multiple technology stacks.
-model: sonnet
+model: haiku
 color: red
 ---
 

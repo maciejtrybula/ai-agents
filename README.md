@@ -99,10 +99,11 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
 ./sync-local-agents.sh --sync all --platform opencode
 ./sync-local-agents.sh --interactive
 ./sync-local-agents.sh --platform claude --claude-model anthropic/sonnet
-./sync-local-agents.sh --agent-model claude:backend-engineer:anthropic/opus
+./sync-local-agents.sh --agent-model claude:backend-architect:anthropic/opus
 ./sync-local-agents.sh --agent-model opencode:backend-engineer:openai/gpt-5.3-codex
 ./sync-local-agents.sh --platform opencode
 ./sync-local-agents.sh --opencode-model openai/gpt-5.4
+./sync-local-agents.sh --platform claude --use-recommended-models
 ./sync-local-agents.sh --platform opencode --use-recommended-models
 ./sync-local-agents.sh --platform codex --use-recommended-fallback-models
 ./sync-local-agents.sh --platform codex --codex-model github-copilot/gpt-5.2-codex
@@ -128,8 +129,8 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
   - requires a TTY; otherwise it exits with a clear error.
 - `--claude-model`, `--opencode-model`, and `--codex-model` set per-platform fallback models for synced agent frontmatter.
 - `--agent-model platform:agent-slug:provider/model` is repeatable and applies a catalog-validated per-agent override for that platform.
-- `--use-recommended-models` requires explicit `--platform`, supports `opencode` and `codex` only, and expands the first entry from `platforms.<platform>.recommendedAgents` into per-agent overrides for the selected agents.
-- `--use-recommended-fallback-models` requires explicit `--platform`, supports `opencode` and `codex` only, and expands the second entry from `platforms.<platform>.recommendedAgents` into per-agent overrides for the selected agents. It fails if any selected agent does not have a second recommendation.
+- `--use-recommended-models` requires explicit `--platform`, supports `claude`, `opencode`, and `codex`, and expands the first entry from `platforms.<platform>.recommendedAgents` into per-agent overrides for the selected agents.
+- `--use-recommended-fallback-models` requires explicit `--platform`, supports `claude`, `opencode`, and `codex`, and expands the second entry from `platforms.<platform>.recommendedAgents` into per-agent overrides for the selected agents. It fails if any selected agent does not have a second recommendation.
 
 Allowed overrides come from the repo-managed catalog at `.config/model-catalog.json`.
 
@@ -188,7 +189,7 @@ Do not put them in the synced target directories such as `~/.claude/`, `~/.confi
 ```bash
 # .claude.local.env
 CLAUDE_MODEL=anthropic/sonnet
-CLAUDE_AGENT_MODEL_BACKEND_ENGINEER=anthropic/opus
+CLAUDE_AGENT_MODEL_BACKEND_ARCHITECT=anthropic/opus
 
 # .opencode.local.env
 OPENCODE_MODEL=openai/gpt-5.4
@@ -209,9 +210,9 @@ Per-agent environment keys use the pattern `<PLATFORM>_AGENT_MODEL_<AGENT_NAME_I
 
 Precedence for model selection during sync is:
 
-1. Per-agent CLI flag, for example `--agent-model claude:backend-engineer:anthropic/opus`
+1. Per-agent CLI flag, for example `--agent-model claude:backend-architect:anthropic/opus`
 2. Generated recommended per-agent override from `--use-recommended-models` or `--use-recommended-fallback-models`
-3. Per-agent environment variable, for example `CLAUDE_AGENT_MODEL_BACKEND_ENGINEER`
+3. Per-agent environment variable, for example `CLAUDE_AGENT_MODEL_BACKEND_ARCHITECT`
 4. Per-agent local env file entry, for example in `.claude.local.env`
 5. Platform-specific CLI flag, for example `--claude-model`
 6. Platform-specific environment variable, for example `CLAUDE_MODEL`

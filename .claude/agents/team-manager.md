@@ -1,7 +1,7 @@
 ---
 name: team-manager
 description: Use this agent when you need guidance on people management, team leadership, project delivery, performance management, or organizational challenges. Examples include team planning, handling conflicts, performance reviews, stakeholder communication, resource allocation, or career development strategies.
-model: sonnet
+model: haiku
 color: green
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: ux-ui-architect
 description: use this agent if there are considering any frontend application, any changes to components. Everything that could have an impact for UX and UI in any application
-model: sonnet
+model: opus
 color: cyan
 ---
 

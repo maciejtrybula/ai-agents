@@ -799,11 +799,11 @@ Repeatable per-agent override.
 Format: platform:agent-slug:provider/model
 Validated against ./.config/model-catalog.json
 --use-recommended-models
-Requires explicit --platform and supports opencode/codex only.
+Requires explicit --platform and supports claude/opencode/codex.
 Uses the first model from platforms.<platform>.recommendedAgents
 for each selected agent and expands it into per-agent overrides.
 --use-recommended-fallback-models
-Requires explicit --platform and supports opencode/codex only.
+Requires explicit --platform and supports claude/opencode/codex.
 Uses the second model from platforms.<platform>.recommendedAgents
 for each selected agent and expands it into per-agent overrides.
 Fails if any selected agent does not define a second recommendation.
@@ -820,6 +820,7 @@ Examples:
 ./sync-local-agents.sh --interactive --configure-api-keys
 ./sync-local-agents.sh --platform claude --claude-model anthropic/sonnet
 ./sync-local-agents.sh --agent-model claude:backend-engineer:anthropic/sonnet
+./sync-local-agents.sh --platform claude --use-recommended-models
 ./sync-local-agents.sh --platform opencode --use-recommended-models
 ./sync-local-agents.sh --platform codex --use-recommended-fallback-models
 ./sync-local-agents.sh --platform opencode --configure-api-keys
@@ -1939,10 +1940,10 @@ if [[ "$use_recommended_models" == true || "$use_recommended_fallback_models" ==
 
   for platform in "${selected_platforms[@]}"; do
     case "$platform" in
-      opencode|codex)
+      claude|opencode|codex)
         ;;
       *)
-        print_error "Recommended model flags support only opencode and codex: $platform"
+        print_error "Recommended model flags support only claude, opencode, and codex: $platform"
         exit 1
         ;;
     esac

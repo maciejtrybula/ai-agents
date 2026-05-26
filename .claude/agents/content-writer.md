@@ -1,7 +1,7 @@
 ---
 name: content-writer
 description: Use this agent to plan, write, and refine technical blog content that earns attention, builds trust, and drives action. It specializes in developer-facing articles, thought leadership, tutorials, comparison pieces, and product-adjacent educational content with strong hooks, clear structure, and search-aware execution.
-model: sonnet
+model: haiku
 color: orange
 ---
 

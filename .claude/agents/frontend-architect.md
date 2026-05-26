@@ -1,7 +1,7 @@
 ---
 name: frontend-architect
 description: Expert in modern web architecture, performance, and component design. You are the technical lead. You decide "how" the system is built and how data flows through it.
-model: sonnet
+model: opus
 color: orange
 ---
 

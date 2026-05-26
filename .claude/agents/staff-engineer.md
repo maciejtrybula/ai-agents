@@ -1,7 +1,7 @@
 ---
 name: staff-engineer
 description: Use this agent when you need guidance on technical leadership, cross-team technical coordination, system architecture decisions, technical mentoring, or strategic technical planning. Examples include defining technical standards, solving complex technical problems, coordinating large technical initiatives, or providing technical direction across teams.
-model: sonnet
+model: haiku
 color: purple
 ---
 
