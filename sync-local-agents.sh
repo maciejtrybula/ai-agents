@@ -46,6 +46,7 @@ interactive_opencode_model=""
 interactive_codex_model=""
 use_recommended_models=false
 use_recommended_fallback_models=false
+cli_recommended_provider=""
 supports_color=false
 color_reset=""
 color_bold=""
@@ -288,15 +289,16 @@ NODE
 list_recommended_model_ids_for_agent() {
   local platform="$1"
   local agent_slug="$2"
+  local provider="$3"
 
   require_node
 
-  node - "$model_catalog_file" "$platform" "$agent_slug" <<'NODE'
+  node - "$model_catalog_file" "$platform" "$agent_slug" "$provider" <<'NODE'
 const fs = require("fs")
 
-const [catalogFile, platform, agentSlug] = process.argv.slice(2)
+const [catalogFile, platform, agentSlug, provider] = process.argv.slice(2)
 const catalog = JSON.parse(fs.readFileSync(catalogFile, "utf8"))
-const recommendedModels = catalog?.platforms?.[platform]?.recommendedAgents?.[agentSlug]
+const recommendedModels = catalog?.platforms?.[platform]?.recommendedAgents?.[provider]?.[agentSlug]
 
 if (!Array.isArray(recommendedModels)) {
   process.exit(0)
@@ -312,15 +314,16 @@ resolve_recommended_model_id_for_agent() {
   local platform="$1"
   local agent_slug="$2"
   local recommendation_index="$3"
+  local provider="$4"
 
   require_node
 
-  node - "$model_catalog_file" "$platform" "$agent_slug" "$recommendation_index" <<'NODE'
+  node - "$model_catalog_file" "$platform" "$agent_slug" "$recommendation_index" "$provider" <<'NODE'
 const fs = require("fs")
 
-const [catalogFile, platform, agentSlug, recommendationIndex] = process.argv.slice(2)
+const [catalogFile, platform, agentSlug, recommendationIndex, provider] = process.argv.slice(2)
 const catalog = JSON.parse(fs.readFileSync(catalogFile, "utf8"))
-const recommendedModels = catalog?.platforms?.[platform]?.recommendedAgents?.[agentSlug]
+const recommendedModels = catalog?.platforms?.[platform]?.recommendedAgents?.[provider]?.[agentSlug]
 const index = Number.parseInt(recommendationIndex, 10)
 
 if (!Array.isArray(recommendedModels) || Number.isNaN(index) || index < 0 || index >= recommendedModels.length) {
@@ -337,7 +340,8 @@ build_recommended_agent_model_overrides() {
   local selection="$3"
   local recommendation_index="$4"
   local missing_label="$5"
-  local __result_var="$6"
+  local provider="$6"
+  local __result_var="$7"
   local current_overrides=""
   local file=""
   local agent_slug=""
@@ -347,11 +351,11 @@ build_recommended_agent_model_overrides() {
     [[ -n "$file" ]] || continue
 
     agent_slug="$(basename "$file" .md)"
-    recommended_model_id="$(resolve_recommended_model_id_for_agent "$platform" "$agent_slug" "$recommendation_index")"
+    recommended_model_id="$(resolve_recommended_model_id_for_agent "$platform" "$agent_slug" "$recommendation_index" "$provider")"
 
     if [[ -z "$recommended_model_id" ]]; then
       print_error "Missing $missing_label for $platform agent: $agent_slug"
-      print_note "Expected platforms.$platform.recommendedAgents.$agent_slug[$((recommendation_index + 1))] in ./.config/model-catalog.json"
+      print_note "Expected platforms.$platform.recommendedAgents.$provider.$agent_slug[$((recommendation_index + 1))] in ./.config/model-catalog.json"
       exit 1
     fi
 
@@ -359,6 +363,121 @@ build_recommended_agent_model_overrides() {
   done < <(iterate_agent_markdown_files "$source_agents_dir" "$selection")
 
   printf -v "$__result_var" '%s' "$current_overrides"
+}
+
+resolve_default_recommended_provider() {
+  local platform="$1"
+
+  require_node
+
+  node - "$model_catalog_file" "$platform" <<'NODE'
+const fs = require("fs")
+
+const [catalogFile, platform] = process.argv.slice(2)
+const catalog = JSON.parse(fs.readFileSync(catalogFile, "utf8"))
+const provider = catalog?.platforms?.[platform]?.defaultRecommendedProvider
+
+if (typeof provider === "string" && provider.length > 0) {
+  process.stdout.write(`${provider}\n`)
+}
+NODE
+}
+
+list_recommended_providers() {
+  local platform="$1"
+
+  require_node
+
+  node - "$model_catalog_file" "$platform" <<'NODE'
+const fs = require("fs")
+
+const [catalogFile, platform] = process.argv.slice(2)
+const catalog = JSON.parse(fs.readFileSync(catalogFile, "utf8"))
+const platformConfig = catalog?.platforms?.[platform]
+
+if (!platformConfig) {
+  process.exit(0)
+}
+
+const recommendedAgents = platformConfig.recommendedAgents ?? {}
+const providerOrder = Array.isArray(platformConfig.providerOrder) ? platformConfig.providerOrder : []
+const defaultProvider = platformConfig.defaultRecommendedProvider ?? ""
+const providers = []
+const seenProviders = new Set()
+
+for (const provider of providerOrder) {
+  if (provider in recommendedAgents && !seenProviders.has(provider)) {
+    providers.push(provider)
+    seenProviders.add(provider)
+  }
+}
+
+for (const provider of Object.keys(recommendedAgents)) {
+  if (!seenProviders.has(provider)) {
+    providers.push(provider)
+    seenProviders.add(provider)
+  }
+}
+
+for (const provider of providers) {
+  process.stdout.write(`${provider}\t${provider === defaultProvider ? "default" : ""}\n`)
+}
+NODE
+}
+
+resolve_effective_recommended_provider() {
+  local platform="$1"
+  local requested_provider="$2"
+  local resolved_provider=""
+  local listed_entry=""
+  local matched_provider=false
+
+  if [[ -n "$requested_provider" ]]; then
+    while IFS= read -r listed_entry; do
+      [[ -n "$listed_entry" ]] || continue
+      if [[ "${listed_entry%%$'\t'*}" == "$requested_provider" ]]; then
+        printf '%s' "$requested_provider"
+        return 0
+      fi
+    done < <(list_recommended_providers "$platform")
+
+    print_error "Unsupported recommended provider for $platform: $requested_provider"
+    print_note "Expected a provider from platforms.$platform.recommendedAgents in ./.config/model-catalog.json"
+    exit 1
+  fi
+
+  resolved_provider="$(resolve_default_recommended_provider "$platform")"
+  if [[ -n "$resolved_provider" ]]; then
+    while IFS= read -r listed_entry; do
+      [[ -n "$listed_entry" ]] || continue
+      if [[ "${listed_entry%%$'\t'*}" == "$resolved_provider" ]]; then
+        matched_provider=true
+        break
+      fi
+    done < <(list_recommended_providers "$platform")
+
+    if [[ "$matched_provider" == true ]]; then
+      printf '%s' "$resolved_provider"
+      return 0
+    fi
+
+    print_error "Missing recommended provider mapping for $platform: $resolved_provider"
+    print_note "Expected platforms.$platform.recommendedAgents.$resolved_provider in ./.config/model-catalog.json"
+    exit 1
+  fi
+
+  print_error "Missing default recommended provider for $platform"
+  print_note "Expected platforms.$platform.defaultRecommendedProvider in ./.config/model-catalog.json"
+  exit 1
+}
+
+validate_recommended_provider_selection() {
+  local requested_provider="$1"
+  local platform=""
+
+  for platform in "${selected_platforms[@]}"; do
+    resolve_effective_recommended_provider "$platform" "$requested_provider" >/dev/null
+  done
 }
 
 resolve_catalog_model_target() {
@@ -763,6 +882,7 @@ Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode
 [--agent-model platform:agent-slug:provider/model]
 [--use-recommended-models]
 [--use-recommended-fallback-models]
+[--recommended-provider PROVIDER]
 
 Copies agents and skills from this repository into the matching local config
 directories in your home folder.
@@ -800,13 +920,18 @@ Format: platform:agent-slug:provider/model
 Validated against ./.config/model-catalog.json
 --use-recommended-models
 Requires explicit --platform and supports claude/opencode/codex.
-Uses the first model from platforms.<platform>.recommendedAgents
+Uses the first model from
+platforms.<platform>.recommendedAgents.<provider>
 for each selected agent and expands it into per-agent overrides.
 --use-recommended-fallback-models
 Requires explicit --platform and supports claude/opencode/codex.
-Uses the second model from platforms.<platform>.recommendedAgents
+Uses the second model from
+platforms.<platform>.recommendedAgents.<provider>
 for each selected agent and expands it into per-agent overrides.
 Fails if any selected agent does not define a second recommendation.
+--recommended-provider
+Optional provider selector for recommended-model modes.
+Defaults to the platform's configured default recommended provider.
 
 Examples:
 ./sync-local-agents.sh
@@ -823,6 +948,8 @@ Examples:
 ./sync-local-agents.sh --platform claude --use-recommended-models
 ./sync-local-agents.sh --platform opencode --use-recommended-models
 ./sync-local-agents.sh --platform codex --use-recommended-fallback-models
+./sync-local-agents.sh --platform opencode --use-recommended-models --recommended-provider openai
+./sync-local-agents.sh --platform codex --use-recommended-fallback-models --recommended-provider openai
 ./sync-local-agents.sh --platform opencode --configure-api-keys
 ./sync-local-agents.sh --opencode-model openai/gpt-5.4
 ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
@@ -948,11 +1075,92 @@ collect_selected_entries() {
   printf -v "$__result_var" '%s' "$(IFS='|'; printf '%s' "${selected_entries[*]}")"
 }
 
+prompt_interactive_recommended_provider() {
+  local platform="$1"
+  local __result_var="$2"
+  local provider_entries=()
+  local available_providers=()
+  local listed_entry=""
+  local provider=""
+  local provider_status=""
+  local default_provider=""
+  local configured_default_provider=""
+  local answer=""
+  local index=1
+
+  while IFS= read -r listed_entry; do
+    [[ -n "$listed_entry" ]] || continue
+    provider_entries+=("$listed_entry")
+    available_providers+=("${listed_entry%%$'\t'*}")
+    if [[ "${listed_entry#*$'\t'}" == "default" ]]; then
+      default_provider="${listed_entry%%$'\t'*}"
+    fi
+  done < <(list_recommended_providers "$platform")
+
+  if [[ ${#available_providers[@]} -eq 0 ]]; then
+    print_error "No recommended providers are defined for $platform"
+    exit 1
+  fi
+
+  configured_default_provider="$(resolve_default_recommended_provider "$platform")"
+  if [[ -z "$configured_default_provider" ]]; then
+    print_error "Missing default recommended provider for $platform"
+    print_note "Expected platforms.$platform.defaultRecommendedProvider in ./.config/model-catalog.json"
+    exit 1
+  fi
+
+  if [[ -z "$default_provider" ]]; then
+    print_error "Missing recommended provider mapping for $platform: $configured_default_provider"
+    print_note "Expected platforms.$platform.recommendedAgents.$configured_default_provider in ./.config/model-catalog.json"
+    exit 1
+  fi
+
+  if [[ ${#available_providers[@]} -eq 1 ]]; then
+    printf -v "$__result_var" '%s' "${available_providers[0]}"
+    return 0
+  fi
+
+  print_heading "Recommended provider for $platform"
+  print_note "Choose which provider's recommended models to apply."
+  print_divider
+
+  for listed_entry in "${provider_entries[@]}"; do
+    provider="${listed_entry%%$'\t'*}"
+    provider_status="${listed_entry#*$'\t'}"
+
+    if [[ "$provider_status" == "default" ]]; then
+      printf '  %s[%d]%s %s%s%s %s(default)%s\n' "$color_blue" "$index" "$color_reset" "$color_bold" "$provider" "$color_reset" "$color_dim" "$color_reset"
+    else
+      printf '  %s[%d]%s %s%s%s\n' "$color_blue" "$index" "$color_reset" "$color_bold" "$provider" "$color_reset"
+    fi
+    ((index++))
+  done
+
+  while true; do
+    printf '%sChoose a recommended provider number (default: %s):%s ' "$color_magenta" "${default_provider:-${available_providers[0]}}" "$color_reset"
+    read -r answer
+    answer="$(trim "$answer")"
+
+    if [[ -z "$answer" ]]; then
+      printf -v "$__result_var" '%s' "${default_provider:-${available_providers[0]}}"
+      return 0
+    fi
+
+    if [[ "$answer" =~ ^[0-9]+$ ]] && (( answer >= 1 && answer <= ${#available_providers[@]} )); then
+      printf -v "$__result_var" '%s' "${available_providers[answer-1]}"
+      return 0
+    fi
+
+    print_warning "Please choose a valid number between 1 and ${#available_providers[@]}."
+  done
+}
+
 select_catalog_model_interactively() {
   local platform="$1"
   local prompt_label="$2"
   local __result_var="$3"
   local agent_slug="${4:-}"
+  local recommended_provider="${5:-}"
   local available_providers=()
   local provider_entries=()
   local model_entries=()
@@ -976,6 +1184,7 @@ select_catalog_model_interactively() {
   local recommended_model_lookup=""
   local recommended_summary=""
   local recommended_badge=""
+  local badge_provider=""
 
   while IFS= read -r listed_entry; do
     [[ -n "$listed_entry" ]] || continue
@@ -984,10 +1193,15 @@ select_catalog_model_interactively() {
   done < <(list_model_catalog_providers "$platform")
 
   if [[ -n "$agent_slug" ]]; then
+    badge_provider="$recommended_provider"
+    if [[ -z "$badge_provider" ]]; then
+      badge_provider="$(resolve_default_recommended_provider "$platform")"
+    fi
+
     while IFS= read -r listed_entry; do
       [[ -n "$listed_entry" ]] || continue
       recommended_model_ids+=("$listed_entry")
-    done < <(list_recommended_model_ids_for_agent "$platform" "$agent_slug")
+    done < <(list_recommended_model_ids_for_agent "$platform" "$agent_slug" "$badge_provider")
 
     if [[ ${#recommended_model_ids[@]} -gt 0 ]]; then
       recommended_model_lookup="|$(IFS='|'; printf '%s' "${recommended_model_ids[*]}")|"
@@ -1060,7 +1274,7 @@ select_catalog_model_interactively() {
       print_note "Provider: $selected_provider"
     fi
     if [[ -n "$agent_slug" && ${#recommended_model_ids[@]} -gt 0 ]]; then
-      print_note "Recommended for $agent_slug: $recommended_summary"
+      print_note "Recommended for $agent_slug (${badge_provider}): $recommended_summary"
     fi
     printf '%sFilter models (empty = show all):%s ' "$color_magenta" "$color_reset"
     read -r filter_input
@@ -1140,6 +1354,7 @@ prompt_interactive_model_overrides() {
   local source_agents_dir="$2"
   local agent_selection="$3"
   local current_platform_model="$4"
+  local recommended_provider="$5"
   local answer=""
   local selected_joined=""
   local selected_entries=()
@@ -1203,7 +1418,7 @@ prompt_interactive_model_overrides() {
           read -r answer
           answer="$(to_lower "$(trim "$answer")")"
           if [[ "$answer" == "y" || "$answer" == "yes" ]]; then
-            select_catalog_model_interactively "$platform" "Pick a model for $agent_slug" chosen_entry "$agent_slug"
+            select_catalog_model_interactively "$platform" "Pick a model for $agent_slug" chosen_entry "$agent_slug" "$recommended_provider"
             requested_model="${chosen_entry%%$'\t'*}"
             interactive_agent_model_overrides="$(append_agent_model_override "$interactive_agent_model_overrides" "$platform" "$agent_slug" "$requested_model")"
           fi
@@ -1911,6 +2126,14 @@ while [[ $# -gt 0 ]]; do
     --use-recommended-fallback-models)
       use_recommended_fallback_models=true
       ;;
+    --recommended-provider)
+      if [[ $# -lt 2 ]]; then
+        print_error "Missing value for --recommended-provider"
+        exit 1
+      fi
+      cli_recommended_provider="$(normalize_model_catalog_value "$2")"
+      shift
+      ;;
     --configure-api-keys)
       configure_api_keys=true
       ;;
@@ -1929,6 +2152,11 @@ while [[ $# -gt 0 ]]; do
 
 if [[ "$use_recommended_models" == true && "$use_recommended_fallback_models" == true ]]; then
   print_error "Choose either --use-recommended-models or --use-recommended-fallback-models, not both."
+  exit 1
+fi
+
+if [[ -n "$cli_recommended_provider" && "$use_recommended_models" != true && "$use_recommended_fallback_models" != true ]]; then
+  print_error "--recommended-provider requires --use-recommended-models or --use-recommended-fallback-models."
   exit 1
 fi
 
@@ -1961,6 +2189,10 @@ fi
 
 if [[ ${#selected_platforms[@]} -eq 0 ]]; then
   selected_platforms=(claude opencode codex)
+fi
+
+if [[ "$use_recommended_models" == true || "$use_recommended_fallback_models" == true ]]; then
+  validate_recommended_provider_selection "$cli_recommended_provider"
 fi
 
 if [[ "$interactive_mode" == true ]]; then
@@ -2073,6 +2305,7 @@ sync_platform() {
   local entry=""
   local interactive_model_override=""
   local recommended_overrides=""
+  local recommended_provider=""
 
   resolve_platform_settings "$platform" source_base target_base model_override config_source config_target mcp_root_key
 
@@ -2090,7 +2323,16 @@ sync_platform() {
 
     if [[ "$interactive_mode" == true ]]; then
       collect_selected_entries "$source_base/agents" "agents" "$platform" agent_selection
-      prompt_interactive_model_overrides "$platform" "$source_base/agents" "$agent_selection" "$model_override"
+
+      if [[ "$use_recommended_models" == true || "$use_recommended_fallback_models" == true ]]; then
+        if [[ -n "$cli_recommended_provider" ]]; then
+          recommended_provider="$(resolve_effective_recommended_provider "$platform" "$cli_recommended_provider")"
+        else
+          prompt_interactive_recommended_provider "$platform" recommended_provider
+        fi
+      fi
+
+      prompt_interactive_model_overrides "$platform" "$source_base/agents" "$agent_selection" "$model_override" "$recommended_provider"
 
       interactive_model_override="$(resolve_interactive_platform_model_override "$platform")"
       [[ -n "$interactive_model_override" ]] && model_override="$interactive_model_override"
@@ -2099,10 +2341,12 @@ sync_platform() {
     fi
 
     if [[ "$use_recommended_models" == true ]]; then
-      build_recommended_agent_model_overrides "$platform" "$source_base/agents" "$agent_selection" 0 "recommended model" recommended_overrides
+      [[ -z "$recommended_provider" ]] && recommended_provider="$(resolve_effective_recommended_provider "$platform" "$cli_recommended_provider")"
+      build_recommended_agent_model_overrides "$platform" "$source_base/agents" "$agent_selection" 0 "recommended model" "$recommended_provider" recommended_overrides
       generated_agent_model_overrides="$(append_override_record "$generated_agent_model_overrides" "$recommended_overrides")"
     elif [[ "$use_recommended_fallback_models" == true ]]; then
-      build_recommended_agent_model_overrides "$platform" "$source_base/agents" "$agent_selection" 1 "recommended fallback model" recommended_overrides
+      [[ -z "$recommended_provider" ]] && recommended_provider="$(resolve_effective_recommended_provider "$platform" "$cli_recommended_provider")"
+      build_recommended_agent_model_overrides "$platform" "$source_base/agents" "$agent_selection" 1 "recommended fallback model" "$recommended_provider" recommended_overrides
       generated_agent_model_overrides="$(append_override_record "$generated_agent_model_overrides" "$recommended_overrides")"
     fi
 

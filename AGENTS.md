@@ -67,18 +67,19 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 2. **Standard Headings**: Use `Core Principles`, `Technical Standards`, `Workflow`, and `Review Checklist`.
 3. **Task Routing**: Use `it-task-master` as the default orchestrator, then hand off to specialist agents by task type.
 4. **Skills Awareness**: Before doing specialized work, check the available shared skills and use the relevant ones instead of recreating guidance that already exists.
-5. **Tool/Library Documentation Verification (Context7 MCP)**:
+5. **Planning Artifacts**: Do not write specs, plans, or similar workflow artifacts to files in this repository by default. Keep them in chat unless the user explicitly asks for a file-based artifact.
+6. **Tool/Library Documentation Verification (Context7 MCP)**:
    - When implementing with a specific tool, library, or framework, first check whether its documentation is available via Context7 MCP.
    - If available, use Context7 docs to verify APIs and usage patterns, and rely on them during implementation decisions.
    - Practical flow: resolve library ID → query docs → implement.
-6. **UI Design & Prototyping (Stitch MCP)**:
+7. **UI Design & Prototyping (Stitch MCP)**:
    - Stitch MCP is available for UI design and prototyping workflows.
    - Use it to create/list projects, generate screens from text, edit screens,
      generate design variants, and retrieve project/screen details.
-7. **Verification**:
+8. **Verification**:
    - Run `markdownlint "**/*.md"` to ensure formatting consistency.
    - Use `rg --files .claude/agents | sort` to verify the agent pool.
-8. **Commits**: Use imperative summaries: `Add [agent-name]` or `Improve [agent-name]`.
+9. **Commits**: Use imperative summaries: `Add [agent-name]` or `Improve [agent-name]`.
 
 ### Security
 - Never embed secrets or sensitive company data in agent prompts.

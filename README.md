@@ -106,6 +106,8 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
 ./sync-local-agents.sh --platform claude --use-recommended-models
 ./sync-local-agents.sh --platform opencode --use-recommended-models
 ./sync-local-agents.sh --platform codex --use-recommended-fallback-models
+./sync-local-agents.sh --platform opencode --use-recommended-models --recommended-provider openai
+./sync-local-agents.sh --platform codex --use-recommended-fallback-models --recommended-provider openai
 ./sync-local-agents.sh --platform codex --codex-model github-copilot/gpt-5.2-codex
 ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
 ```
@@ -121,16 +123,18 @@ Use `sync-local-agents.sh` to copy the repository's current agents and skills in
   - lists actual available agents/skills for each selected platform,
   - lets you keep current model precedence, choose one catalog model for all selected agents, or pick catalog-backed per-agent overrides,
   - when a platform has multiple catalog providers, asks you to choose the provider first, shows favorite providers first, and then shows only that provider's models,
+  - when recommended-model mode is active on a platform with multiple recommended providers, asks which provider's recommendations to apply and defaults to the platform's configured recommended provider,
   - lets you enter a plain-text model filter before choosing from the visible catalog models,
-  - when choosing per-agent models, visibly marks catalog entries recommended for that specific agent,
+  - when choosing per-agent models, visibly marks catalog entries recommended for that specific agent using the active recommended provider for that platform,
   - when syncing config files, lets you choose per platform between full config sync, MCP-only sync, or skip,
   - when syncing MCP only, lists actual MCP server names from the source config so you can sync all or selected servers,
   - defaults to syncing all entries, with optional narrowing to selected items.
   - requires a TTY; otherwise it exits with a clear error.
 - `--claude-model`, `--opencode-model`, and `--codex-model` set per-platform fallback models for synced agent frontmatter.
 - `--agent-model platform:agent-slug:provider/model` is repeatable and applies a catalog-validated per-agent override for that platform.
-- `--use-recommended-models` requires explicit `--platform`, supports `claude`, `opencode`, and `codex`, and expands the first entry from `platforms.<platform>.recommendedAgents` into per-agent overrides for the selected agents.
-- `--use-recommended-fallback-models` requires explicit `--platform`, supports `claude`, `opencode`, and `codex`, and expands the second entry from `platforms.<platform>.recommendedAgents` into per-agent overrides for the selected agents. It fails if any selected agent does not have a second recommendation.
+- `--use-recommended-models` requires explicit `--platform`, supports `claude`, `opencode`, and `codex`, and expands the first entry from `platforms.<platform>.recommendedAgents.<provider>` into per-agent overrides for the selected agents.
+- `--use-recommended-fallback-models` requires explicit `--platform`, supports `claude`, `opencode`, and `codex`, and expands the second entry from `platforms.<platform>.recommendedAgents.<provider>` into per-agent overrides for the selected agents. It fails if any selected agent does not have a second recommendation.
+- `--recommended-provider <provider>` only applies with recommended-model modes and selects which provider-specific recommendation set to use. Current defaults stay unchanged: `claude` uses `anthropic`, `opencode` uses `github-copilot`, and `codex` uses `github-copilot` when this flag is omitted.
 
 Allowed overrides come from the repo-managed catalog at `.config/model-catalog.json`.
 
