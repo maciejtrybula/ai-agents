@@ -515,10 +515,10 @@ append_agent_model_override() {
   append_override_record "$current_value" "$platform:$agent_slug:$model_id:$target_value:$provider"
 }
 
-# Keep OpenCode's orchestrator on the lighter Copilot Haiku default unless the
+# Keep OpenCode's orchestrator on the lighter Copilot Sonnet default unless the
 # caller overrides it via CLI, interactive mode, env, local env file, or
 # recommended-model expansion.
-repo_default_agent_model_overrides="$(append_agent_model_override "$repo_default_agent_model_overrides" "opencode" "it-task-master" "github-copilot/claude-haiku-4.5")"
+repo_default_agent_model_overrides="$(append_agent_model_override "$repo_default_agent_model_overrides" "opencode" "it-task-master" "github-copilot/claude-sonnet-4.6")"
 
 find_agent_model_override_target() {
   local overrides="$1"

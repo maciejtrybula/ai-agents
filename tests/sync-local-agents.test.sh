@@ -61,7 +61,7 @@ assert_contains "$recommended_output" ".claude/agents/content-writer.md -> haiku
 
 fallback_output="$(run_and_capture bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform claude --use-recommended-fallback-models)"
 assert_contains "$fallback_output" ".claude/agents/backend-architect.md -> sonnet"
-assert_contains "$fallback_output" ".claude/agents/backend-engineer.md -> haiku"
+assert_contains "$fallback_output" ".claude/agents/backend-engineer.md -> sonnet"
 assert_contains "$fallback_output" ".claude/agents/content-writer.md -> sonnet"
 
 opencode_default_output="$(run_and_capture bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform opencode --use-recommended-models)"
