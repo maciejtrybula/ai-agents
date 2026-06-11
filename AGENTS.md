@@ -18,6 +18,7 @@ This repository serves as a centralized hub for AI agent definitions and special
 | **DevOps Engineer** | Infrastructure as Code, CI/CD, and cloud orchestration. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **Developer Tooling Engineer** | Shell tooling, local developer automation, config sync scripts, CLI UX, provider and model catalogs, and Claude/OpenCode/Codex local tooling integration. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **E2E Test Engineer** | Playwright-based end-to-end testing and quality assurance. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Electrical Domain Specialist** | Electrical planning, smart-home ecosystems, building automation, and compliance-aware scope triage across residential, commercial, and industrial contexts. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **SecOps Auditor** | Security architecture, threat analysis, and OWASP compliance. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **SEO Inspector** | Technical SEO, content architecture, AI search readiness, and discoverability audits. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **Tax Advisor** | Polish tax law guidance for PIT, CIT, VAT, compliance, deadlines, and practical business-tax tradeoffs. | `.claude/`, `.config/opencode/`, `.codex/` |
@@ -47,6 +48,7 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 - **AI Search Optimization**: LLM retrieval, AI Overview readiness, and citation-friendly content design.
 - **SEO Measurement and Observability**: KPI frameworks, crawl monitoring, and discoverability reporting.
 - **Polish Tax Law**: Reusable guidance for Polish tax analysis, compliance boundaries, risk framing, and current-law verification.
+- **Poland Electrical Compliance**: Reusable guidance for Poland-specific electrical legality, qualifications, sign-off, EV/PV/UDT routing, and compliance boundaries.
 - **Technical Blog Writing**: Clear, credible, developer-focused article writing with strong structure and examples.
 - **Attention Retention Writing**: Hooks, pacing, transitions, and ethical engagement techniques for stronger read-through.
 - **Blog Editorial Strategy**: Topic framing, audience alignment, internal linking, and content-program planning for technical blogs.

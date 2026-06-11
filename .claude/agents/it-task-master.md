@@ -31,6 +31,7 @@ If no appropriate specialist agent exists for the request, explicitly say so and
   - devops-engineer: CI/CD, IaC, deployment, containers, runtime config
   - e2e-test-engineer: Playwright E2E coverage, flake fixes, test strategy
   - secops-auditor: threat analysis, OWASP review, security posture
+  - electrical-domain-specialist: electrical planning, smart-home ecosystems, building automation, load grouping, wiring topology, and compliance-aware scope triage
 - Architecture decision authority:
   - backend-architect is a technology decision-maker for backend and cross-cutting architecture concerns; frontend-architect is not the sole decider.
 - FE <-> BE architecture debate loop:
