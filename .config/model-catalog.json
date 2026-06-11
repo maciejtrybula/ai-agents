@@ -49,9 +49,9 @@
       }
     },
     "opencode": {
-      "defaultRecommendedProvider": "github-copilot",
-      "providerOrder": ["openai", "github-copilot", "ollama", "nvidia-nim"],
-      "favoriteProviders": ["openai", "github-copilot"],
+        "defaultRecommendedProvider": "nvidia-nim",
+      "providerOrder": ["nvidia-nim", "openai", "github-copilot", "ollama"],
+      "favoriteProviders": ["nvidia-nim", "github-copilot"],
       "recommendedAgents": {
         "github-copilot": {
           "3d-modeling-artist": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
@@ -73,23 +73,23 @@
            "ux-ui-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"]
          },
          "openai": {
-           "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "backend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.4"],
-           "backend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.4"],
-           "content-writer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "developer-tooling-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "devops-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.4"],
-           "e2e-test-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.4"],
-           "frontend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.4"],
-           "frontend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.4"],
-           "it-task-master": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "principal-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "secops-auditor": ["openai/gpt-5.3-codex", "openai/gpt-5.4"],
-          "seo-inspector": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "staff-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "tax-advisor": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "team-manager": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "ux-ui-architect": ["openai/gpt-5.4", "openai/gpt-5.3-codex"]
+           "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "backend-architect": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "backend-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "content-writer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "developer-tooling-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "devops-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "e2e-test-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "frontend-architect": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "frontend-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "it-task-master": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "principal-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+          "secops-auditor": ["openai/gpt-5.4", "openai/gpt-5.4"],
+          "seo-inspector": ["openai/gpt-5.4", "openai/gpt-5.4"],
+          "staff-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+          "tax-advisor": ["openai/gpt-5.4", "openai/gpt-5.4"],
+          "team-manager": ["openai/gpt-5.4", "openai/gpt-5.4"],
+          "ux-ui-architect": ["openai/gpt-5.4", "openai/gpt-5.4"]
         }
       },
       "providers": {
@@ -191,6 +191,11 @@
               "id": "nvidia-nim/moonshotai/kimi-k2.5",
               "target": "nvidia-nim/moonshotai/kimi-k2.5",
               "description": "Hosted NVIDIA NIM option already defined in repo-local OpenCode config."
+            },
+            {
+              "id": "nvidia-nim/moonshotai/kimi-k2.6",
+              "target": "nvidia-nim/moonshotai/kimi-k2.6",
+              "description": "Recommended NVIDIA NIM model for OpenCode agents."
             }
           ]
         }
@@ -224,10 +229,10 @@
            "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
            "backend-architect": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
            "backend-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "content-writer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
+           "content-writer": ["openai/gpt-5.4-mini", "openai/gpt-5.3-codex"],
            "developer-tooling-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
            "devops-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "e2e-test-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
+           "e2e-test-engineer": ["openai/gpt-5.4-mini", "openai/gpt-5.3-codex"],
            "frontend-architect": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
            "frontend-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
            "it-task-master": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
@@ -236,7 +241,7 @@
           "seo-inspector": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
           "staff-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
           "tax-advisor": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "team-manager": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
+          "team-manager": ["openai/gpt-5.4-mini", "openai/gpt-5.3-codex"],
           "ux-ui-architect": ["openai/gpt-5.4", "openai/gpt-5.3-codex"]
         }
       },

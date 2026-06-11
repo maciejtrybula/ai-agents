@@ -42,7 +42,11 @@
       "models": {
         "moonshotai/kimi-k2.5": {
           "name": "Kimi K2.5",
-          "limit": {"context": 131072, "output": 8192}
+          "limit": {"max_input_tokens": 131072, "max_output_tokens": 8192}
+        },
+        "moonshotai/kimi-k2.6": {
+          "name": "Kimi K2.6 (recommended)",
+          "limit": {"max_input_tokens": 262144, "max_output_tokens": 8192}
         }
       }
     },
