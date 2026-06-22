@@ -70,7 +70,8 @@
            "staff-engineer": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
            "tax-advisor": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
            "team-manager": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-           "ux-ui-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"]
+           "ux-ui-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
+           "electrical-domain-specialist": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"]
          },
          "openai": {
            "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.4"],
