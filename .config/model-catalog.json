@@ -23,7 +23,8 @@
           "staff-engineer": ["anthropic/haiku", "anthropic/sonnet"],
           "tax-advisor": ["anthropic/sonnet", "anthropic/haiku"],
           "team-manager": ["anthropic/haiku", "anthropic/sonnet"],
-          "ux-ui-architect": ["anthropic/opus", "anthropic/sonnet"]
+          "ux-ui-architect": ["anthropic/opus", "anthropic/sonnet"],
+          "electrical-domain-specialist": ["anthropic/opus", "anthropic/sonnet"]
         }
       },
       "providers": {
