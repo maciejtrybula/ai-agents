@@ -71,29 +71,32 @@
            "staff-engineer": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
            "tax-advisor": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
            "team-manager": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-           "ux-ui-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
-           "electrical-domain-specialist": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"]
-         },
-         "openai": {
-           "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "backend-architect": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "backend-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "content-writer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "developer-tooling-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "devops-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "e2e-test-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "frontend-architect": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "frontend-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "it-task-master": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "principal-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-          "secops-auditor": ["openai/gpt-5.4", "openai/gpt-5.4"],
-          "seo-inspector": ["openai/gpt-5.4", "openai/gpt-5.4"],
-          "staff-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-          "tax-advisor": ["openai/gpt-5.4", "openai/gpt-5.4"],
-          "team-manager": ["openai/gpt-5.4", "openai/gpt-5.4"],
-          "ux-ui-architect": ["openai/gpt-5.4", "openai/gpt-5.4"]
-        }
-      },
+           "native-mobile-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
+            "ux-ui-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
+            "electrical-domain-specialist": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"]
+          },
+          "openai": {
+            "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.4"],
+            "backend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "backend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "content-writer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+            "developer-tooling-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+            "devops-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "e2e-test-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "frontend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "frontend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "it-task-master": ["openai/gpt-5.4", "openai/gpt-5.4"],
+            "principal-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "secops-auditor": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+           "seo-inspector": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "staff-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "tax-advisor": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "team-manager": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "native-mobile-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "electrical-domain-specialist": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "ux-ui-architect": ["openai/gpt-5.4", "openai/gpt-5.4"]
+         }
+       },
       "providers": {
         "openai": {
           "models": [
@@ -225,43 +228,47 @@
            "staff-engineer": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
            "tax-advisor": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
            "team-manager": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-           "ux-ui-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"]
-         },
+            "native-mobile-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
+            "ux-ui-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
+            "electrical-domain-specialist": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"]
+          },
+          "openai": {
+            "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.4"],
+            "backend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "backend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "content-writer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+            "developer-tooling-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+            "devops-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "e2e-test-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "frontend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "frontend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+            "it-task-master": ["openai/gpt-5.4", "openai/gpt-5.4"],
+            "principal-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "secops-auditor": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
+           "seo-inspector": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "staff-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "tax-advisor": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "team-manager": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "native-mobile-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "electrical-domain-specialist": ["openai/gpt-5.4", "openai/gpt-5.4"],
+           "ux-ui-architect": ["openai/gpt-5.4", "openai/gpt-5.4"]
+         }
+       },
+       "providers": {
          "openai": {
-           "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "backend-architect": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "backend-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "content-writer": ["openai/gpt-5.4-mini", "openai/gpt-5.3-codex"],
-           "developer-tooling-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "devops-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "e2e-test-engineer": ["openai/gpt-5.4-mini", "openai/gpt-5.3-codex"],
-           "frontend-architect": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "frontend-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "it-task-master": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-           "principal-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "secops-auditor": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "seo-inspector": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "staff-engineer": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "tax-advisor": ["openai/gpt-5.4", "openai/gpt-5.3-codex"],
-          "team-manager": ["openai/gpt-5.4-mini", "openai/gpt-5.3-codex"],
-          "ux-ui-architect": ["openai/gpt-5.4", "openai/gpt-5.3-codex"]
-        }
-      },
-      "providers": {
-        "openai": {
-          "models": [
-            {
-              "id": "openai/gpt-5.4",
-              "target": "openai/gpt-5.4",
-              "description": "General-purpose default for Codex agents."
-            },
-            {
-              "id": "openai/gpt-5.3-codex",
-              "target": "openai/gpt-5.3-codex",
-              "description": "Code-focused alternative when preferred locally."
-            }
-          ]
-        },
+           "models": [
+             {
+               "id": "openai/gpt-5.4",
+               "target": "openai/gpt-5.4",
+                "description": "General-purpose default for shared local agents."
+              },
+              {
+                "id": "openai/gpt-5.3-codex",
+                "target": "openai/gpt-5.3-codex",
+                "description": "Code-focused option for implementation-heavy roles."
+              }
+            ]
+          },
         "github-copilot": {
           "models": [
             {

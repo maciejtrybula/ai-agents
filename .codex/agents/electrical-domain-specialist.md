@@ -9,6 +9,7 @@ description: >
   Matter, Zigbee, Z-Wave, and Home Assistant, while separating technical
   reasoning from jurisdiction-specific compliance.
 model: openai/gpt-5.4
+temperature: 0.2
 color: amber
 ---
 

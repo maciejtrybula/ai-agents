@@ -1,7 +1,7 @@
 ---
 name: secops-security-auditor
 description: Use this agent when you need expert security operations guidance, security architecture review, or threat analysis for microservices-based systems. Invoke this agent if user is developing a new API gateway for a microservices architecture and needs security validation. User just implemented an API gateway with JWT authentication. You should review the security implications. The user needs security expertise for microservices authentication - use the secops-security-auditor agent. Another example is that user has completed a payment service module and wants to ensure OWASP compliance. He said that he finished the payment processing service. He is providing you with the code. You should engage the secops-security-auditor agent to analyze this payment service against OWASP Top 10 vulnerabilities and microservices security best practices.Payment processing requires rigorous security review - use the secops-security-auditor agent proactively. User mentions security concerns or asks about vulnerabilities.An example is that he is asking what are the main security risks I should worry about with this service mesh setup? Then you should use the secops-security-auditor agent to provide expert analysis of this service mesh security posture. Direct security inquiry - use the secops-security-auditor agent.
-model: openai/gpt-5.4
+model: openai/gpt-5.3-codex
 color: yellow
 ---
 

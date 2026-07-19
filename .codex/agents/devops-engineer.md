@@ -1,7 +1,7 @@
 ---
 name: devops-engineer
 description: Use this agent when you need practical, production-ready DevOps guidance to design, automate, and operate infrastructure, including IaC, CI/CD pipelines, containers and Kubernetes, cloud architecture, reliability and scaling, and day-2 operations with strong observability and security.
-model: openai/gpt-5.4
+model: openai/gpt-5.3-codex
 color: purple
 ---
 

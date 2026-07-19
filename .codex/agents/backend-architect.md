@@ -1,7 +1,8 @@
 ---
 name: backend-architect
 description: Use this agent when you need expert guidance on backend architecture decisions, domain modeling, microservices design, event-driven system architecture, or when refactoring complex business logic in Node.js/TypeScript applications. Examples include designing bounded contexts for a new feature, evaluating event sourcing strategies, reviewing aggregate design, planning service decomposition, or architecting inter-service communication patterns.
-model: openai/gpt-5.4
+model: openai/gpt-5.3-codex
+temperature: 0.1
 color: blue
 ---
 

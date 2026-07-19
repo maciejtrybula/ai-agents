@@ -1,7 +1,7 @@
 ---
 name: e2e-test-engineer
 description: Use this agent when you need to create, review, or optimize end-to-end tests using Playwright. This includes writing new E2E test suites for features or user workflows, reviewing existing E2E test code for best practices and maintainability, debugging flaky or failing E2E tests, setting up or maintaining CI/CD pipeline configurations for E2E testing, optimizing test performance and execution strategies, providing guidance on test architecture, page object models, and test organization, refactoring legacy E2E tests for better reliability. Example - User has just implemented a new authentication flow and needs E2E tests.User just finished implementing the OAuth login flow. He present the code for the login page and authentication service. An assistant suggest to invoke the e2e-test-engineer agent to create comprehensive E2E tests for OAuth login flow. Example of uses Agent tool to launch e2e-test-engineer - User is experiencing flaky tests in their CI pipeline. User is saying that E2E tests keep failing randomly in CI. The checkout flow tests are particularly unstable. Assistant is going to use the e2e-test-engineer agent to analyze user's flaky tests and provide solutions to stabilize them.
-model: openai/gpt-5.4
+model: openai/gpt-5.3-codex
 color: cyan
 ---
 
