@@ -7,11 +7,23 @@
     "bash": "ask",
     "curl": "ask",
     "git status *": "allow",
-    "git diff*": "allow",
-    "ls*": "allow",
-    "pnpm test*": "allow",
-    "pnpm mobile:lint*": "allow"
-
+    "git status": "allow",
+    "git diff *": "allow",
+    "git diff": "allow",
+    "git log *": "allow",
+    "git show *": "allow",
+    "pnpm --filter *": "allow",
+    "pnpm build *": "allow",
+    "docker compose build *": "allow",
+    "docker compose up *": "allow",
+    "docker compose restart": "allow",
+    "docker compose restart *": "allow",
+    "docker compose ps": "allow",
+    "docker compose logs *": "allow",
+    "ls *": "allow",
+    "grep *": "allow",
+    "cat *": "allow",
+    "rg *": "allow"
   },
   "agent": {
     "it-task-master": {
