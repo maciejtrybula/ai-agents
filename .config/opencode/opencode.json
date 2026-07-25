@@ -4,26 +4,33 @@
   "model": "openai/gpt-5.4",
   "autoupdate": true,
   "permission": {
-    "bash": "ask",
-    "curl": "ask",
-    "git status *": "allow",
-    "git status": "allow",
-    "git diff *": "allow",
-    "git diff": "allow",
-    "git log *": "allow",
-    "git show *": "allow",
-    "pnpm --filter *": "allow",
-    "pnpm build *": "allow",
-    "docker compose build *": "allow",
-    "docker compose up *": "allow",
-    "docker compose restart": "allow",
-    "docker compose restart *": "allow",
-    "docker compose ps": "allow",
-    "docker compose logs *": "allow",
-    "ls *": "allow",
-    "grep *": "allow",
-    "cat *": "allow",
-    "rg *": "allow"
+    "bash": {
+      "*": "ask",
+      "ls*": "allow",
+      "git log *": "allow",
+      "git status": "allow",
+      "git status *": "allow",
+      "git diff": "allow",
+      "git diff *": "allow",
+      "git show *": "allow",
+      "pnpm --filter *": "allow",
+      "pnpm build *": "allow",
+      "pnpm test*": "allow",
+      "pnpm mobile:lint*": "allow",
+      "docker compose build *": "allow",
+      "docker compose up *": "allow",
+      "docker compose restart": "allow",
+      "docker compose restart *": "allow",
+      "docker compose ps": "allow",
+      "docker compose ps*": "allow",
+      "docker compose logs *": "allow",
+      "grep*": "allow",
+      "cat*": "allow",
+      "rg*": "allow",
+      "sort*": "allow",
+      "find*": "allow",
+      "head*": "allow"
+    }
   },
   "agent": {
     "it-task-master": {
@@ -132,6 +139,26 @@
       "command": [
         "uvx",
         "blender-mcp"
+      ],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "@playwright/mcp@latest",
+        "--headless",
+        "--isolated"
+      ],
+      "enabled": true
+    },
+    "filesystem": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/maciejtrybula/Projects/ai-agents"
       ],
       "enabled": true
     }

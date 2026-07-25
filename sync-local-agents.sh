@@ -5,6 +5,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$script_dir"
 model_catalog_file="$repo_root/.config/model-catalog.json"
+shared_permissions_file="$repo_root/.config/shared-permissions.json"
 
 # Script map:
 # 1. Shared state and terminal formatting
@@ -33,9 +34,12 @@ file_codex_model=""
 env_claude_model="${CLAUDE_MODEL:-}"
 env_opencode_model="${OPENCODE_MODEL:-}"
 env_codex_model="${CODEX_MODEL:-}"
+file_claude_statusline_command_path=""
+env_claude_statusline_command_path="${CLAUDE_STATUSLINE_COMMAND_PATH:-}"
 claude_model=""
 opencode_model=""
 codex_model=""
+claude_statusline_command_path=""
 cli_agent_model_overrides=""
 generated_agent_model_overrides=""
 file_agent_model_overrides=""
@@ -142,9 +146,25 @@ normalize_model_catalog_value() {
   printf '%s' "$value"
 }
 
+normalize_path_setting_value() {
+  local value="$1"
+
+  value="$(trim "$value")"
+  value="$(strip_wrapping_quotes "$value")"
+
+  if [[ "$value" == '~/'* ]]; then
+    value="$HOME/${value#~/}"
+  elif [[ "$value" == '~' ]]; then
+    value="$HOME"
+  fi
+
+  printf '%s' "$value"
+}
+
 env_claude_model="$(normalize_model_catalog_value "$env_claude_model")"
 env_opencode_model="$(normalize_model_catalog_value "$env_opencode_model")"
 env_codex_model="$(normalize_model_catalog_value "$env_codex_model")"
+env_claude_statusline_command_path="$(normalize_path_setting_value "$env_claude_statusline_command_path")"
 
 append_override_record() {
   local current_value="$1"
@@ -641,6 +661,8 @@ load_model_settings_from_file() {
       "$expected_key")
         current_model_value="$value"
         ;;
+      CLAUDE_STATUSLINE_COMMAND_PATH)
+        ;;
       ${agent_prefix}*)
         [[ -n "$value" ]] || continue
         normalized_agent_slug="$(normalize_agent_env_suffix "${key#${agent_prefix}}")"
@@ -679,6 +701,38 @@ load_agent_model_overrides_from_environment() {
   printf -v "$__result_var" '%s' "$current_overrides_value"
 }
 
+load_path_setting_from_file() {
+  local config_file="$1"
+  local expected_key="$2"
+  local __result_var="$3"
+  local line=""
+  local key=""
+  local value=""
+  local current_value="${!__result_var:-}"
+
+  [[ -f "$config_file" ]] || return 0
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="$(trim "$line")"
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    [[ "$line" == *=* ]] || continue
+
+    key="${line%%=*}"
+    value="${line#*=}"
+
+    key="$(trim "$key")"
+    value="$(normalize_path_setting_value "$value")"
+
+    case "$key" in
+      "$expected_key")
+        current_value="$value"
+        ;;
+    esac
+  done < "$config_file"
+
+  printf -v "$__result_var" '%s' "$current_value"
+}
+
 resolve_model_override() {
   local cli_value="$1"
   local env_value="$2"
@@ -690,6 +744,20 @@ resolve_model_override() {
     printf '%s' "$env_value"
   else
     printf '%s' "$file_value"
+  fi
+}
+
+resolve_path_override() {
+  local env_value="$1"
+  local file_value="$2"
+  local fallback_value="$3"
+
+  if [[ -n "$env_value" ]]; then
+    printf '%s' "$env_value"
+  elif [[ -n "$file_value" ]]; then
+    printf '%s' "$file_value"
+  else
+    printf '%s' "$fallback_value"
   fi
 }
 
@@ -879,6 +947,7 @@ preview_model_override() {
 load_model_settings_from_file "$repo_root/.claude.local.env" "claude" "CLAUDE_MODEL" file_claude_model file_agent_model_overrides
 load_model_settings_from_file "$repo_root/.opencode.local.env" "opencode" "OPENCODE_MODEL" file_opencode_model file_agent_model_overrides
 load_model_settings_from_file "$repo_root/.codex.local.env" "codex" "CODEX_MODEL" file_codex_model file_agent_model_overrides
+load_path_setting_from_file "$repo_root/.claude.local.env" "CLAUDE_STATUSLINE_COMMAND_PATH" file_claude_statusline_command_path
 load_agent_model_overrides_from_environment "claude" "CLAUDE" env_agent_model_overrides
 load_agent_model_overrides_from_environment "opencode" "OPENCODE" env_agent_model_overrides
 load_agent_model_overrides_from_environment "codex" "CODEX" env_agent_model_overrides
@@ -1894,6 +1963,218 @@ fs.writeFileSync(targetJson, `${JSON.stringify(target, null, 2)}\n`)
 NODE
 }
 
+merge_selected_json_top_level_keys() {
+  local source_json="$1"
+  local target_json="$2"
+  local selection="$3"
+
+  require_node
+
+  mkdir -p "$(dirname "$target_json")"
+
+  node - "$source_json" "$target_json" "$selection" <<'NODE'
+const fs = require("fs")
+const vm = require("vm")
+
+const [sourceJson, targetJson, selection] = process.argv.slice(2)
+
+function parseConfigFile(filePath) {
+  const text = fs.readFileSync(filePath, "utf8")
+
+  try {
+    return JSON.parse(text)
+  } catch (_error) {
+    return vm.runInNewContext(`(${text})`, {})
+  }
+}
+
+const source = parseConfigFile(sourceJson)
+const target = fs.existsSync(targetJson)
+  ? parseConfigFile(targetJson)
+  : {}
+const selectedKeys = selection === "*" ? Object.keys(source) : selection.split("|").filter(Boolean)
+const placeholderPattern = /^\$\{[A-Z0-9_]+\}$/
+
+function preservePlaceholderValues(sourceValue, targetValue) {
+  if (typeof sourceValue === "string") {
+    if (placeholderPattern.test(sourceValue) && typeof targetValue === "string" && targetValue.length > 0) {
+      return targetValue
+    }
+    return sourceValue
+  }
+
+  if (Array.isArray(sourceValue)) {
+    const targetArray = Array.isArray(targetValue) ? targetValue : []
+    return sourceValue.map((entry, index) => preservePlaceholderValues(entry, targetArray[index]))
+  }
+
+  if (sourceValue && typeof sourceValue === "object") {
+    const targetObject = targetValue && typeof targetValue === "object" && !Array.isArray(targetValue)
+      ? targetValue
+      : {}
+    const result = {}
+    for (const [key, value] of Object.entries(sourceValue)) {
+      result[key] = preservePlaceholderValues(value, targetObject[key])
+    }
+    return result
+  }
+
+  return sourceValue
+}
+
+for (const key of selectedKeys) {
+  if (!(key in source)) {
+    continue
+  }
+  target[key] = preservePlaceholderValues(source[key], target[key])
+}
+
+fs.writeFileSync(targetJson, `${JSON.stringify(target, null, 2)}\n`)
+NODE
+}
+
+prepare_claude_settings_source() {
+  local source_json="$1"
+  local target_json="$2"
+  local model_override="$3"
+  local statusline_path="$4"
+
+  require_node
+
+  node - "$source_json" "$target_json" "$shared_permissions_file" "$model_override" "$statusline_path" <<'NODE'
+const fs = require("fs")
+
+const [sourceJson, targetJson, sharedPermissionsFile, modelOverride, statuslinePath] = process.argv.slice(2)
+const source = JSON.parse(fs.readFileSync(sourceJson, "utf8"))
+const sharedPermissions = JSON.parse(fs.readFileSync(sharedPermissionsFile, "utf8"))
+const bashAllow = Array.isArray(sharedPermissions.shared?.bashAllow)
+  ? sharedPermissions.shared.bashAllow
+  : []
+const mcpAllow = Array.isArray(sharedPermissions.claude?.mcpAllow)
+  ? sharedPermissions.claude.mcpAllow
+  : []
+
+if (typeof modelOverride === "string" && modelOverride.length > 0) {
+  source.model = modelOverride
+}
+
+source.statusLine = {
+  ...(source.statusLine ?? {}),
+  type: "command",
+  command: `bash \"${statuslinePath}\"`,
+}
+
+source.permissions = {
+  allow: [
+    ...bashAllow.map((pattern) => `Bash(${pattern})`),
+    ...mcpAllow.map((namespace) => `mcp__${namespace}__*`),
+  ],
+}
+
+fs.writeFileSync(targetJson, `${JSON.stringify(source, null, 2)}\n`)
+NODE
+}
+
+prepare_opencode_config_source() {
+  local source_json="$1"
+  local target_json="$2"
+
+  require_node
+
+  node - "$source_json" "$target_json" "$shared_permissions_file" <<'NODE'
+const fs = require("fs")
+
+const [sourceJson, targetJson, sharedPermissionsFile] = process.argv.slice(2)
+const source = JSON.parse(fs.readFileSync(sourceJson, "utf8"))
+const sharedPermissions = JSON.parse(fs.readFileSync(sharedPermissionsFile, "utf8"))
+const bashAllow = Array.isArray(sharedPermissions.shared?.bashAllow)
+  ? sharedPermissions.shared.bashAllow
+  : []
+const bashRules = { "*": "ask" }
+
+for (const pattern of bashAllow) {
+  bashRules[pattern] = "allow"
+}
+
+source.permission = {
+  bash: bashRules,
+}
+
+fs.writeFileSync(targetJson, `${JSON.stringify(source, null, 2)}\n`)
+NODE
+}
+
+prepare_codex_config_source() {
+  local source_toml="$1"
+  local target_toml="$2"
+
+  require_node
+
+  node - "$source_toml" "$target_toml" "$shared_permissions_file" <<'NODE'
+const fs = require("fs")
+
+const [sourceToml, targetToml, sharedPermissionsFile] = process.argv.slice(2)
+const sourceText = fs.readFileSync(sourceToml, "utf8").trimEnd()
+const sharedPermissions = JSON.parse(fs.readFileSync(sharedPermissionsFile, "utf8"))
+const defaultPermissions = sharedPermissions.codex?.defaultPermissions ?? "repo-workspace"
+const description = sharedPermissions.codex?.description ?? "Repo-managed workspace-write default for synced Codex setups."
+const extendsProfile = sharedPermissions.codex?.extends ?? ":workspace"
+
+const rendered = [
+  sourceText,
+  `default_permissions = \"${defaultPermissions}\"`,
+  "",
+  `[permissions.${defaultPermissions}]`,
+  `description = \"${description.replace(/\"/g, '\\\"')}\"`,
+  `extends = \"${extendsProfile}\"`,
+].filter((value, index) => !(index === 0 && value.length === 0)).join("\n")
+
+fs.writeFileSync(targetToml, `${rendered}\n`)
+NODE
+}
+
+resolve_shared_codex_default_permissions() {
+  require_node
+
+  node - "$shared_permissions_file" <<'NODE'
+const fs = require("fs")
+
+const [sharedPermissionsFile] = process.argv.slice(2)
+const sharedPermissions = JSON.parse(fs.readFileSync(sharedPermissionsFile, "utf8"))
+process.stdout.write(`${sharedPermissions.codex?.defaultPermissions ?? "repo-workspace"}`)
+NODE
+}
+
+upsert_toml_top_level_string() {
+  local target_toml="$1"
+  local key="$2"
+  local value="$3"
+
+  require_node
+
+  mkdir -p "$(dirname "$target_toml")"
+
+  node - "$target_toml" "$key" "$value" <<'NODE'
+const fs = require("fs")
+
+const [targetToml, key, value] = process.argv.slice(2)
+const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+const pattern = new RegExp(`^${escapedKey}\\s*=.*$`, "m")
+let text = fs.existsSync(targetToml) ? fs.readFileSync(targetToml, "utf8") : ""
+const replacement = `${key} = \"${value.replace(/\"/g, '\\\"')}\"`
+
+if (pattern.test(text)) {
+  text = text.replace(pattern, replacement)
+} else if (text.trim().length === 0) {
+  text = `${replacement}\n`
+} else {
+  text = `${replacement}\n\n${text.replace(/^\n+/, "")}`
+}
+
+fs.writeFileSync(targetToml, text.endsWith("\n") ? text : `${text}\n`)
+NODE
+}
+
 merge_selected_toml_tables() {
   local source_toml="$1"
   local target_toml="$2"
@@ -2193,6 +2474,7 @@ fi
 claude_model="$(resolve_platform_model_override "claude" "$cli_claude_model" "$env_claude_model" "$file_claude_model")"
 opencode_model="$(resolve_platform_model_override "opencode" "$cli_opencode_model" "$env_opencode_model" "$file_opencode_model")"
 codex_model="$(resolve_platform_model_override "codex" "$cli_codex_model" "$env_codex_model" "$file_codex_model")"
+claude_statusline_command_path="$(resolve_path_override "$env_claude_statusline_command_path" "$file_claude_statusline_command_path" "$HOME/.claude/statusline-command.sh")"
 
 if ! command -v rsync >/dev/null 2>&1; then
   echo "rsync is required but not installed." >&2
@@ -2405,49 +2687,122 @@ sync_platform() {
   fi
 }
 
+sync_claude_support_files() {
+  local source_base="$1"
+  local source_statusline="$source_base/statusline-command.sh"
+
+  [[ -f "$source_statusline" ]] || return 0
+
+  if [[ "$dry_run" == true ]]; then
+    printf 'Would sync %s to %s\n' "$source_statusline" "$claude_statusline_command_path"
+    return 0
+  fi
+
+  run_rsync_entry "$source_statusline" "$claude_statusline_command_path"
+}
+
+sync_claude_json() {
+  local source_base="$1"
+  local target_base="$2"
+  local json_source="$source_base/settings.json"
+  local json_target="$target_base/settings.json"
+  local prepared_source=""
+
+  [[ -f "$json_source" ]] || return 0
+
+  prepared_source="$(mktemp)"
+  prepare_claude_settings_source "$json_source" "$prepared_source" "$claude_model" "$claude_statusline_command_path"
+
+  if [[ "$dry_run" == true ]]; then
+    printf 'Would merge repo-managed Claude settings into %s\n' "$json_target"
+  else
+    merge_selected_json_top_level_keys "$prepared_source" "$json_target" 'model|agent|permissions|mcpServers|statusLine|enabledPlugins|extraKnownMarketplaces|tui|agentPushNotifEnabled'
+    echo "Synced repo-managed Claude settings into $json_target"
+  fi
+
+  sync_claude_support_files "$source_base"
+  rm -f "$prepared_source"
+}
+
 # Special handling for opencode.json - prompt for API keys
 sync_opencode_json() {
   local source_base="$1"
   local target_base="$2"
   local json_source="$source_base/opencode.json"
   local json_target="$target_base/opencode.json"
+  local prepared_source=""
+  local substituted_source=""
   local configure_keys=""
 
   if [[ ! -f "$json_source" ]]; then
     return 0
   fi
 
+  prepared_source="$(mktemp)"
+  prepare_opencode_config_source "$json_source" "$prepared_source"
+
   if [[ "$dry_run" == true ]]; then
     echo "Would sync $json_source to $json_target with API key substitution"
+    rm -f "$prepared_source"
     return 0
   fi
 
+  substituted_source="$prepared_source"
+
   # Check if opencode.json contains placeholders that need substitution
-  if grep -q '\${NVIDIA_NIM_API_KEY}\|\${STITCH_API_KEY}\|\${CONTEXT7_API_KEY}' "$json_source" 2>/dev/null; then
+  if grep -q '\${NVIDIA_NIM_API_KEY}\|\${STITCH_API_KEY}\|\${CONTEXT7_API_KEY}' "$prepared_source" 2>/dev/null; then
     echo ""
     echo "opencode.json contains API key placeholders."
 
     # If --configure-api-keys flag is set, automatically configure
     if [[ "$configure_api_keys" == true ]]; then
-      substitute_api_keys "$json_source" "$json_target"
-      return 0
-    fi
-
-    # Otherwise, prompt interactively
-    read -rp "Configure API keys now? [Y/n]: " configure_keys
-    if [[ ! "$configure_keys" =~ ^[Nn]$ ]]; then
-      substitute_api_keys "$json_source" "$json_target"
+      substituted_source="$(mktemp)"
+      substitute_api_keys "$prepared_source" "$substituted_source"
     else
-      merge_selected_json_object_keys "$json_source" "$json_target" "provider" "*"
-      merge_selected_json_object_keys "$json_source" "$json_target" "mcp" "*"
-      echo "Synced opencode.json while preserving any existing local API keys in $json_target"
+      # Otherwise, prompt interactively
+      read -rp "Configure API keys now? [Y/n]: " configure_keys
+      if [[ ! "$configure_keys" =~ ^[Nn]$ ]]; then
+        substituted_source="$(mktemp)"
+        substitute_api_keys "$prepared_source" "$substituted_source"
+      fi
     fi
-  else
-    # No placeholders, just copy
-    mkdir -p "$(dirname "$json_target")"
-    cp "$json_source" "$json_target"
-    echo "Copied opencode.json"
   fi
+
+  merge_selected_json_top_level_keys "$substituted_source" "$json_target" '$schema|default_agent|model|autoupdate|permission|agent|provider|mcp'
+  echo "Synced repo-managed OpenCode config into $json_target"
+
+  if [[ "$substituted_source" != "$prepared_source" ]]; then
+    rm -f "$substituted_source"
+  fi
+  rm -f "$prepared_source"
+}
+
+sync_codex_config() {
+  local source_base="$1"
+  local target_base="$2"
+  local toml_source="$source_base/config.toml"
+  local toml_target="$target_base/config.toml"
+  local prepared_source=""
+  local default_permissions=""
+
+  [[ -f "$toml_source" ]] || return 0
+
+  prepared_source="$(mktemp)"
+  prepare_codex_config_source "$toml_source" "$prepared_source"
+  default_permissions="$(resolve_shared_codex_default_permissions)"
+
+  if [[ "$dry_run" == true ]]; then
+    printf 'Would sync repo-managed Codex config into %s\n' "$toml_target"
+    rm -f "$prepared_source"
+    return 0
+  fi
+
+  merge_selected_toml_tables "$prepared_source" "$toml_target" "mcp_servers" "*"
+  merge_selected_toml_tables "$prepared_source" "$toml_target" "permissions" "*"
+  upsert_toml_top_level_string "$toml_target" "default_permissions" "$default_permissions"
+  echo "Synced repo-managed Codex config into $toml_target"
+
+  rm -f "$prepared_source"
 }
 
 sync_selected_mcp_servers() {
@@ -2514,15 +2869,12 @@ sync_platform_config() {
       return 0
       ;;
     full)
-      if [[ "$platform" == "opencode" ]]; then
+      if [[ "$platform" == "claude" ]]; then
+        sync_claude_json "$(dirname "$config_source")" "$(dirname "$config_target")"
+      elif [[ "$platform" == "opencode" ]]; then
         sync_opencode_json "$(dirname "$config_source")" "$(dirname "$config_target")"
       elif [[ "$platform" == "codex" ]]; then
-        if [[ "$dry_run" == true ]]; then
-          preview_selected_json_keys_sync "$platform" "$config_target" "repo-managed Codex MCP servers" "*"
-        else
-          merge_selected_toml_tables "$config_source" "$config_target" "$mcp_root_key" "*"
-          echo "Synced repo-managed Codex MCP config into $config_target"
-        fi
+        sync_codex_config "$(dirname "$config_source")" "$(dirname "$config_target")"
       else
         run_rsync_entry "$config_source" "$config_target"
       fi

@@ -1,0 +1,44 @@
+{
+  "shared": {
+    "bashAllow": [
+      "ls*",
+      "git log *",
+      "git status",
+      "git status *",
+      "git diff",
+      "git diff *",
+      "git show *",
+      "pnpm --filter *",
+      "pnpm build *",
+      "pnpm test*",
+      "pnpm mobile:lint*",
+      "docker compose build *",
+      "docker compose up *",
+      "docker compose restart",
+      "docker compose restart *",
+      "docker compose ps",
+      "docker compose ps*",
+      "docker compose logs *",
+      "grep*",
+      "cat*",
+      "rg*",
+      "sort*",
+      "find*",
+      "head*"
+    ]
+  },
+  "claude": {
+    "mcpAllow": [
+      "github",
+      "linear-server",
+      "blender",
+      "stitch",
+      "playwright"
+    ]
+  },
+  "codex": {
+    "defaultPermissions": "repo-workspace",
+    "description": "Repo-managed workspace-write default for synced Codex setups.",
+    "extends": ":workspace"
+  }
+}

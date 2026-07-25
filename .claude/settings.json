@@ -1,6 +1,24 @@
 {
   "model": "sonnet",
   "agent": "it-task-master",
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"~/.claude/statusline-command.sh\""
+  },
+  "enabledPlugins": {
+    "swift-lsp@claude-plugins-official": true,
+    "warp@claude-code-warp": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    }
+  },
+  "tui": "fullscreen",
+  "agentPushNotifEnabled": true,
   "permissions": {
     "allow": [
       "Bash(ls*)",
@@ -14,15 +32,18 @@
       "Bash(docker compose up *)",
       "Bash(docker compose restart *)",
       "Bash(docker compose ps*)",
+      "Bash(docker compose logs *)",
       "Bash(grep*)",
       "Bash(cat*)",
       "Bash(rg*)",
       "Bash(sort*)",
       "Bash(find*)",
       "Bash(head*)",
-      "mcp__github_get_*",
-      "mcp__linear_*",
-      "mcp__context7_*"
+      "mcp__github__*",
+      "mcp__linear-server__*",
+      "mcp__blender__*",
+      "mcp__stitch__*",
+      "mcp__playwright__*"
     ]
   },
   "mcpServers": {
@@ -49,6 +70,22 @@
       "command": "uvx",
       "args": [
         "blender-mcp"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--headless",
+        "--isolated"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/maciejtrybula/Projects/ai-agents"
       ]
     }
   }

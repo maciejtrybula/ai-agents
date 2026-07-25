@@ -147,13 +147,31 @@ Repo-managed config files currently supported by config sync are:
 - `.config/opencode/opencode.json` -> `~/.config/opencode/opencode.json`
 - `.codex/config.toml` -> `~/.codex/config.toml`
 
+Repo-managed shared permission defaults live in
+`.config/shared-permissions.json` and are projected into Claude,
+OpenCode, and Codex during config sync.
+
 Those repo-managed configs currently include MCP entries for:
 
 - `github` across Claude, OpenCode, and Codex via the official `ghcr.io/github/github-mcp-server` Docker image
+- `playwright` across Claude, OpenCode, and Codex via `npx @playwright/mcp@latest --headless --isolated`
 - `linear` and `blender` across Claude and OpenCode
 - `stitch` and `context7` in OpenCode
 
-Codex config sync is merge-based for repo-managed MCP entries, so syncing `.codex/config.toml` preserves unrelated local Codex settings already present in `~/.codex/config.toml`.
+Config sync ownership differs by platform:
+
+- Claude full config sync is merge-based for repo-managed top-level
+  keys: `model`, `agent`, `permissions`, `mcpServers`, `statusLine`,
+  `enabledPlugins`, `extraKnownMarketplaces`, `tui`, and
+  `agentPushNotifEnabled`. Local-only keys such as `_disabledHooks`
+  remain preserved in `~/.claude/settings.json`.
+- OpenCode full config sync is merge-based for repo-managed top-level
+  keys and preserves existing local secret values anywhere the repo
+  source still uses placeholders.
+- Codex config sync is merge-based for repo-managed MCP entries and
+  repo-managed permission profiles, so syncing `.codex/config.toml`
+  preserves unrelated local Codex settings already present in
+  `~/.codex/config.toml`.
 
 ### GitHub MCP Setup
 
@@ -186,6 +204,26 @@ docker pull ghcr.io/github/github-mcp-server
 
 Use a token with the minimum GitHub scopes needed for the repositories and Actions data you want to inspect.
 
+### Playwright MCP Setup
+
+Playwright MCP is configured for headless, isolated local browser automation.
+
+- Transport: local `npx @playwright/mcp@latest --headless --isolated`
+- Local requirement: Node.js and `npx` available on your PATH
+- No repo-managed API key is required for this baseline setup
+
+If you only want to sync the repo-managed Playwright MCP entry for a
+single platform, use interactive config sync and choose `MCP only`,
+then select `playwright` from the MCP server list.
+
+Example:
+
+```bash
+./sync-local-agents.sh --interactive --sync config --platform claude
+./sync-local-agents.sh --interactive --sync config --platform opencode
+./sync-local-agents.sh --interactive --sync config --platform codex
+```
+
 To keep one model per platform, or set readable per-agent overrides without passing flags every time, create the local env files in this repository root, next to `sync-local-agents.sh`.
 
 Do not put them in the synced target directories such as `~/.claude/`, `~/.config/opencode/`, or `~/.codex/`.
@@ -194,6 +232,7 @@ Do not put them in the synced target directories such as `~/.claude/`, `~/.confi
 # .claude.local.env
 CLAUDE_MODEL=anthropic/sonnet
 CLAUDE_AGENT_MODEL_BACKEND_ARCHITECT=anthropic/opus
+CLAUDE_STATUSLINE_COMMAND_PATH=~/.claude/statusline-command.sh
 
 # .opencode.local.env
 OPENCODE_MODEL=openai/gpt-5.4
@@ -211,6 +250,10 @@ Example files are included:
 - `.codex.local.env.example`
 
 Per-agent environment keys use the pattern `<PLATFORM>_AGENT_MODEL_<AGENT_NAME_IN_UPPER_SNAKE_CASE>`.
+
+Use `CLAUDE_STATUSLINE_COMMAND_PATH` to point Claude's repo-managed
+status line at a machine-specific script location while keeping the
+setting itself repo-owned.
 
 Precedence for model selection during sync is:
 

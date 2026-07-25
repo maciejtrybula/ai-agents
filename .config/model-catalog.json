@@ -50,7 +50,7 @@
       }
     },
     "opencode": {
-        "defaultRecommendedProvider": "nvidia-nim",
+        "defaultRecommendedProvider": "github-copilot",
       "providerOrder": ["nvidia-nim", "openai", "github-copilot", "ollama"],
       "favoriteProviders": ["nvidia-nim", "github-copilot"],
       "recommendedAgents": {
