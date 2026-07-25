@@ -1,6 +1,30 @@
 {
   "model": "sonnet",
   "agent": "it-task-master",
+  "permissions": {
+    "allow": [
+      "Bash(ls*)",
+      "Bash(git log *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(pnpm --filter *)",
+      "Bash(pnpm build *)",
+      "Bash(docker compose build *)",
+      "Bash(docker compose up *)",
+      "Bash(docker compose restart *)",
+      "Bash(docker compose ps*)",
+      "Bash(grep*)",
+      "Bash(cat*)",
+      "Bash(rg*)",
+      "Bash(sort*)",
+      "Bash(find*)",
+      "Bash(head*)",
+      "mcp__github_get_*",
+      "mcp__linear_*",
+      "mcp__context7_*"
+    ]
+  },
   "mcpServers": {
     "github": {
       "command": "docker",
