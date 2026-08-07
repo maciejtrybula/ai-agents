@@ -61,31 +61,33 @@
       "models": {
         "moonshotai/kimi-k2.5": {
           "name": "Kimi K2.5",
-          "limit": {"max_input_tokens": 131072, "max_output_tokens": 8192}
+          "limit": {
+            "context": 131072,
+            "output": 8192
+          }
         },
         "moonshotai/kimi-k2.6": {
           "name": "Kimi K2.6 (recommended)",
-          "limit": {"max_input_tokens": 262144, "max_output_tokens": 8192}
+          "limit": {
+            "context": 131072,
+            "output": 8192
+          }
         }
       }
     },
     "ollama": {
       "models": {
         "deepseek-r1:7b": {
-          "_launch": true,
           "name": "deepseek-r1:7b"
         },
         "llama3.2": {
-          "_launch": true,
           "name": "llama3.2"
         },
         "gemma4:26b": {
-          "name": "gemma4 26b",
-          "tools": true
+          "name": "gemma4 26b"
         },
         "qwen2.5-coder:14b": {
-          "name": "Qwen 2.5 coder",
-          "_launch": true
+          "name": "Qwen 2.5 coder"
         }
       },
       "name": "Ollama",
