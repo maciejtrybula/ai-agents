@@ -19,6 +19,7 @@ This repository serves as a centralized hub for AI agent definitions and special
 | **Developer Tooling Engineer** | Shell tooling, local developer automation, config sync scripts, CLI UX, provider and model catalogs, and Claude/OpenCode/Codex local tooling integration. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **E2E Test Engineer** | Playwright-based end-to-end testing and quality assurance. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **Electrical Domain Specialist** | Electrical planning, smart-home ecosystems, building automation, and compliance-aware scope triage across residential, commercial, and industrial contexts. | `.claude/`, `.config/opencode/`, `.codex/` |
+| **Unity Gameplay Engineer** | Unity gameplay implementation, debugging, prefab/scene wiring, systems-level gameplay boundaries, and gameplay-focused code review. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **SecOps Auditor** | Security architecture, threat analysis, and OWASP compliance. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **SEO Inspector** | Technical SEO, content architecture, AI search readiness, and discoverability audits. | `.claude/`, `.config/opencode/`, `.codex/` |
 | **Tax Advisor** | Polish tax law guidance for PIT, CIT, VAT, compliance, deadlines, and practical business-tax tradeoffs. | `.claude/`, `.config/opencode/`, `.codex/` |
