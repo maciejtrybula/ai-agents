@@ -17,6 +17,24 @@ assert_file_contains() {
   fi
 }
 
+assert_line_order() {
+  local file_path="$1"
+  local first="$2"
+  local second="$3"
+  local first_line
+  local second_line
+
+  first_line="$(grep -n -F "$first" "$file_path" | cut -d: -f1 | head -n1)"
+  second_line="$(grep -n -F "$second" "$file_path" | cut -d: -f1 | head -n1)"
+
+  if [[ -z "$first_line" || -z "$second_line" || "$first_line" -ge "$second_line" ]]; then
+    printf 'Expected %s to contain %s before %s\n' "$file_path" "$first" "$second" >&2
+    printf 'Actual contents:\n' >&2
+    cat "$file_path" >&2
+    exit 1
+  fi
+}
+
 temp_home="$(mktemp -d)"
 backup_dir="$(mktemp -d)"
 claude_env_file="$repo_root/.claude.local.env"
@@ -99,6 +117,11 @@ model = "gpt-5.3-codex"
 
 [projects."/Users/maciejtrybula/Projects/ai-agents"]
 trust_level = "trusted"
+
+[mcp_servers.filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/old"]
+default_permissions = "stale-bad-location"
 EOF
 
 HOME="$temp_home" bash "$repo_root/sync-local-agents.sh" --sync config --platform claude
@@ -161,5 +184,6 @@ assert_file_contains "$codex_target" 'extends = ":workspace"'
 assert_file_contains "$codex_target" '[mcp_servers.github]'
 assert_file_contains "$codex_target" '[mcp_servers.playwright]'
 assert_file_contains "$codex_target" '@playwright/mcp@latest'
+assert_line_order "$codex_target" 'default_permissions = "repo-workspace"' '[projects."/Users/maciejtrybula/Projects/ai-agents"]'
 
 printf 'Config sync checks passed.\n'

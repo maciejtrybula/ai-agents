@@ -2159,13 +2159,15 @@ const fs = require("fs")
 
 const [targetToml, key, value] = process.argv.slice(2)
 const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-const pattern = new RegExp(`^${escapedKey}\\s*=.*$`, "m")
-let text = fs.existsSync(targetToml) ? fs.readFileSync(targetToml, "utf8") : ""
-const replacement = `${key} = \"${value.replace(/\"/g, '\\\"')}\"`
+  const pattern = new RegExp(`^${escapedKey}\\s*=.*$`, "gm")
+  let text = fs.existsSync(targetToml) ? fs.readFileSync(targetToml, "utf8") : ""
+  const replacement = `${key} = \"${value.replace(/\"/g, '\\\"')}\"`
 
-if (pattern.test(text)) {
-  text = text.replace(pattern, replacement)
-} else if (text.trim().length === 0) {
+  if (pattern.test(text)) {
+  text = text.replace(pattern, "").replace(/^\s+/, "")
+}
+
+if (text.trim().length === 0) {
   text = `${replacement}\n`
 } else {
   text = `${replacement}\n\n${text.replace(/^\n+/, "")}`
@@ -2719,7 +2721,7 @@ sync_opencode_support_files() {
 sync_codex_bootstrap() {
   local ponytail_marketplace=("codex" "plugin" "marketplace" "add" "DietrichGebert/ponytail")
   local ponytail_plugin=("codex" "plugin" "add" "ponytail@ponytail")
-  local caveman_skill=("npx" "skills" "add" "JuliusBrussee/caveman" "-a" "codex")
+  local caveman_skill=("npx" "-y" "skills" "add" "JuliusBrussee/caveman" "-g" "-a" "codex" "-s" "caveman" "-y")
 
   if [[ "$dry_run" == true ]]; then
     printf 'Would bootstrap Codex ponytail plugin via: %s\n' "${ponytail_marketplace[*]}"

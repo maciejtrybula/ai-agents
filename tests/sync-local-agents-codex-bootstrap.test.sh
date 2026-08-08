@@ -23,6 +23,6 @@ output="$(<"$output_file")"
 
 assert_contains "$output" 'Would sync repo-managed Codex config into'
 assert_contains "$output" 'Would bootstrap Codex ponytail plugin via: codex plugin marketplace add DietrichGebert/ponytail'
-assert_contains "$output" 'Would bootstrap Codex caveman skill via: npx skills add JuliusBrussee/caveman -a codex'
+assert_contains "$output" 'Would bootstrap Codex caveman skill via: npx -y skills add JuliusBrussee/caveman -g -a codex -s caveman -y'
 
 printf 'Codex bootstrap sync checks passed.\n'
