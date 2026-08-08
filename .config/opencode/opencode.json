@@ -3,6 +3,11 @@
   "default_agent": "plan",
   "model": "openai/gpt-5.4",
   "autoupdate": true,
+  "plugin": [
+    "superpowers@git+https://github.com/obra/superpowers.git",
+    "@dietrichgebert/ponytail",
+    "./plugins/caveman/plugin.js"
+  ],
   "permission": {
     "bash": {
       "*": "ask",

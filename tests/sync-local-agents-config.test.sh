@@ -109,6 +109,7 @@ claude_target="$temp_home/.claude/settings.json"
 opencode_target="$temp_home/.config/opencode/opencode.json"
 codex_target="$temp_home/.codex/config.toml"
 claude_statusline_script="$temp_home/.claude/statusline-command.sh"
+opencode_caveman_plugin="$temp_home/.config/opencode/plugins/caveman/plugin.js"
 
 assert_file_contains "$claude_target" '"_disabledHooks"'
 assert_file_contains "$claude_target" 'node /tmp/local-only-hook.mjs'
@@ -116,6 +117,11 @@ assert_file_contains "$claude_target" '"model": "opus"'
 assert_file_contains "$claude_target" '"command": "bash \"'
 assert_file_contains "$claude_target" "$claude_statusline_script"
 assert_file_contains "$claude_target" '"enabledPlugins"'
+assert_file_contains "$claude_target" '"caveman@caveman": true'
+assert_file_contains "$claude_target" '"ponytail@ponytail": true'
+assert_file_contains "$claude_target" '"caveman"'
+assert_file_contains "$claude_target" 'JuliusBrussee/caveman'
+assert_file_contains "$claude_target" 'DietrichGebert/ponytail'
 assert_file_contains "$claude_target" '"agentPushNotifEnabled": true'
 assert_file_contains "$claude_target" 'Bash(git log *)'
 assert_file_contains "$claude_target" 'mcp__github__*'
@@ -126,6 +132,8 @@ assert_file_contains "$claude_statusline_script" 'basename_dir="$(basename "$cur
 
 assert_file_contains "$opencode_target" '"plugin"'
 assert_file_contains "$opencode_target" 'superpowers@git+https://github.com/obra/superpowers.git'
+assert_file_contains "$opencode_target" '@dietrichgebert/ponytail'
+assert_file_contains "$opencode_target" './plugins/caveman/plugin.js'
 assert_file_contains "$opencode_target" '"apiKey": "nvapi-existing"'
 assert_file_contains "$opencode_target" '"X-Goog-Api-Key": "AQ.existing"'
 assert_file_contains "$opencode_target" '"CONTEXT7_API_KEY": "ctx7sk-existing"'
@@ -139,6 +147,11 @@ assert_file_contains "$opencode_target" '"playwright"'
 assert_file_contains "$opencode_target" '@playwright/mcp@latest'
 assert_file_contains "$opencode_target" '"--headless"'
 assert_file_contains "$opencode_target" '"--isolated"'
+
+if [[ ! -f "$opencode_caveman_plugin" ]]; then
+  printf 'Expected OpenCode caveman plugin at %s\n' "$opencode_caveman_plugin" >&2
+  exit 1
+fi
 
 assert_file_contains "$codex_target" 'model = "gpt-5.3-codex"'
 assert_file_contains "$codex_target" '[projects."/Users/maciejtrybula/Projects/ai-agents"]'
