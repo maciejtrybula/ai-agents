@@ -6,10 +6,24 @@
     "command": "bash \"~/.claude/statusline-command.sh\""
   },
   "enabledPlugins": {
+    "caveman@caveman": true,
+    "ponytail@ponytail": true,
     "swift-lsp@claude-plugins-official": true,
     "warp@claude-code-warp": true
   },
   "extraKnownMarketplaces": {
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    },
     "claude-code-warp": {
       "source": {
         "source": "github",

@@ -2159,13 +2159,15 @@ const fs = require("fs")
 
 const [targetToml, key, value] = process.argv.slice(2)
 const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-const pattern = new RegExp(`^${escapedKey}\\s*=.*$`, "m")
-let text = fs.existsSync(targetToml) ? fs.readFileSync(targetToml, "utf8") : ""
-const replacement = `${key} = \"${value.replace(/\"/g, '\\\"')}\"`
+  const pattern = new RegExp(`^${escapedKey}\\s*=.*$`, "gm")
+  let text = fs.existsSync(targetToml) ? fs.readFileSync(targetToml, "utf8") : ""
+  const replacement = `${key} = \"${value.replace(/\"/g, '\\\"')}\"`
 
-if (pattern.test(text)) {
-  text = text.replace(pattern, replacement)
-} else if (text.trim().length === 0) {
+  if (pattern.test(text)) {
+  text = text.replace(pattern, "").replace(/^\s+/, "")
+}
+
+if (text.trim().length === 0) {
   text = `${replacement}\n`
 } else {
   text = `${replacement}\n\n${text.replace(/^\n+/, "")}`
@@ -2701,6 +2703,54 @@ sync_claude_support_files() {
   run_rsync_entry "$source_statusline" "$claude_statusline_command_path"
 }
 
+sync_opencode_support_files() {
+  local source_base="$1"
+  local source_plugins_dir="$source_base/plugins/caveman"
+  local target_plugins_dir="$HOME/.config/opencode/plugins/caveman"
+
+  [[ -d "$source_plugins_dir" ]] || return 0
+
+  if [[ "$dry_run" == true ]]; then
+    printf 'Would sync %s to %s\n' "$source_plugins_dir" "$target_plugins_dir"
+    return 0
+  fi
+
+  run_rsync "$source_plugins_dir" "$target_plugins_dir"
+}
+
+sync_codex_bootstrap() {
+  local ponytail_marketplace=("codex" "plugin" "marketplace" "add" "DietrichGebert/ponytail")
+  local ponytail_plugin=("codex" "plugin" "add" "ponytail@ponytail")
+  local caveman_skill=("npx" "-y" "skills" "add" "JuliusBrussee/caveman" "-g" "-a" "codex" "-s" "caveman" "-y")
+
+  if [[ "$dry_run" == true ]]; then
+    printf 'Would bootstrap Codex ponytail plugin via: %s\n' "${ponytail_marketplace[*]}"
+    printf 'Would bootstrap Codex ponytail plugin via: %s\n' "${ponytail_plugin[*]}"
+    printf 'Would bootstrap Codex caveman skill via: %s\n' "${caveman_skill[*]}"
+    return 0
+  fi
+
+  if ! command -v codex >/dev/null 2>&1; then
+    print_warning "Skipping Codex ponytail bootstrap: codex is not installed or not on PATH"
+  else
+    if ! "${ponytail_marketplace[@]}" >/dev/null 2>&1; then
+      print_warning "Codex ponytail marketplace add failed; continuing"
+    fi
+    if ! "${ponytail_plugin[@]}" >/dev/null 2>&1; then
+      print_warning "Codex ponytail plugin install failed; continuing"
+    fi
+  fi
+
+  if ! command -v npx >/dev/null 2>&1; then
+    print_warning "Skipping Codex caveman bootstrap: npx is not installed or not on PATH"
+    return 0
+  fi
+
+  if ! "${caveman_skill[@]}" >/dev/null 2>&1; then
+    print_warning "Codex caveman skill install failed; continuing"
+  fi
+}
+
 sync_claude_json() {
   local source_base="$1"
   local target_base="$2"
@@ -2768,8 +2818,9 @@ sync_opencode_json() {
     fi
   fi
 
-  merge_selected_json_top_level_keys "$substituted_source" "$json_target" '$schema|default_agent|model|autoupdate|permission|agent|provider|mcp'
+  merge_selected_json_top_level_keys "$substituted_source" "$json_target" '$schema|default_agent|model|autoupdate|plugin|permission|agent|provider|mcp'
   echo "Synced repo-managed OpenCode config into $json_target"
+  sync_opencode_support_files "$source_base"
 
   if [[ "$substituted_source" != "$prepared_source" ]]; then
     rm -f "$substituted_source"
@@ -2875,6 +2926,7 @@ sync_platform_config() {
         sync_opencode_json "$(dirname "$config_source")" "$(dirname "$config_target")"
       elif [[ "$platform" == "codex" ]]; then
         sync_codex_config "$(dirname "$config_source")" "$(dirname "$config_target")"
+        sync_codex_bootstrap
       else
         run_rsync_entry "$config_source" "$config_target"
       fi

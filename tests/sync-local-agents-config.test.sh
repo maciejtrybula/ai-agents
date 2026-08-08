@@ -17,6 +17,24 @@ assert_file_contains() {
   fi
 }
 
+assert_line_order() {
+  local file_path="$1"
+  local first="$2"
+  local second="$3"
+  local first_line
+  local second_line
+
+  first_line="$(grep -n -F "$first" "$file_path" | cut -d: -f1 | head -n1)"
+  second_line="$(grep -n -F "$second" "$file_path" | cut -d: -f1 | head -n1)"
+
+  if [[ -z "$first_line" || -z "$second_line" || "$first_line" -ge "$second_line" ]]; then
+    printf 'Expected %s to contain %s before %s\n' "$file_path" "$first" "$second" >&2
+    printf 'Actual contents:\n' >&2
+    cat "$file_path" >&2
+    exit 1
+  fi
+}
+
 temp_home="$(mktemp -d)"
 backup_dir="$(mktemp -d)"
 claude_env_file="$repo_root/.claude.local.env"
@@ -99,6 +117,11 @@ model = "gpt-5.3-codex"
 
 [projects."/Users/maciejtrybula/Projects/ai-agents"]
 trust_level = "trusted"
+
+[mcp_servers.filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/old"]
+default_permissions = "stale-bad-location"
 EOF
 
 HOME="$temp_home" bash "$repo_root/sync-local-agents.sh" --sync config --platform claude
@@ -109,6 +132,7 @@ claude_target="$temp_home/.claude/settings.json"
 opencode_target="$temp_home/.config/opencode/opencode.json"
 codex_target="$temp_home/.codex/config.toml"
 claude_statusline_script="$temp_home/.claude/statusline-command.sh"
+opencode_caveman_plugin="$temp_home/.config/opencode/plugins/caveman/plugin.js"
 
 assert_file_contains "$claude_target" '"_disabledHooks"'
 assert_file_contains "$claude_target" 'node /tmp/local-only-hook.mjs'
@@ -116,6 +140,11 @@ assert_file_contains "$claude_target" '"model": "opus"'
 assert_file_contains "$claude_target" '"command": "bash \"'
 assert_file_contains "$claude_target" "$claude_statusline_script"
 assert_file_contains "$claude_target" '"enabledPlugins"'
+assert_file_contains "$claude_target" '"caveman@caveman": true'
+assert_file_contains "$claude_target" '"ponytail@ponytail": true'
+assert_file_contains "$claude_target" '"caveman"'
+assert_file_contains "$claude_target" 'JuliusBrussee/caveman'
+assert_file_contains "$claude_target" 'DietrichGebert/ponytail'
 assert_file_contains "$claude_target" '"agentPushNotifEnabled": true'
 assert_file_contains "$claude_target" 'Bash(git log *)'
 assert_file_contains "$claude_target" 'mcp__github__*'
@@ -126,6 +155,8 @@ assert_file_contains "$claude_statusline_script" 'basename_dir="$(basename "$cur
 
 assert_file_contains "$opencode_target" '"plugin"'
 assert_file_contains "$opencode_target" 'superpowers@git+https://github.com/obra/superpowers.git'
+assert_file_contains "$opencode_target" '@dietrichgebert/ponytail'
+assert_file_contains "$opencode_target" './plugins/caveman/plugin.js'
 assert_file_contains "$opencode_target" '"apiKey": "nvapi-existing"'
 assert_file_contains "$opencode_target" '"X-Goog-Api-Key": "AQ.existing"'
 assert_file_contains "$opencode_target" '"CONTEXT7_API_KEY": "ctx7sk-existing"'
@@ -140,6 +171,11 @@ assert_file_contains "$opencode_target" '@playwright/mcp@latest'
 assert_file_contains "$opencode_target" '"--headless"'
 assert_file_contains "$opencode_target" '"--isolated"'
 
+if [[ ! -f "$opencode_caveman_plugin" ]]; then
+  printf 'Expected OpenCode caveman plugin at %s\n' "$opencode_caveman_plugin" >&2
+  exit 1
+fi
+
 assert_file_contains "$codex_target" 'model = "gpt-5.3-codex"'
 assert_file_contains "$codex_target" '[projects."/Users/maciejtrybula/Projects/ai-agents"]'
 assert_file_contains "$codex_target" 'default_permissions = "repo-workspace"'
@@ -148,5 +184,6 @@ assert_file_contains "$codex_target" 'extends = ":workspace"'
 assert_file_contains "$codex_target" '[mcp_servers.github]'
 assert_file_contains "$codex_target" '[mcp_servers.playwright]'
 assert_file_contains "$codex_target" '@playwright/mcp@latest'
+assert_line_order "$codex_target" 'default_permissions = "repo-workspace"' '[projects."/Users/maciejtrybula/Projects/ai-agents"]'
 
 printf 'Config sync checks passed.\n'
