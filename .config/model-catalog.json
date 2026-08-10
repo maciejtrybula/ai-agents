@@ -3,28 +3,86 @@
   "platforms": {
     "claude": {
       "defaultRecommendedProvider": "anthropic",
-      "providerOrder": ["anthropic"],
-      "favoriteProviders": ["anthropic"],
+      "providerOrder": [
+        "anthropic"
+      ],
+      "favoriteProviders": [
+        "anthropic"
+      ],
       "recommendedAgents": {
         "anthropic": {
-          "3d-modeling-artist": ["anthropic/sonnet", "anthropic/haiku"],
-          "backend-architect": ["anthropic/opus", "anthropic/sonnet"],
-          "backend-engineer": ["anthropic/sonnet", "anthropic/haiku"],
-          "content-writer": ["anthropic/haiku", "anthropic/sonnet"],
-          "developer-tooling-engineer": ["anthropic/sonnet", "anthropic/haiku"],
-          "devops-engineer": ["anthropic/sonnet", "anthropic/haiku"],
-          "e2e-test-engineer": ["anthropic/sonnet", "anthropic/haiku"],
-          "frontend-architect": ["anthropic/opus", "anthropic/sonnet"],
-          "frontend-engineer": ["anthropic/sonnet", "anthropic/haiku"],
-           "it-task-master": ["anthropic/sonnet", "anthropic/haiku"],
-          "principal-engineer": ["anthropic/haiku", "anthropic/sonnet"],
-          "secops-auditor": ["anthropic/sonnet", "anthropic/haiku"],
-          "seo-inspector": ["anthropic/sonnet", "anthropic/haiku"],
-          "staff-engineer": ["anthropic/haiku", "anthropic/sonnet"],
-          "tax-advisor": ["anthropic/sonnet", "anthropic/haiku"],
-          "team-manager": ["anthropic/haiku", "anthropic/sonnet"],
-          "ux-ui-architect": ["anthropic/opus", "anthropic/sonnet"],
-          "electrical-domain-specialist": ["anthropic/opus", "anthropic/sonnet"]
+          "3d-modeling-artist": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "backend-architect": [
+            "anthropic/opus",
+            "anthropic/sonnet"
+          ],
+          "backend-engineer": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "content-writer": [
+            "anthropic/haiku",
+            "anthropic/sonnet"
+          ],
+          "developer-tooling-engineer": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "devops-engineer": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "e2e-test-engineer": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "frontend-architect": [
+            "anthropic/opus",
+            "anthropic/sonnet"
+          ],
+          "frontend-engineer": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "it-task-master": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "principal-engineer": [
+            "anthropic/haiku",
+            "anthropic/sonnet"
+          ],
+          "secops-auditor": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "seo-inspector": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "staff-engineer": [
+            "anthropic/haiku",
+            "anthropic/sonnet"
+          ],
+          "tax-advisor": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
+          "team-manager": [
+            "anthropic/haiku",
+            "anthropic/sonnet"
+          ],
+          "ux-ui-architect": [
+            "anthropic/opus",
+            "anthropic/sonnet"
+          ],
+          "electrical-domain-specialist": [
+            "anthropic/opus",
+            "anthropic/sonnet"
+          ]
         }
       },
       "providers": {
@@ -50,53 +108,175 @@
       }
     },
     "opencode": {
-        "defaultRecommendedProvider": "github-copilot",
-      "providerOrder": ["nvidia-nim", "openai", "github-copilot", "ollama"],
-      "favoriteProviders": ["nvidia-nim", "github-copilot"],
+      "defaultRecommendedProvider": "github-copilot",
+      "providerOrder": [
+        "nvidia-nim",
+        "openai",
+        "github-copilot",
+        "ollama"
+      ],
+      "favoriteProviders": [
+        "nvidia-nim",
+        "github-copilot"
+      ],
       "recommendedAgents": {
         "github-copilot": {
-          "3d-modeling-artist": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "backend-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
-          "backend-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "content-writer": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-          "developer-tooling-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "devops-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "e2e-test-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "frontend-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
-          "frontend-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "it-task-master": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "principal-engineer": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-           "secops-auditor": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "seo-inspector": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "staff-engineer": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-           "tax-advisor": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "team-manager": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-           "native-mobile-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-            "ux-ui-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
-            "electrical-domain-specialist": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"]
-          },
-          "openai": {
-            "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.4"],
-            "backend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "backend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "content-writer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-            "developer-tooling-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-            "devops-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "e2e-test-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "frontend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "frontend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "it-task-master": ["openai/gpt-5.4", "openai/gpt-5.4"],
-            "principal-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "secops-auditor": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-           "seo-inspector": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "staff-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "tax-advisor": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "team-manager": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "native-mobile-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "electrical-domain-specialist": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "ux-ui-architect": ["openai/gpt-5.4", "openai/gpt-5.4"]
-         }
-       },
+          "3d-modeling-artist": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "backend-architect": [
+            "github-copilot/gpt-5.6-sol",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "backend-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "content-writer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "developer-tooling-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "devops-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "e2e-test-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "frontend-architect": [
+            "github-copilot/gpt-5.6-sol",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "frontend-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "it-task-master": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "principal-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "secops-auditor": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "seo-inspector": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "staff-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "tax-advisor": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "team-manager": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "native-mobile-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "ux-ui-architect": [
+            "github-copilot/gpt-5.6-sol",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "electrical-domain-specialist": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ]
+        },
+        "openai": {
+          "3d-modeling-artist": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "backend-architect": [
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-sol"
+          ],
+          "backend-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "content-writer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "developer-tooling-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "devops-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "e2e-test-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "frontend-architect": [
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-sol"
+          ],
+          "frontend-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "it-task-master": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "principal-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "secops-auditor": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "seo-inspector": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "staff-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "tax-advisor": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "team-manager": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "native-mobile-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "electrical-domain-specialist": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "ux-ui-architect": [
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-sol"
+          ]
+        }
+      },
       "providers": {
         "openai": {
           "models": [
@@ -109,6 +289,16 @@
               "id": "openai/gpt-5.3-codex",
               "target": "openai/gpt-5.3-codex",
               "description": "Code-focused option for implementation-heavy roles."
+            },
+            {
+              "id": "openai/gpt-5.6-sol",
+              "target": "openai/gpt-5.6-sol",
+              "description": "Model dedicated for reasoning, especially for architect-like agents."
+            },
+            {
+              "id": "openai/gpt-5.6-luna",
+              "target": "openai/gpt-5.6-luna",
+              "description": "Model dedicated for code tasks"
             }
           ]
         },
@@ -138,6 +328,16 @@
               "id": "github-copilot/gpt-5.3-codex",
               "target": "github-copilot/gpt-5.3-codex",
               "description": "Copilot code-focused model name aligned with documented GPT-5.3-Codex availability."
+            },
+            {
+              "id": "github-copilot/gpt-5.6-sol",
+              "target": "github-copilot/gpt-5.6-sol",
+              "description": "Model dedicated for reasoning, especially for architect-like agents."
+            },
+            {
+              "id": "github-copilot/gpt-5.6-luna",
+              "target": "github-copilot/gpt-5.6-luna",
+              "description": "Model dedicated for code tasks"
             },
             {
               "id": "github-copilot/claude-sonnet-4.5",
@@ -208,67 +408,196 @@
     },
     "codex": {
       "defaultRecommendedProvider": "github-copilot",
-      "providerOrder": ["openai", "github-copilot"],
-      "favoriteProviders": ["openai"],
+      "providerOrder": [
+        "openai",
+        "github-copilot"
+      ],
+      "favoriteProviders": [
+        "openai"
+      ],
       "recommendedAgents": {
         "github-copilot": {
-          "3d-modeling-artist": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "backend-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
-          "backend-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "content-writer": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-          "developer-tooling-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "devops-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "e2e-test-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-          "frontend-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
-          "frontend-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "it-task-master": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "principal-engineer": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-           "secops-auditor": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "seo-inspector": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "staff-engineer": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-           "tax-advisor": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-           "team-manager": ["github-copilot/claude-haiku-4.5", "github-copilot/gpt-5-mini"],
-            "native-mobile-engineer": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"],
-            "ux-ui-architect": ["github-copilot/claude-opus-4.6", "github-copilot/gpt-5-mini"],
-            "electrical-domain-specialist": ["github-copilot/claude-sonnet-4.6", "github-copilot/gpt-5-mini"]
-          },
-          "openai": {
-            "3d-modeling-artist": ["openai/gpt-5.4", "openai/gpt-5.4"],
-            "backend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "backend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "content-writer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-            "developer-tooling-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-            "devops-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "e2e-test-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "frontend-architect": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "frontend-engineer": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-            "it-task-master": ["openai/gpt-5.4", "openai/gpt-5.4"],
-            "principal-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "secops-auditor": ["openai/gpt-5.3-codex", "openai/gpt-5.3-codex"],
-           "seo-inspector": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "staff-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "tax-advisor": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "team-manager": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "native-mobile-engineer": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "electrical-domain-specialist": ["openai/gpt-5.4", "openai/gpt-5.4"],
-           "ux-ui-architect": ["openai/gpt-5.4", "openai/gpt-5.4"]
-         }
-       },
-       "providers": {
-         "openai": {
-           "models": [
-             {
-               "id": "openai/gpt-5.4",
-               "target": "openai/gpt-5.4",
-                "description": "General-purpose default for shared local agents."
-              },
-              {
-                "id": "openai/gpt-5.3-codex",
-                "target": "openai/gpt-5.3-codex",
-                "description": "Code-focused option for implementation-heavy roles."
-              }
-            ]
-          },
+          "3d-modeling-artist": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "backend-architect": [
+            "github-copilot/gpt-5.6-sol",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "backend-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "content-writer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "developer-tooling-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "devops-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "e2e-test-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "frontend-architect": [
+            "github-copilot/gpt-5.6-sol",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "frontend-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "it-task-master": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "principal-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "secops-auditor": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "seo-inspector": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "staff-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "tax-advisor": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "team-manager": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "native-mobile-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "ux-ui-architect": [
+            "github-copilot/gpt-5.6-sol",
+            "github-copilot/gpt-5.6-luna"
+          ],
+          "electrical-domain-specialist": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ]
+        },
+        "openai": {
+          "3d-modeling-artist": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "backend-architect": [
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-sol"
+          ],
+          "backend-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "content-writer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "developer-tooling-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "devops-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "e2e-test-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "frontend-architect": [
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-sol"
+          ],
+          "frontend-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "it-task-master": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "principal-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "secops-auditor": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "seo-inspector": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "staff-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "tax-advisor": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "team-manager": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "native-mobile-engineer": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "electrical-domain-specialist": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "ux-ui-architect": [
+            "openai/gpt-5.6-sol",
+            "openai/gpt-5.6-sol"
+          ]
+        }
+      },
+      "providers": {
+        "openai": {
+          "models": [
+            {
+              "id": "openai/gpt-5.4",
+              "target": "openai/gpt-5.4",
+              "description": "General-purpose default for shared local agents."
+            },
+            {
+              "id": "openai/gpt-5.3-codex",
+              "target": "openai/gpt-5.3-codex",
+              "description": "Code-focused option for implementation-heavy roles."
+            },
+            {
+              "id": "openai/gpt-5.6-sol",
+              "target": "openai/gpt-5.6-sol",
+              "description": "Model dedicated for reasoning, especially for architect-like agents."
+            },
+            {
+              "id": "openai/gpt-5.6-luna",
+              "target": "openai/gpt-5.6-luna",
+              "description": "Model dedicated for code tasks"
+            }
+          ]
+        },
         "github-copilot": {
           "models": [
             {
@@ -295,6 +624,16 @@
               "id": "github-copilot/gpt-5.3-codex",
               "target": "github-copilot/gpt-5.3-codex",
               "description": "Copilot code-focused model name aligned with documented GPT-5.3-Codex availability."
+            },
+            {
+              "id": "openai/gpt-5.6-sol",
+              "target": "openai/gpt-5.6-sol",
+              "description": "Model dedicated for reasoning, especially for architect-like agents."
+            },
+            {
+              "id": "openai/gpt-5.6-luna",
+              "target": "openai/gpt-5.6-luna",
+              "description": "Model dedicated for code tasks"
             },
             {
               "id": "github-copilot/claude-sonnet-4.5",
