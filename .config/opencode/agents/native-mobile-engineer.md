@@ -1,6 +1,7 @@
 ---
 description: Use for native iOS, native Android, CarPlay, Android Auto, speech/audio/background lifecycle, and mobile testing work—especially Slice 1 plan Tasks 8-10.
 mode: subagent
+model: openai/gpt-5.6-luna
 permission:
   edit: allow
   bash:

@@ -1,7 +1,7 @@
 ---
 name: content-writer
 description: Use this agent to plan, write, and refine technical blog content that earns attention, builds trust, and drives action. It specializes in developer-facing articles, thought leadership, tutorials, comparison pieces, and product-adjacent educational content with strong hooks, clear structure, and search-aware execution.
-model: openai/gpt-5.4
+model: openai/gpt-5.6-luna
 temperature: 0.3
 ---
 

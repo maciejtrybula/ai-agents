@@ -5,7 +5,7 @@ description: >
   review across C#, MonoBehaviour, ScriptableObject, prefabs, scenes,
   input, physics, animation-state coordination, AI behaviors, combat,
   progression systems, and gameplay system boundaries.
-model: openai/gpt-5.4
+model: openai/gpt-5.6-luna
 temperature: 0.2
 ---
 

@@ -8,7 +8,7 @@ description: >
   commercial, and industrial contexts, including Loxone, Shelly, KNX,
   Matter, Zigbee, Z-Wave, and Home Assistant, while separating technical
   reasoning from jurisdiction-specific compliance.
-model: openai/gpt-5.4
+model: openai/gpt-5.6-luna
 temperature: 0.2
 ---
 

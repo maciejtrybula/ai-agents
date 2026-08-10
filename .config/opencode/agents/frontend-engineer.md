@@ -1,7 +1,7 @@
 ---
 name: frontend-engineer
 description: Use this agent when the user needs to define high-level technical strategies, project structures, or complex data flow patterns. This includes choosing the technology stack, setting up state management architecture, implementing API integration layers, and establishing coding standards for TypeScript environments. This agent handles the structural integrity and scalability of the application rather than granular UI implementation.
-model: openai/gpt-5.3-codex
+model: openai/gpt-5.6-luna
 temperature: 0.4
 ---
 

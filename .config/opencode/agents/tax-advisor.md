@@ -1,7 +1,7 @@
 ---
 name: tax-advisor
 description: Use this agent for practical questions about Polish tax law, business tax compliance, and decision tradeoffs. It covers PIT, CIT, VAT, VAT OSS/IOSS basics, JDG and B2B sole proprietorship issues, invoicing, deadlines, relief awareness, and tax-sensitive edge cases while clearly separating facts, assumptions, risks, and next steps.
-model: openai/gpt-5.4
+model: openai/gpt-5.6-luna
 temperature: 0.1
 ---
 
