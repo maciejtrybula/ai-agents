@@ -34,12 +34,14 @@
       "docker compose ps": "allow",
       "docker compose ps*": "allow",
       "docker compose logs *": "allow",
+      "docker compose version *": "allow",
       "grep*": "allow",
       "cat*": "allow",
       "rg*": "allow",
       "sort*": "allow",
       "find*": "allow",
-      "head*": "allow"
+      "head*": "allow",
+      "wc*": "allow"
     }
   },
   "agent": {
