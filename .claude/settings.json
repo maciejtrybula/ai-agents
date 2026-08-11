@@ -58,6 +58,8 @@
       "Bash(head*)",
       "Bash(wc*)",
       "Bash(test*)",
+      "Bash(true*)",
+      "Bash(false*)",
       "mcp__github__*",
       "mcp__linear-server__*",
       "mcp__blender__*",

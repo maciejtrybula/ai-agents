@@ -42,7 +42,9 @@
       "find*": "allow",
       "head*": "allow",
       "wc*": "allow",
-      "test*": "allow"
+      "test*": "allow",
+      "true*": "allow",
+      "false*": "allow"
     }
   },
   "agent": {
