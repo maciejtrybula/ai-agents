@@ -41,7 +41,8 @@
       "sort*": "allow",
       "find*": "allow",
       "head*": "allow",
-      "wc*": "allow"
+      "wc*": "allow",
+      "test*": "allow"
     }
   },
   "agent": {

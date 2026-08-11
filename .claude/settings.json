@@ -57,6 +57,7 @@
       "Bash(find*)",
       "Bash(head*)",
       "Bash(wc*)",
+      "Bash(test*)",
       "mcp__github__*",
       "mcp__linear-server__*",
       "mcp__blender__*",
