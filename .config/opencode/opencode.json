@@ -44,7 +44,14 @@
       "wc*": "allow",
       "test*": "allow",
       "true*": "allow",
-      "false*": "allow"
+      "false*": "allow",
+      "echo*": "allow",
+      "printf*": "allow",
+      "tail*": "allow",
+      "exit*": "allow",
+      "kill*": "allow",
+      "pkill*": "allow",
+      "ps*": "allow"
     }
   },
   "agent": {

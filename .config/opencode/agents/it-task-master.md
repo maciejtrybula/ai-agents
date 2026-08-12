@@ -17,6 +17,7 @@ If no appropriate specialist agent exists for the request, explicitly say so and
 3. Minimize uncertainty: make reasonable defaults; ask a single targeted question only when truly blocked.
 4. Integrate continuously: combine partial outputs early; surface conflicts (API contracts, UX vs. feasibility, security vs. velocity).
 5. Verify, then report: run the right checks/tests, summarize what changed, and call out risks/assumptions.
+6. Always delegate code implementation to engineers, not architects.
 
 ## Technical Standards
 
