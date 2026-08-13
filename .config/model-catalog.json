@@ -75,6 +75,10 @@
             "anthropic/haiku",
             "anthropic/sonnet"
           ],
+          "unity-gameplay-engineer": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
           "ux-ui-architect": [
             "anthropic/opus",
             "anthropic/sonnet"
@@ -189,6 +193,10 @@
             "github-copilot/gpt-5.6-luna",
             "github-copilot/gpt-5.6-luna"
           ],
+          "unity-gameplay-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
           "ux-ui-architect": [
             "github-copilot/gpt-5.6-sol",
             "github-copilot/gpt-5.6-luna"
@@ -268,6 +276,10 @@
             "openai/gpt-5.6-luna"
           ],
           "electrical-domain-specialist": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "unity-gameplay-engineer": [
             "openai/gpt-5.6-luna",
             "openai/gpt-5.6-luna"
           ],
@@ -485,6 +497,10 @@
             "github-copilot/gpt-5.6-luna",
             "github-copilot/gpt-5.6-luna"
           ],
+          "unity-gameplay-engineer": [
+            "github-copilot/gpt-5.6-luna",
+            "github-copilot/gpt-5.6-luna"
+          ],
           "ux-ui-architect": [
             "github-copilot/gpt-5.6-sol",
             "github-copilot/gpt-5.6-luna"
@@ -564,6 +580,10 @@
             "openai/gpt-5.6-luna"
           ],
           "electrical-domain-specialist": [
+            "openai/gpt-5.6-luna",
+            "openai/gpt-5.6-luna"
+          ],
+          "unity-gameplay-engineer": [
             "openai/gpt-5.6-luna",
             "openai/gpt-5.6-luna"
           ],

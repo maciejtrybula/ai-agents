@@ -44,6 +44,8 @@
       "Bash(git branch *)",
       "Bash(pnpm --filter *)",
       "Bash(pnpm build *)",
+      "Bash(pnpm format:check *)",
+      "Bash(pnpm test *)",
       "Bash(docker compose build *)",
       "Bash(docker compose up *)",
       "Bash(docker compose restart *)",
