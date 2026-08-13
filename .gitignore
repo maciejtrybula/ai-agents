@@ -4,3 +4,10 @@
 .opencode.local.env
 .DS_Store
 .worktrees/
+
+# Generated platform agent copies (single-source of truth from .agents/)
+# These dirs are materialized by generate-agents.sh from the canonical
+# .agents/*.md sources. Do not edit them by hand.
+.claude/agents/
+.codex/agents/
+.config/opencode/agents/

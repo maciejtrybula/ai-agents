@@ -20,6 +20,7 @@ dry_run=false
 delete_extra=false
 interactive_mode=false
 configure_api_keys=false
+target_dir=""
 selected_platforms=()
 sync_agents=true
 sync_skills=true
@@ -629,7 +630,12 @@ resolve_agent_model_override() {
     return 0
   fi
 
-  find_agent_model_override_target "$repo_default_agent_model_overrides" "$platform" "$agent_slug" || true
+  # NOTE: the per-agent repo_default (e.g. opencode/it-task-master ->
+  # claude-sonnet-4.6) is intentionally NOT resolved here. It must only apply as
+  # a last-resort fallback when neither an explicit agent override nor an
+  # explicit platform-model selection was made, so it is handled at the bottom
+  # of resolve_effective_model_override rather than shadowing the platform model.
+  return 1
 }
 
 load_model_settings_from_file() {
@@ -901,13 +907,36 @@ resolve_effective_model_override() {
   local agent_slug="$2"
   local platform_model_value="$3"
   local agent_model_value=""
+  local repo_default_value=""
 
+  # Explicit per-agent overrides always win (interactive mode 3, --agent-model,
+  # recommended expansion, env, local env file).
   agent_model_value="$(resolve_agent_model_override "$platform" "$agent_slug" || true)"
   if [[ -n "$agent_model_value" ]]; then
     printf '%s' "$agent_model_value"
-  else
-    printf '%s' "$platform_model_value"
+    return 0
   fi
+
+  # An explicit platform-model selection (CLI, env, local env file, interactive
+  # one-model-for-all) always wins over the per-agent repo_default.
+  if [[ -n "$platform_model_value" ]]; then
+    printf '%s' "$platform_model_value"
+    return 0
+  fi
+
+  # The per-agent repo_default (e.g. opencode/it-task-master ->
+  # github-copilot/claude-sonnet-4.6) is the last-resort fallback: it applies
+  # only when the caller provided neither an explicit agent override nor an
+  # explicit platform-model selection.
+  repo_default_value="$(find_agent_model_override_target "$repo_default_agent_model_overrides" "$platform" "$agent_slug" || true)"
+  if [[ -n "$repo_default_value" ]]; then
+    printf '%s' "$repo_default_value"
+  fi
+
+  # Always exit 0: callers substitute the result into an assignment under
+  # `set -e`; a non-zero exit here would abort mid-loop. Empty output means "no
+  # model determined", which callers guard with `[[ -n ... ]] || continue`.
+  return 0
 }
 
 validate_agent_override_targets_exist() {
@@ -966,6 +995,7 @@ Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode
 [--use-recommended-models]
 [--use-recommended-fallback-models]
 [--recommended-provider PROVIDER]
+[--target-dir PATH]
 
 Copies agents and skills from this repository into the matching local config
 directories in your home folder.
@@ -1015,6 +1045,11 @@ Fails if any selected agent does not define a second recommendation.
 --recommended-provider
 Optional provider selector for recommended-model modes.
 Defaults to the platform's configured default recommended provider.
+--target-dir
+Custom destination root. When set, files are copied under
+<path>/.claude, <path>/.config/opencode, and <path>/.codex
+instead of $HOME. Applies to agents, skills, and config.
+When omitted, the default $HOME folders are used.
 
 Examples:
 ./sync-local-agents.sh
@@ -1026,6 +1061,7 @@ Examples:
 ./sync-local-agents.sh --sync all --platform opencode
 ./sync-local-agents.sh --interactive
 ./sync-local-agents.sh --interactive --configure-api-keys
+./sync-local-agents.sh --sync agents --target-dir /tmp/project-root
 ./sync-local-agents.sh --platform claude --claude-model anthropic/sonnet
 ./sync-local-agents.sh --agent-model claude:backend-engineer:anthropic/sonnet
 ./sync-local-agents.sh --platform claude --use-recommended-models
@@ -2369,6 +2405,29 @@ prompt_interactive_scope() {
   set_sync_scope "$answer"
 }
 
+prompt_interactive_target_dir() {
+  local answer=""
+  local custom_path=""
+
+  printf '%sWhere should files be copied? [user-local/custom] (default: user-local):%s ' "$color_magenta" "$color_reset"
+  read -r answer
+  answer="$(trim "$answer")"
+  answer="$(to_lower "$answer")"
+  [[ -z "$answer" ]] && answer="user-local"
+
+  if [[ "$answer" == "custom" || "$answer" == "c" ]]; then
+    printf '%sCustom destination path: %s' "$color_magenta" "$color_reset"
+    read -r custom_path
+    custom_path="$(trim "$custom_path")"
+    if [[ -z "$custom_path" ]]; then
+      print_error "No path provided; keeping user-local destination."
+    else
+      target_dir="$(normalize_path_setting_value "$custom_path")"
+      print_note "Syncing to target dir: $target_dir"
+    fi
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run)
@@ -2445,6 +2504,14 @@ while [[ $# -gt 0 ]]; do
     --configure-api-keys)
       configure_api_keys=true
       ;;
+    --target-dir)
+      if [[ $# -lt 2 ]]; then
+        print_error "Missing value for --target-dir"
+        exit 1
+      fi
+      target_dir="$(normalize_path_setting_value "$2")"
+      shift
+      ;;
     --help|-h)
       usage
       exit 0
@@ -2489,7 +2556,6 @@ fi
 claude_model="$(resolve_platform_model_override "claude" "$cli_claude_model" "$env_claude_model" "$file_claude_model")"
 opencode_model="$(resolve_platform_model_override "opencode" "$cli_opencode_model" "$env_opencode_model" "$file_opencode_model")"
 codex_model="$(resolve_platform_model_override "codex" "$cli_codex_model" "$env_codex_model" "$file_codex_model")"
-claude_statusline_command_path="$(resolve_path_override "$env_claude_statusline_command_path" "$file_claude_statusline_command_path" "$HOME/.claude/statusline-command.sh")"
 
 if [[ ${#selected_platforms[@]} -eq 0 ]]; then
   selected_platforms=(claude opencode codex)
@@ -2501,7 +2567,16 @@ fi
 
 if [[ "$interactive_mode" == true ]]; then
   prompt_interactive_scope
+  prompt_interactive_target_dir
 fi
+
+# Resolve statusline path after interactive target-dir prompt so a custom
+# destination chosen interactively is reflected in the default location.
+default_statusline_dir="$HOME/.claude"
+if [[ -n "$target_dir" ]]; then
+  default_statusline_dir="$target_dir/.claude"
+fi
+claude_statusline_command_path="$(resolve_path_override "$env_claude_statusline_command_path" "$file_claude_statusline_command_path" "$default_statusline_dir/statusline-command.sh")"
 
 # -----------------------------------------------------------------------------
 # Main sync flow
@@ -2543,7 +2618,11 @@ resolve_platform_settings() {
   case "$platform" in
     claude)
       source_base_value="$repo_root/.claude"
-      target_base_value="$HOME/.claude"
+      if [[ -n "$target_dir" ]]; then
+        target_base_value="$target_dir/.claude"
+      else
+        target_base_value="$HOME/.claude"
+      fi
       model_override_value="$claude_model"
       config_source_value="$source_base_value/settings.json"
       config_target_value="$target_base_value/settings.json"
@@ -2551,7 +2630,11 @@ resolve_platform_settings() {
       ;;
     opencode)
       source_base_value="$repo_root/.config/opencode"
-      target_base_value="$HOME/.config/opencode"
+      if [[ -n "$target_dir" ]]; then
+        target_base_value="$target_dir/.opencode"
+      else
+        target_base_value="$HOME/.config/opencode"
+      fi
       model_override_value="$opencode_model"
       config_source_value="$source_base_value/opencode.json"
       config_target_value="$target_base_value/opencode.json"
@@ -2559,7 +2642,11 @@ resolve_platform_settings() {
       ;;
     codex)
       source_base_value="$repo_root/.codex"
-      target_base_value="$HOME/.codex"
+      if [[ -n "$target_dir" ]]; then
+        target_base_value="$target_dir/.codex"
+      else
+        target_base_value="$HOME/.codex"
+      fi
       model_override_value="$codex_model"
       config_source_value="$source_base_value/config.toml"
       config_target_value="$target_base_value/config.toml"
@@ -2715,7 +2802,12 @@ sync_claude_support_files() {
 sync_opencode_support_files() {
   local source_base="$1"
   local source_plugins_dir="$source_base/plugins/caveman"
-  local target_plugins_dir="$HOME/.config/opencode/plugins/caveman"
+  local target_plugins_dir=""
+  if [[ -n "$target_dir" ]]; then
+    target_plugins_dir="$target_dir/.config/opencode/plugins/caveman"
+  else
+    target_plugins_dir="$HOME/.config/opencode/plugins/caveman"
+  fi
 
   [[ -d "$source_plugins_dir" ]] || return 0
 
