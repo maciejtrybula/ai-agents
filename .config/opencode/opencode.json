@@ -27,6 +27,8 @@
       "pnpm build *": "allow",
       "pnpm test*": "allow",
       "pnpm mobile:lint*": "allow",
+      "pnpm format:check *": "allow",
+      "pnpm exec prettier *": "allow",
       "docker compose build *": "allow",
       "docker compose up *": "allow",
       "docker compose restart": "allow",

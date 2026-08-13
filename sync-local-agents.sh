@@ -41,6 +41,8 @@ opencode_model=""
 codex_model=""
 claude_statusline_command_path=""
 cli_agent_model_overrides=""
+# Path to the rsync binary, overridable via SYNC_RSYNC (e.g. for testing/mocking).
+RSYNC_BIN="${SYNC_RSYNC:-rsync}"
 generated_agent_model_overrides=""
 file_agent_model_overrides=""
 env_agent_model_overrides=""
@@ -1530,11 +1532,21 @@ expand_selection() {
   printf -v "$__result_var" '%s' "$(IFS='|'; printf '%s' "${entries[*]-}")"
 }
 
+# Verify the rsync binary is available before a real copy. Operation-scoped:
+# only invoked when an actual rsync call is about to happen, not at module load.
+require_rsync() {
+  if ! command -v "$RSYNC_BIN" >/dev/null 2>&1; then
+    echo "rsync is required but not installed." >&2
+    exit 1
+  fi
+}
+
 run_rsync_entry() {
   local source_path="$1"
   local target_path="$2"
   local args=()
 
+  require_rsync
   mkdir -p "$(dirname "$target_path")"
 
   if [[ -d "$source_path" ]]; then
@@ -1550,7 +1562,7 @@ run_rsync_entry() {
     args=(--dry-run -av "${args[@]}")
   fi
 
-  rsync "${args[@]}"
+  "$RSYNC_BIN" "${args[@]}"
 }
 
 preview_model_override_for_entries() {
@@ -1580,7 +1592,8 @@ prompt_for_api_key() {
 
   # Check if already set in environment
   if [[ -n "${!var_name:-}" ]]; then
-    echo "Found $var_name in environment (${#var_name} chars)"
+    local existing_value="${!var_name}"
+    echo "Found $var_name in environment (${#existing_value} chars)"
     read -rp "Use existing value? [Y/n]: " use_existing
     if [[ ! "$use_existing" =~ ^[Nn]$ ]]; then
       echo "${!var_name}"
@@ -2478,11 +2491,6 @@ opencode_model="$(resolve_platform_model_override "opencode" "$cli_opencode_mode
 codex_model="$(resolve_platform_model_override "codex" "$cli_codex_model" "$env_codex_model" "$file_codex_model")"
 claude_statusline_command_path="$(resolve_path_override "$env_claude_statusline_command_path" "$file_claude_statusline_command_path" "$HOME/.claude/statusline-command.sh")"
 
-if ! command -v rsync >/dev/null 2>&1; then
-  echo "rsync is required but not installed." >&2
-  exit 1
-fi
-
 if [[ ${#selected_platforms[@]} -eq 0 ]]; then
   selected_platforms=(claude opencode codex)
 fi
@@ -2503,6 +2511,7 @@ run_rsync() {
   local source_dir="$1"
   local target_dir="$2"
 
+  require_rsync
   mkdir -p "$target_dir"
 
   local args=(-a "$source_dir/" "$target_dir/")
@@ -2513,7 +2522,7 @@ run_rsync() {
     args=(--dry-run -av "${args[@]}")
   fi
 
-  rsync "${args[@]}"
+  "$RSYNC_BIN" "${args[@]}"
 }
 
 resolve_platform_settings() {
