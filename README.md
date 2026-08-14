@@ -125,12 +125,86 @@ agents are expected to check them before starting specialized work.
 
 ## Locations
 
-- `.claude/agents/` - Claude agent definitions
+- `.agents/` - **Canonical agent sources** (single source of truth):
+  shared frontmatter (`name`, `description`, `color`) plus the full body.
+  Per-platform `model`/`temperature` are injected at generation time.
+- `.claude/agents/` - Claude agent definitions (generated, git-ignored)
 - `.claude/skills/` - Claude skill definitions
-- `.config/opencode/agents/` - OpenCode agent definitions
+- `.config/opencode/agents/` - OpenCode agent definitions (generated, git-ignored)
 - `.config/opencode/skills/` - OpenCode skill definitions
-- `.codex/agents/` - Codex agent definitions
+- `.codex/agents/` - Codex agent definitions (generated, git-ignored)
 - `.codex/skills/` - Codex skill definitions
+
+### Authoring Agents
+
+The `.claude/agents/`, `.config/opencode/agents/`, and `.codex/agents/`
+directories are **generated outputs**, git-ignored and created by
+`generate-agents.sh` from the canonical sources in `.agents/`. Do not
+hand-edit those files. To author or update a shared agent:
+
+1. **Edit** the canonical file in `.agents/`.
+2. **Regenerate** the three platform outputs:
+   ```bash
+   ./generate-agents.sh
+   ```
+3. **Sync** to your local tool directories (model overrides applied):
+   ```bash
+   ./sync-local-agents.sh
+   ```
+
+Per-platform default `model` values (and whether `color` is emitted)
+are wired through `.config/agent-platforms.json`; the existing
+model-override machinery in `sync-local-agents.sh` applies on top of
+those defaults at sync time.
+
+**.config/agent-platforms.json** lists every canonical agent explicitly
+per platform (`platforms.<name>.agents.<slug>`), each with its effective
+`model` (and, where the platform has a temperature concept,
+`temperature`), and an optional `description` that appears only where it
+diverges from the canonical `.agents/*.md` description. For example,
+`backend-architect` → `opus` on Claude, `openai/gpt-5.6-sol` on
+OpenCode, `openai/gpt-5.3-codex` on Codex. No agent currently carries a
+`description` override, so every platform uses the canonical
+`.agents/*.md` description.
+
+**Platform-exclusive agents** are handled with a `platforms:` list in
+the canonical frontmatter. For example, declaring
+`platforms: [codex, opencode]` makes the generator emit that agent only
+to Codex and OpenCode and never to Claude. An agent with no `platforms:`
+line is emitted to all three platforms. Most agents are shared across
+all platforms; only those that genuinely need platform exclusivity
+declare a `platforms:` list.
+
+`generate-agents.sh` also supports `--target-dir <path>` to write the
+generated platform files directly into an arbitrary destination, e.g. a
+project checkout:
+
+```bash
+./generate-agents.sh --target-dir /path/to/project
+```
+
+This writes them under `/path/to/project/.claude/agents`,
+`/path/to/project/.codex/agents`, and
+`/path/to/project/.opencode/agents`. For OpenCode, a custom project
+destination uses `.opencode/` (a project root's local config dir), while
+the user-local default remains `$HOME/.config/opencode`.
+
+`sync-local-agents.sh` also supports `--target-dir <path>` to direct the
+full sync (agents, skills, and config) into an arbitrary destination
+root, applying model overrides exactly as it does for the default
+`$HOME` folders:
+
+```bash
+./sync-local-agents.sh --target-dir /path/to/project
+```
+
+When set, files are written under `/path/to/project/.claude`,
+`/path/to/project/.opencode`, and `/path/to/project/.codex` instead of
+`$HOME`. For OpenCode, a custom project destination uses `.opencode/`
+(its project-level local config root), while the user-local default
+remains `$HOME/.config/opencode`. In `--interactive` mode you can also choose the
+destination interactively: after the scope prompt, select `user-local`
+(the default) or `custom`, and provide a destination path.
 
 ## Local Sync
 
@@ -139,6 +213,7 @@ skills into your local tool directories.
 
 ```bash
 ./sync-local-agents.sh
+./sync-local-agents.sh --target-dir /tmp/project-root
 ./sync-local-agents.sh --dry-run
 ./sync-local-agents.sh --delete
 ./sync-local-agents.sh --sync agents

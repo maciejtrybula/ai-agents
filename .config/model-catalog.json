@@ -51,6 +51,10 @@
             "anthropic/sonnet",
             "anthropic/haiku"
           ],
+          "native-mobile-engineer": [
+            "anthropic/sonnet",
+            "anthropic/haiku"
+          ],
           "principal-engineer": [
             "anthropic/haiku",
             "anthropic/sonnet"
@@ -646,13 +650,13 @@
               "description": "Copilot code-focused model name aligned with documented GPT-5.3-Codex availability."
             },
             {
-              "id": "openai/gpt-5.6-sol",
-              "target": "openai/gpt-5.6-sol",
+              "id": "github-copilot/gpt-5.6-sol",
+              "target": "github-copilot/gpt-5.6-sol",
               "description": "Model dedicated for reasoning, especially for architect-like agents."
             },
             {
-              "id": "openai/gpt-5.6-luna",
-              "target": "openai/gpt-5.6-luna",
+              "id": "github-copilot/gpt-5.6-luna",
+              "target": "github-copilot/gpt-5.6-luna",
               "description": "Model dedicated for code tasks"
             },
             {

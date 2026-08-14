@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "description": "Per-platform frontmatter defaults and per-agent overrides applied by generate-agents.sh when materializing agents from the canonical .agents/ sources. Every canonical agent is listed explicitly per platform with its effective model and (where the platform has a temperature concept) temperature; description appears only where it diverges from the canonical .agents/*.md description. claude intentionally omits temperature, as it has no temperature concept. These are default values; the model-override machinery in sync-local-agents.sh applies on top at sync time.",
+  "platforms": {
+    "claude": {
+      "dir": ".claude/agents",
+      "model": "sonnet",
+      "color": true,
+      "agents": {
+        "3d-modeling-artist": {
+          "model": "sonnet"
+        },
+        "backend-architect": {
+          "model": "opus"
+        },
+        "backend-engineer": {
+          "model": "sonnet"
+        },
+        "content-writer": {
+          "model": "haiku"
+        },
+        "developer-tooling-engineer": {
+          "model": "sonnet"
+        },
+        "devops-engineer": {
+          "model": "sonnet"
+        },
+        "e2e-test-engineer": {
+          "model": "sonnet"
+        },
+        "electrical-domain-specialist": {
+          "model": "sonnet"
+        },
+        "frontend-architect": {
+          "model": "opus"
+        },
+        "frontend-engineer": {
+          "model": "sonnet"
+        },
+        "it-task-master": {
+          "model": "sonnet"
+        },
+        "native-mobile-engineer": {
+          "model": "sonnet"
+        },
+        "principal-engineer": {
+          "model": "haiku"
+        },
+        "secops-auditor": {
+          "model": "sonnet"
+        },
+        "seo-inspector": {
+          "model": "sonnet"
+        },
+        "staff-engineer": {
+          "model": "haiku"
+        },
+        "tax-advisor": {
+          "model": "sonnet"
+        },
+        "team-manager": {
+          "model": "haiku"
+        },
+        "unity-gameplay-engineer": {
+          "model": "sonnet"
+        },
+        "ux-ui-architect": {
+          "model": "opus"
+        }
+      }
+    },
+    "codex": {
+      "dir": ".codex/agents",
+      "model": "openai/gpt-5.4",
+      "temperature": 0.4,
+      "color": true,
+      "agents": {
+        "3d-modeling-artist": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.4"
+        },
+        "backend-architect": {
+          "model": "openai/gpt-5.3-codex",
+          "temperature": "0.1"
+        },
+        "backend-engineer": {
+          "model": "openai/gpt-5.3-codex",
+          "temperature": "0.4"
+        },
+        "content-writer": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.3"
+        },
+        "developer-tooling-engineer": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.4"
+        },
+        "devops-engineer": {
+          "model": "openai/gpt-5.3-codex",
+          "temperature": "0.4"
+        },
+        "e2e-test-engineer": {
+          "model": "openai/gpt-5.3-codex",
+          "temperature": "0.4"
+        },
+        "electrical-domain-specialist": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.2"
+        },
+        "frontend-architect": {
+          "model": "openai/gpt-5.3-codex",
+          "temperature": "0.1"
+        },
+        "frontend-engineer": {
+          "model": "openai/gpt-5.3-codex",
+          "temperature": "0.4"
+        },
+        "it-task-master": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.4"
+        },
+        "native-mobile-engineer": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.4"
+        },
+        "principal-engineer": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.4"
+        },
+        "secops-auditor": {
+          "model": "openai/gpt-5.3-codex",
+          "temperature": "0.4"
+        },
+        "seo-inspector": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.1"
+        },
+        "staff-engineer": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.4"
+        },
+        "tax-advisor": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.1"
+        },
+        "team-manager": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.4"
+        },
+        "unity-gameplay-engineer": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.2"
+        },
+        "ux-ui-architect": {
+          "model": "openai/gpt-5.4",
+          "temperature": "0.7"
+        }
+      }
+    },
+    "opencode": {
+      "dir": ".config/opencode/agents",
+      "projectDir": ".opencode/agents",
+      "model": "openai/gpt-5.6-luna",
+      "temperature": 0.4,
+      "color": false,
+      "agents": {
+        "3d-modeling-artist": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "backend-architect": {
+          "model": "openai/gpt-5.6-sol",
+          "temperature": "0.1"
+        },
+        "backend-engineer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "content-writer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.3"
+        },
+        "developer-tooling-engineer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "devops-engineer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "e2e-test-engineer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "electrical-domain-specialist": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.2"
+        },
+        "frontend-architect": {
+          "model": "openai/gpt-5.6-sol",
+          "temperature": "0.1"
+        },
+        "frontend-engineer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "it-task-master": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "native-mobile-engineer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "principal-engineer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "secops-auditor": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "seo-inspector": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.1"
+        },
+        "staff-engineer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "tax-advisor": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.1"
+        },
+        "team-manager": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.4"
+        },
+        "unity-gameplay-engineer": {
+          "model": "openai/gpt-5.6-luna",
+          "temperature": "0.2"
+        },
+        "ux-ui-architect": {
+          "model": "openai/gpt-5.6-sol",
+          "temperature": "0.7"
+        }
+      }
+    }
+  }
+}

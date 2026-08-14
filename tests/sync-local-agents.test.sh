@@ -65,24 +65,24 @@ assert_contains "$fallback_output" ".claude/agents/backend-engineer.md -> haiku"
 assert_contains "$fallback_output" ".claude/agents/content-writer.md -> sonnet"
 
 opencode_default_output="$(run_and_capture bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform opencode --use-recommended-models)"
-assert_contains "$opencode_default_output" ".config/opencode/agents/backend-engineer.md -> github-copilot/claude-sonnet-4.6"
+assert_contains "$opencode_default_output" ".config/opencode/agents/backend-engineer.md -> github-copilot/gpt-5.6-luna"
 assert_not_contains "$opencode_default_output" ".config/opencode/agents/backend-engineer.md -> openai/gpt-5.3-codex"
 
 codex_default_output="$(run_and_capture bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform codex --use-recommended-models)"
-assert_contains "$codex_default_output" ".codex/agents/backend-engineer.md -> github-copilot/claude-sonnet-4.6"
+assert_contains "$codex_default_output" ".codex/agents/backend-engineer.md -> github-copilot/gpt-5.6-luna"
 assert_not_contains "$codex_default_output" ".codex/agents/backend-engineer.md -> openai/gpt-5.4"
 
 opencode_openai_output="$(run_and_capture bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform opencode --use-recommended-models --recommended-provider openai)"
-assert_contains "$opencode_openai_output" ".config/opencode/agents/backend-engineer.md -> openai/gpt-5.3-codex"
-assert_contains "$opencode_openai_output" ".config/opencode/agents/content-writer.md -> openai/gpt-5.4"
+assert_contains "$opencode_openai_output" ".config/opencode/agents/backend-engineer.md -> openai/gpt-5.6-luna"
+assert_contains "$opencode_openai_output" ".config/opencode/agents/content-writer.md -> openai/gpt-5.6-luna"
 
 opencode_openai_fallback_output="$(run_and_capture bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform opencode --use-recommended-fallback-models --recommended-provider openai)"
-assert_contains "$opencode_openai_fallback_output" ".config/opencode/agents/backend-engineer.md -> openai/gpt-5.3-codex"
-assert_contains "$opencode_openai_fallback_output" ".config/opencode/agents/content-writer.md -> openai/gpt-5.4"
+assert_contains "$opencode_openai_fallback_output" ".config/opencode/agents/backend-engineer.md -> openai/gpt-5.6-luna"
+assert_contains "$opencode_openai_fallback_output" ".config/opencode/agents/content-writer.md -> openai/gpt-5.6-luna"
 
 codex_openai_output="$(run_and_capture bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform codex --use-recommended-models --recommended-provider openai)"
-assert_contains "$codex_openai_output" ".codex/agents/backend-engineer.md -> openai/gpt-5.3-codex"
-assert_contains "$codex_openai_output" ".codex/agents/backend-architect.md -> openai/gpt-5.3-codex"
+assert_contains "$codex_openai_output" ".codex/agents/backend-engineer.md -> openai/gpt-5.6-luna"
+assert_contains "$codex_openai_output" ".codex/agents/backend-architect.md -> openai/gpt-5.6-sol"
 
 invalid_usage_output="$(run_and_capture_failure bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform opencode --recommended-provider openai)"
 assert_contains "$invalid_usage_output" "--recommended-provider requires --use-recommended-models or --use-recommended-fallback-models."
