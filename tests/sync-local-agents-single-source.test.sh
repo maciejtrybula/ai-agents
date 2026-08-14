@@ -204,6 +204,36 @@ if find "$sync_home" -type f -name '*.md' 2>/dev/null | grep -q .; then
   exit 1
 fi
 
+# --- Fresh-checkout resilience: sync auto-materializes missing sources ---
+# The generated agent dirs are git-ignored, so a user can run sync-local-agents.sh
+# before ever running generate-agents.sh. It must materialize the sources itself
+# rather than silently copying nothing.
+fresh_cleanup() {
+  rm -rf "$repo_root/.claude/agents" "$repo_root/.codex/agents" "$repo_root/.config/opencode/agents"
+  "$repo_root/generate-agents.sh" >/dev/null 2>&1
+}
+trap 'fresh_cleanup' EXIT
+
+# Simulate a fresh checkout: drop the generated source dirs.
+rm -rf "$repo_root/.claude/agents" "$repo_root/.codex/agents" "$repo_root/.config/opencode/agents"
+
+fresh_target_dir="$(mktemp -d)"
+fresh_home="$(mktemp -d)"
+HOME="$fresh_home" bash "$repo_root/sync-local-agents.sh" \
+  --sync agents --platform claude --target-dir "$fresh_target_dir" >/dev/null 2>&1
+
+# All agents must reach the custom path even though the source dirs were absent.
+assert_file_contains "$fresh_target_dir/.claude/agents/it-task-master.md" "$body_marker"
+assert_file_contains "$fresh_target_dir/.claude/agents/it-task-master.md" "name: it-task-master"
+assert_file_contains "$fresh_target_dir/.claude/agents/it-task-master.md" "model: sonnet"
+# The missing source dirs are regenerated in the repo so they can be reused.
+if [[ ! -d "$repo_root/.claude/agents" ]]; then
+  printf 'Expected sync-local-agents.sh to regenerate missing .claude/agents\n' >&2
+  exit 1
+fi
+
+fresh_cleanup
+
 # --- Model-override precedence: explicit platform model wins over the per-agent
 #     repo_default (opencode/it-task-master -> claude-sonnet-4.6) ---
 precedence_target_dir="$(mktemp -d)"

@@ -2579,6 +2579,36 @@ fi
 claude_statusline_command_path="$(resolve_path_override "$env_claude_statusline_command_path" "$file_claude_statusline_command_path" "$default_statusline_dir/statusline-command.sh")"
 
 # -----------------------------------------------------------------------------
+# Materialize canonical sources before syncing
+# -----------------------------------------------------------------------------
+# Agent sources live in the git-ignored .claude/agents, .codex/agents, and
+# .config/opencode/agents dirs, generated from the canonical .agents/*.md by
+# generate-agents.sh. On a fresh checkout (or after a clean) those dirs are
+# absent; syncing would silently copy nothing. If agent syncing is enabled and
+# any source dir is missing, regenerate the platform outputs first so the sync
+# always has real content to copy.
+ensure_agent_sources() {
+  [[ "$sync_agents" == true ]] || return 0
+  [[ -f "$repo_root/generate-agents.sh" ]] || return 0
+  [[ -d "$repo_root/.agents" ]] || return 0
+
+  local missing=0
+  for src in "$repo_root/.claude/agents" "$repo_root/.codex/agents" "$repo_root/.config/opencode/agents"; do
+    [[ -d "$src" ]] || missing=1
+  done
+  [[ "$missing" -eq 0 ]] && return 0
+
+  print_note "Agent source dirs not materialized; running $repo_root/generate-agents.sh"
+  if [[ "$dry_run" == true ]]; then
+    printf 'Would run %s/generate-agents.sh\n' "$repo_root"
+    return 0
+  fi
+  bash "$repo_root/generate-agents.sh"
+}
+
+ensure_agent_sources
+
+# -----------------------------------------------------------------------------
 # Main sync flow
 # -----------------------------------------------------------------------------
 
@@ -2701,9 +2731,16 @@ sync_platform() {
 
   resolve_platform_settings "$platform" source_base target_base model_override config_source config_target mcp_root_key
 
-  if [[ ! -d "$source_base/agents" && ! -d "$source_base/skills" ]]; then
-    echo "Skipping $platform: no agents or skills found in $source_base" >&2
-    return
+  # An explicitly requested scope must have a real source: abort rather than
+  # silently syncing nothing.
+  if [[ "$sync_agents" == true && ! -d "$source_base/agents" ]]; then
+    print_error "No $platform agents found at $source_base/agents. Run ./generate-agents.sh first (or ensure agent sources exist)."
+    exit 1
+  fi
+
+  if [[ "$sync_skills" == true && ! -d "$source_base/skills" ]]; then
+    print_error "No $platform skills found at $source_base/skills."
+    exit 1
   fi
 
   print_heading "Syncing $platform"
