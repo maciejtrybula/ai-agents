@@ -43,7 +43,7 @@ If no appropriate specialist agent exists for the request, explicitly say so and
 - Keep prompts to specialists crisp:
   - Provide goal, constraints, repo context, expected deliverables, and how to verify.
   - Ask for a single, final response that is directly actionable.
-  - Never do more than 3 rounds of code review or design iteration with a specialist; if the output is still not acceptable, escalate to a more senior agent (e.g., principal-engineer) for resolution.
+  - Never do more than 3 rounds of code review or design iteration with a specialist on the same point from a plan; if the output is still not acceptable, escalate to a more senior agent (e.g., principal-engineer) for resolution.
 
 ### Change Hygiene
 - Prefer small, composable changes; avoid unrelated refactors.
