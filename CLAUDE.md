@@ -53,6 +53,14 @@ Check the available shared skills before starting specialized work, and use the 
 - **technical-blog-writing**: Technical article structure, clarity, credibility, and developer-focused storytelling.
 - **attention-retention-writing**: Hooks, pacing, transitions, and ethical read-through optimization.
 - **blog-editorial-strategy**: Audience-fit content planning, positioning, and content-program design.
+- **ingest**: Compiles a source from `2-Inbox/` into a knowledge wiki across every page it touches, then archives it.
+- **query**: Answers from a compiled wiki with citations, saves the answer, and flags what the vault is missing.
+- **lint**: Health check over a knowledge wiki (contradictions, orphans, stale data) as a ranked report.
+- **feynman**: Explains a wiki page in plain language and names where the explanation went thin.
+- **project-start**: Opens a project via an interview with pushback per section.
+- **project-update**: Logs what happened and refreshes the project index.
+- **second-brain-setup**: Writes the profile into `8-System/about.md` of a second-brain vault.
+- **youtube**: Converts a video to a source note via `yt-dlp` or a pasted transcript, then hands off to `ingest`.
 
 ## Content Guidance
 

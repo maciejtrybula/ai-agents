@@ -109,6 +109,30 @@ agents are expected to check them before starting specialized work.
   OSS/IOSS basics, JDG/B2B issues, compliance, deadlines, and
   escalation-aware risk framing.
 
+### Knowledge Management & Second Brain
+
+A workflow set (from
+[superhero-tech/super-brain](https://github.com/superhero-tech/super-brain))
+for running a personal knowledge vault. These assume an Obsidian-style
+wiki layout (`2-Inbox/`, `4-Knowledge/`, `5-Raw/`, `9-Outputs/`,
+`8-System/`) and are best used inside a vault that follows it.
+
+- **ingest**: Compiles a source from `2-Inbox/` into the wiki across
+  every page it touches, then archives it.
+- **query**: Answers from the compiled wiki with citations, saves the
+  answer, and flags what the vault is missing.
+- **lint**: Health check over the wiki (contradictions, orphans, stale
+  data) written up as a ranked report.
+- **feynman**: Explains a wiki page in plain language and names where
+  the explanation went thin.
+- **project-start**: Opens a project via an interview with pushback per
+  section.
+- **project-update**: Logs what happened and refreshes the project
+  index.
+- **second-brain-setup**: Writes the profile into `8-System/about.md`.
+- **youtube**: Converts a video to a source note via `yt-dlp` or a
+  pasted transcript, then hands off to `ingest`.
+
 ### Commerce Platform Expertise
 
 - **adobe-commerce-expertise**: Guidance for Adobe Commerce
