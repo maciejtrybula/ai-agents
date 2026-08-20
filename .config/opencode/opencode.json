@@ -49,12 +49,14 @@
       "true*": "allow",
       "false*": "allow",
       "echo*": "allow",
+      "printf *": "allow",
       "printf*": "allow",
       "tail*": "allow",
       "exit*": "allow",
       "kill*": "allow",
       "pkill*": "allow",
-      "ps*": "allow"
+      "ps*": "allow",
+      "exit": "allow"
     }
   },
   "agent": {
