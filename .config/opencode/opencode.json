@@ -37,6 +37,7 @@
       "docker compose ps*": "allow",
       "docker compose logs *": "allow",
       "docker compose version *": "allow",
+      "/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity *": "allow",
       "grep*": "allow",
       "cat*": "allow",
       "rg*": "allow",

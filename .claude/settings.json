@@ -69,6 +69,7 @@
       "Bash(kill*)",
       "Bash(pkill*)",
       "Bash(ps*)",
+      "Bash(/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity *)",
       "mcp__github__*",
       "mcp__linear-server__*",
       "mcp__blender__*",
