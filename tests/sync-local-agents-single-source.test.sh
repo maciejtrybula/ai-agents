@@ -39,6 +39,57 @@ assert_file_not_contains() {
   fi
 }
 
+assert_file_contains_line() {
+  local file_path="$1"
+  local expected_line="$2"
+
+  if [[ ! -f "$file_path" ]]; then
+    printf 'Expected file to exist: %s\n' "$file_path" >&2
+    exit 1
+  fi
+
+  if ! grep -Fxq "$expected_line" "$file_path"; then
+    printf 'Expected %s to contain exact line: %s\n' "$file_path" "$expected_line" >&2
+    printf 'Actual contents:\n' >&2
+    cat "$file_path" >&2
+    exit 1
+  fi
+}
+
+assert_file_contains_toml_key() {
+  local file_path="$1"
+  local key="$2"
+
+  if [[ ! -f "$file_path" ]]; then
+    printf 'Expected file to exist: %s\n' "$file_path" >&2
+    exit 1
+  fi
+
+  if ! grep -Eq "^${key}[[:space:]]*=" "$file_path"; then
+    printf 'Expected %s to contain top-level TOML key: %s\n' "$file_path" "$key" >&2
+    printf 'Actual contents:\n' >&2
+    cat "$file_path" >&2
+    exit 1
+  fi
+}
+
+assert_file_not_contains_toml_key() {
+  local file_path="$1"
+  local key="$2"
+
+  if [[ ! -f "$file_path" ]]; then
+    printf 'Expected file to exist: %s\n' "$file_path" >&2
+    exit 1
+  fi
+
+  if grep -Eq "^${key}[[:space:]]*=" "$file_path"; then
+    printf 'Expected %s to not contain top-level TOML key: %s\n' "$file_path" "$key" >&2
+    printf 'Actual contents:\n' >&2
+    cat "$file_path" >&2
+    exit 1
+  fi
+}
+
 assert_file_absent() {
   local file_path="$1"
 
@@ -55,14 +106,14 @@ assert_codex_toml() {
   local file_path="$1"
 
   assert_file_absent "${file_path%.toml}.md"
-  assert_file_contains "$file_path" 'name = "it-task-master"'
-  assert_file_contains "$file_path" "description = \"$codex_description\""
-  assert_file_contains "$file_path" 'model = "openai/gpt-5.4"'
-  assert_file_contains "$file_path" 'developer_instructions = """'
+  assert_file_contains_line "$file_path" 'name = "it-task-master"'
+  assert_file_contains_line "$file_path" "description = \"$codex_description\""
+  assert_file_contains_line "$file_path" 'model = "openai/gpt-5.4"'
+  assert_file_contains_line "$file_path" 'developer_instructions = """'
   assert_file_contains "$file_path" "$body_marker"
 
   for key in temperature color mode permission; do
-    assert_file_not_contains "$file_path" "$key ="
+    assert_file_not_contains_toml_key "$file_path" "$key"
   done
 }
 
@@ -134,8 +185,8 @@ for slug in "${shared_agent_slugs[@]}"; do
     "$repo_root/.codex/agents" \
     "$repo_root/.config/opencode/agents"; do
     if [[ "$dir" == "$repo_root/.codex/agents" ]]; then
-      assert_file_contains "$dir/$slug.toml" "name = \"$expected_name\""
-      assert_file_contains "$dir/$slug.toml" "model = \""
+      assert_file_contains_line "$dir/$slug.toml" "name = \"$expected_name\""
+      assert_file_contains_toml_key "$dir/$slug.toml" "model"
     else
       assert_file_contains "$dir/$slug.md" "name: $expected_name"
       assert_file_contains "$dir/$slug.md" "model:"
@@ -146,14 +197,14 @@ done
 # Per-agent model overrides.
 assert_file_contains "$repo_root/.claude/agents/backend-architect.md" "model: opus"
 assert_file_contains "$repo_root/.config/opencode/agents/backend-architect.md" "model: openai/gpt-5.6-sol"
-assert_file_contains "$repo_root/.codex/agents/backend-architect.toml" "model = \"openai/gpt-5.3-codex\""
+assert_file_contains_line "$repo_root/.codex/agents/backend-architect.toml" 'model = "openai/gpt-5.3-codex"'
 
 # A default-model agent still gets the platform default: devops-engineer has
 # no claude override, so it falls back to the claude default `sonnet`.
 assert_file_contains "$repo_root/.claude/agents/devops-engineer.md" "model: sonnet"
 # content-writer has no codex model override, so it falls back to the codex
 # default `openai/gpt-5.4`.
-assert_file_contains "$repo_root/.codex/agents/content-writer.toml" "model = \"openai/gpt-5.4\""
+assert_file_contains_line "$repo_root/.codex/agents/content-writer.toml" 'model = "openai/gpt-5.4"'
 
 # ux-ui-architect claude override.
 assert_file_contains "$repo_root/.claude/agents/ux-ui-architect.md" "model: opus"
@@ -161,7 +212,7 @@ assert_file_contains "$repo_root/.claude/agents/ux-ui-architect.md" "model: opus
 # native-mobile-engineer is now shared: emitted to all three dirs with its
 # canonical name in each platform's native format.
 assert_file_contains "$repo_root/.claude/agents/native-mobile-engineer.md" "name: native-mobile-engineer"
-assert_file_contains "$repo_root/.codex/agents/native-mobile-engineer.toml" "name = \"native-mobile-engineer\""
+assert_file_contains_line "$repo_root/.codex/agents/native-mobile-engineer.toml" 'name = "native-mobile-engineer"'
 assert_file_contains "$repo_root/.config/opencode/agents/native-mobile-engineer.md" "name: native-mobile-engineer"
 
 # backend-engineer uses the short canonical description on ALL platforms
@@ -171,7 +222,7 @@ for dir in \
   "$repo_root/.codex/agents" \
   "$repo_root/.config/opencode/agents"; do
   if [[ "$dir" == "$repo_root/.codex/agents" ]]; then
-    assert_file_contains "$dir/backend-engineer.toml" "description = \"Use this agent to implement backend services, API endpoints, domain models, and tests"
+    assert_file_contains_line "$dir/backend-engineer.toml" 'description = "Use this agent to implement backend services, API endpoints, domain models, and tests following DDD, EDA, and microservices patterns. Handles code implementation, refactoring, test writing, and architectural reviews for distributed backend systems."'
     assert_file_not_contains "$dir/backend-engineer.toml" "Examples:"
   else
     assert_file_contains "$dir/backend-engineer.md" "Handles code implementation, refactoring, test writing"
