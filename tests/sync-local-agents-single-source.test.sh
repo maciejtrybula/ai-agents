@@ -39,7 +39,32 @@ assert_file_not_contains() {
   fi
 }
 
+assert_file_absent() {
+  local file_path="$1"
+
+  if [[ -e "$file_path" ]]; then
+    printf 'Expected file to be absent: %s\n' "$file_path" >&2
+    exit 1
+  fi
+}
+
 body_marker="You are Task Master: a senior technical program lead and hands-on engineering coordinator."
+codex_description="Use this agent as the primary orchestrator for multi-step work. It decomposes the user's request, delegates to the best specialized agents, coordinates dependencies, integrates results, and verifies completion."
+
+assert_codex_toml() {
+  local file_path="$1"
+
+  assert_file_absent "${file_path%.toml}.md"
+  assert_file_contains "$file_path" 'name = "it-task-master"'
+  assert_file_contains "$file_path" "description = \"$codex_description\""
+  assert_file_contains "$file_path" 'model = "openai/gpt-5.4"'
+  assert_file_contains "$file_path" 'developer_instructions = """'
+  assert_file_contains "$file_path" "$body_marker"
+
+  for key in temperature color mode permission; do
+    assert_file_not_contains "$file_path" "$key ="
+  done
+}
 
 # --- Default run writes the generated files into the repo staging dirs ---
 if [[ ! -x "$repo_root/generate-agents.sh" ]]; then
@@ -51,30 +76,26 @@ bash "$repo_root/generate-agents.sh"
 
 # Canonical body marker present in all 3 generated platform files.
 assert_file_contains "$repo_root/.claude/agents/it-task-master.md" "$body_marker"
-assert_file_contains "$repo_root/.codex/agents/it-task-master.md" "$body_marker"
+assert_codex_toml "$repo_root/.codex/agents/it-task-master.toml"
 assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "$body_marker"
 
-# Shared frontmatter `name` present in all 3.
+# Shared frontmatter `name` present in Claude and OpenCode.
 for file in \
   "$repo_root/.claude/agents/it-task-master.md" \
-  "$repo_root/.codex/agents/it-task-master.md" \
   "$repo_root/.config/opencode/agents/it-task-master.md"; do
   assert_file_contains "$file" "name: it-task-master"
 done
 
-# Shared `color` present in Claude and Codex, but NOT in OpenCode (its
-# platform convention omits the color line).
+# Shared `color` present in Claude, but NOT in OpenCode (its platform
+# convention omits the color line).
 assert_file_contains "$repo_root/.claude/agents/it-task-master.md" "color: orange"
-assert_file_contains "$repo_root/.codex/agents/it-task-master.md" "color: orange"
 
-# Per-platform model present.
+# Per-platform model present in each platform's native format.
 assert_file_contains "$repo_root/.claude/agents/it-task-master.md" "model: sonnet"
-assert_file_contains "$repo_root/.codex/agents/it-task-master.md" "model: openai/gpt"
 assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "model: openai/gpt"
 
-# Per-platform temperature present (from platform config) in Codex and
-# OpenCode, but NOT in Claude (no temperature defined for Claude).
-assert_file_contains "$repo_root/.codex/agents/it-task-master.md" "temperature: 0.4"
+# Per-platform temperature present (from platform config) in OpenCode, but
+# NOT in Claude (no temperature defined for Claude).
 assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "temperature: 0.4"
 assert_file_not_contains "$repo_root/.claude/agents/it-task-master.md" "temperature:"
 
@@ -112,30 +133,35 @@ for slug in "${shared_agent_slugs[@]}"; do
     "$repo_root/.claude/agents" \
     "$repo_root/.codex/agents" \
     "$repo_root/.config/opencode/agents"; do
-    assert_file_contains "$dir/$slug.md" "name: $expected_name"
-    assert_file_contains "$dir/$slug.md" "model:"
+    if [[ "$dir" == "$repo_root/.codex/agents" ]]; then
+      assert_file_contains "$dir/$slug.toml" "name = \"$expected_name\""
+      assert_file_contains "$dir/$slug.toml" "model = \""
+    else
+      assert_file_contains "$dir/$slug.md" "name: $expected_name"
+      assert_file_contains "$dir/$slug.md" "model:"
+    fi
   done
 done
 
 # Per-agent model overrides.
 assert_file_contains "$repo_root/.claude/agents/backend-architect.md" "model: opus"
 assert_file_contains "$repo_root/.config/opencode/agents/backend-architect.md" "model: openai/gpt-5.6-sol"
-assert_file_contains "$repo_root/.codex/agents/backend-architect.md" "model: openai/gpt-5.3-codex"
+assert_file_contains "$repo_root/.codex/agents/backend-architect.toml" "model = \"openai/gpt-5.3-codex\""
 
 # A default-model agent still gets the platform default: devops-engineer has
 # no claude override, so it falls back to the claude default `sonnet`.
 assert_file_contains "$repo_root/.claude/agents/devops-engineer.md" "model: sonnet"
 # content-writer has no codex model override, so it falls back to the codex
 # default `openai/gpt-5.4`.
-assert_file_contains "$repo_root/.codex/agents/content-writer.md" "model: openai/gpt-5.4"
+assert_file_contains "$repo_root/.codex/agents/content-writer.toml" "model = \"openai/gpt-5.4\""
 
 # ux-ui-architect claude override.
 assert_file_contains "$repo_root/.claude/agents/ux-ui-architect.md" "model: opus"
 
 # native-mobile-engineer is now shared: emitted to all three dirs with its
-# canonical `name:`.
+# canonical name in each platform's native format.
 assert_file_contains "$repo_root/.claude/agents/native-mobile-engineer.md" "name: native-mobile-engineer"
-assert_file_contains "$repo_root/.codex/agents/native-mobile-engineer.md" "name: native-mobile-engineer"
+assert_file_contains "$repo_root/.codex/agents/native-mobile-engineer.toml" "name = \"native-mobile-engineer\""
 assert_file_contains "$repo_root/.config/opencode/agents/native-mobile-engineer.md" "name: native-mobile-engineer"
 
 # backend-engineer uses the short canonical description on ALL platforms
@@ -144,15 +170,19 @@ for dir in \
   "$repo_root/.claude/agents" \
   "$repo_root/.codex/agents" \
   "$repo_root/.config/opencode/agents"; do
-  assert_file_contains "$dir/backend-engineer.md" "Handles code implementation, refactoring, test writing"
-  assert_file_not_contains "$dir/backend-engineer.md" "Examples:"
+  if [[ "$dir" == "$repo_root/.codex/agents" ]]; then
+    assert_file_contains "$dir/backend-engineer.toml" "description = \"Use this agent to implement backend services, API endpoints, domain models, and tests"
+    assert_file_not_contains "$dir/backend-engineer.toml" "Examples:"
+  else
+    assert_file_contains "$dir/backend-engineer.md" "Handles code implementation, refactoring, test writing"
+    assert_file_not_contains "$dir/backend-engineer.md" "Examples:"
+  fi
 done
 
 # mode/permission survival: native-mobile-engineer carries both, copied
-# verbatim into the claude, codex, and opencode generated outputs.
+# verbatim into the Claude and OpenCode generated outputs.
 for dir in \
   "$repo_root/.claude/agents" \
-  "$repo_root/.codex/agents" \
   "$repo_root/.config/opencode/agents"; do
   assert_file_contains "$dir/native-mobile-engineer.md" "mode: subagent"
   assert_file_contains "$dir/native-mobile-engineer.md" "permission:"
@@ -165,18 +195,16 @@ trap 'rm -rf "$target_dir"' EXIT
 bash "$repo_root/generate-agents.sh" --target-dir "$target_dir"
 
 assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "$body_marker"
-assert_file_contains "$target_dir/.codex/agents/it-task-master.md" "$body_marker"
+assert_codex_toml "$target_dir/.codex/agents/it-task-master.toml"
 assert_file_contains "$target_dir/.opencode/agents/it-task-master.md" "$body_marker"
 
 assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "name: it-task-master"
 assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "color: orange"
 assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "model: sonnet"
-assert_file_contains "$target_dir/.codex/agents/it-task-master.md" "model: openai/gpt"
 assert_file_contains "$target_dir/.opencode/agents/it-task-master.md" "model: openai/gpt"
 assert_file_not_contains "$target_dir/.opencode/agents/it-task-master.md" "color:"
 
-# Per-platform temperature also present in the --target-dir output.
-assert_file_contains "$target_dir/.codex/agents/it-task-master.md" "temperature: 0.4"
+# Per-platform temperature also present in the --target-dir OpenCode output.
 assert_file_contains "$target_dir/.opencode/agents/it-task-master.md" "temperature: 0.4"
 assert_file_not_contains "$target_dir/.claude/agents/it-task-master.md" "temperature:"
 
