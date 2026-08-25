@@ -17,7 +17,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
 
 # Trees to compare. The FIRST tree is the canonical reference; every shared file
-# under it must match in all other trees.
+# under it must match in all other trees. Agent files use Markdown in Claude and
+# OpenCode, but TOML in Codex.
 readonly CLAUDE_TREE="$repo_root/.claude"
 readonly OPENCODE_TREE="$repo_root/.config/opencode"
 readonly CODEX_TREE="$repo_root/.codex"
@@ -36,6 +37,17 @@ md_body() {
       if (delim >= 2) print
       if (delim == 0) print
     }
+  ' "$file"
+}
+
+# Emit the developer-instructions body from a generated Codex agent TOML file.
+codex_body() {
+  local file="$1"
+
+  awk '
+    $0 == "developer_instructions = \"\"\"" { in_body=1; next }
+    in_body && $0 == "\"\"\"" { exit }
+    in_body { print }
   ' "$file"
 }
 
@@ -59,25 +71,48 @@ check_parity() {
   local rel=""
   local ref_file=""
   local other=""
+  local codex_rel=""
   local ref_body=""
   local other_body=""
 
   while IFS= read -r ref_file; do
     rel="${ref_file#"$ref_dir"/}"
-    for other in "$other_root_a/$subdir/$rel" "$other_root_b/$subdir/$rel"; do
-      if [[ ! -f "$other" ]]; then
-        printf 'FAIL: %s not present in %s (missing shared file)\n' "$rel" "$other" >&2
-        failures=$((failures + 1))
-        continue
-      fi
-      ref_body="$(md_body "$ref_file")"
+    ref_body="$(md_body "$ref_file")"
+
+    other="$other_root_a/$subdir/$rel"
+    if [[ ! -f "$other" ]]; then
+      printf 'FAIL: %s not present in %s (missing shared file)\n' "$rel" "$other" >&2
+      failures=$((failures + 1))
+    else
       other_body="$(md_body "$other")"
       if [[ "$ref_body" != "$other_body" ]]; then
         printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
           "$rel" "$ref_file" "$other" >&2
         failures=$((failures + 1))
       fi
-    done
+    fi
+
+    codex_rel="$rel"
+    if [[ "$subdir" == "agents" ]]; then
+      codex_rel="${rel%.md}.toml"
+    fi
+    other="$other_root_b/$subdir/$codex_rel"
+    if [[ ! -f "$other" ]]; then
+      printf 'FAIL: %s not present in %s (missing shared file)\n' "$codex_rel" "$other" >&2
+      failures=$((failures + 1))
+      continue
+    fi
+
+    if [[ "$subdir" == "agents" ]]; then
+      other_body="$(codex_body "$other")"
+    else
+      other_body="$(md_body "$other")"
+    fi
+    if [[ "$ref_body" != "$other_body" ]]; then
+      printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
+        "$rel" "$ref_file" "$other" >&2
+      failures=$((failures + 1))
+    fi
   done < <(find "$ref_dir" -type f -name '*.md' | sort)
 }
 
@@ -108,16 +143,17 @@ mkdir -p "$neg_ref/agents" "$neg_ref/skills"
 mkdir -p "$neg_opencode/agents" "$neg_opencode/skills"
 mkdir -p "$neg_codex/agents" "$neg_codex/skills"
 
-# Copy the real shared agent (with its frontmatter) into all three temp trees,
-# then intentionally corrupt the BODY of the opencode copy while leaving its
-# frontmatter untouched. This mirrors the exact drift the parity check must catch.
+# Copy the real shared agent into all three temp trees, preserving each
+# platform's native format, then intentionally corrupt the Codex instruction
+# body. This mirrors the exact drift the parity check must catch.
 cp -a "$CLAUDE_TREE/agents/backend-architect.md" "$neg_ref/agents/backend-architect.md"
 cp -a "$CLAUDE_TREE/agents/backend-architect.md" "$neg_opencode/agents/backend-architect.md"
-cp -a "$CLAUDE_TREE/agents/backend-architect.md" "$neg_codex/agents/backend-architect.md"
+cp -a "$CODEX_TREE/agents/backend-architect.toml" "$neg_codex/agents/backend-architect.toml"
 
-# Corrupt the body of the opencode copy (append to a body line; frontmatter is
-# unaffected because it is the leading delimited block).
-printf '\n# DRIFTED BODY LINE\n' >> "$neg_opencode/agents/backend-architect.md"
+# Corrupt the Codex developer-instructions body while leaving its TOML fields
+# and delimiters intact.
+perl -0pi -e 's/(developer_instructions = """\n.*?)(\n""")/$1\n# DRIFTED BODY LINE$2/s' \
+  "$neg_codex/agents/backend-architect.toml"
 
 neg_failures=0
 failures=0

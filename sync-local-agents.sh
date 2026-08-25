@@ -374,7 +374,7 @@ build_recommended_agent_model_overrides() {
   while IFS= read -r file; do
     [[ -n "$file" ]] || continue
 
-    agent_slug="$(basename "$file" .md)"
+    agent_slug="$(agent_slug_from_file "$platform" "$file")"
     recommended_model_id="$(resolve_recommended_model_id_for_agent "$platform" "$agent_slug" "$recommendation_index" "$provider")"
 
     if [[ -z "$recommended_model_id" ]]; then
@@ -384,7 +384,7 @@ build_recommended_agent_model_overrides() {
     fi
 
     current_overrides="$(append_agent_model_override "$current_overrides" "$platform" "$agent_slug" "$recommended_model_id")"
-  done < <(iterate_agent_markdown_files "$source_agents_dir" "$selection")
+  done < <(iterate_agent_files "$platform" "$source_agents_dir" "$selection")
 
   printf -v "$__result_var" '%s' "$current_overrides"
 }
@@ -825,16 +825,43 @@ parse_cli_agent_model_override() {
 # Model override resolution and application helpers
 # -----------------------------------------------------------------------------
 
-iterate_agent_markdown_files() {
-  local source_agents_dir="$1"
-  local selection="$2"
+agent_file_extension() {
+  local platform="$1"
+
+  case "$platform" in
+    claude|opencode)
+      printf '.md'
+      ;;
+    codex)
+      printf '.toml'
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+agent_slug_from_file() {
+  local platform="$1"
+  local file="$2"
+  local extension="$(agent_file_extension "$platform")"
+  local filename="${file##*/}"
+
+  printf '%s' "${filename%"$extension"}"
+}
+
+iterate_agent_files() {
+  local platform="$1"
+  local source_agents_dir="$2"
+  local selection="$3"
   local entry=""
   local file=""
+  local extension="$(agent_file_extension "$platform")"
   local expanded_selection=""
   local selected_entries=()
 
   if [[ "$selection" == "*" ]]; then
-    find "$source_agents_dir" -type f -name '*.md' | sort
+    find "$source_agents_dir" -type f -name "*$extension" | sort
     return 0
   fi
 
@@ -846,8 +873,8 @@ iterate_agent_markdown_files() {
     if [[ -d "$source_agents_dir/$entry" ]]; then
       while IFS= read -r file; do
         printf '%s\n' "$file"
-      done < <(find "$source_agents_dir/$entry" -type f -name '*.md' | sort)
-    elif [[ "$entry" == *.md ]]; then
+      done < <(find "$source_agents_dir/$entry" -type f -name "*$extension" | sort)
+    elif [[ "$entry" == *"$extension" ]]; then
       printf '%s\n' "$source_agents_dir/$entry"
     fi
   done
@@ -872,7 +899,7 @@ process_model_override_files() {
   while IFS= read -r file; do
     [[ -n "$file" ]] || continue
 
-    agent_slug="$(basename "$file" .md)"
+    agent_slug="$(agent_slug_from_file "$platform" "$file")"
     effective_model_value="$(resolve_effective_model_override "$platform" "$agent_slug" "$platform_model_value")"
     [[ -n "$effective_model_value" ]] || continue
 
@@ -887,9 +914,13 @@ process_model_override_files() {
     if [[ "$mode" == "preview" ]]; then
       printf 'Would override model in synced copy of %s -> %s\n' "$output_file" "$effective_model_value"
     else
-      MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$output_file"
+      if [[ "$platform" == "codex" ]]; then
+        MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model[ \t]*=[ \t]*".*"[ \t]*$/model = "$ENV{MODEL_OVERRIDE}"/m' "$output_file"
+      else
+        MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$output_file"
+      fi
     fi
-  done < <(iterate_agent_markdown_files "$source_agents_dir" "$selection")
+  done < <(iterate_agent_files "$platform" "$source_agents_dir" "$selection")
 }
 
 apply_model_override() {
@@ -958,7 +989,7 @@ validate_agent_override_targets_exist() {
 
     [[ "$record_platform" == "$platform" ]] || continue
 
-    if [[ ! -f "$source_agents_dir/$record_agent.md" ]]; then
+    if [[ ! -f "$source_agents_dir/$record_agent$(agent_file_extension "$platform")" ]]; then
       print_error "Unknown $platform agent in model override: $record_agent"
       exit 1
     fi
@@ -1024,7 +1055,7 @@ Override the fallback model used in synced OpenCode agent frontmatter
 Precedence: --opencode-model > OPENCODE_MODEL env var >
 ./.opencode.local.env > repo defaults
 --codex-model
-Override the fallback model used in synced Codex agent frontmatter
+Override the fallback model used in synced Codex agent TOML
 Precedence: --codex-model > CODEX_MODEL env var >
 ./.codex.local.env > repo defaults
 --agent-model
@@ -1483,6 +1514,7 @@ prompt_interactive_model_overrides() {
   local requested_model=""
   local target_value=""
   local platform_cli_model=""
+  local agent_extension="$(agent_file_extension "$platform")"
 
   case "$platform" in
     claude) platform_cli_model="$cli_claude_model" ;;
@@ -1529,8 +1561,8 @@ prompt_interactive_model_overrides() {
       3)
         IFS='|' read -r -a selected_entries <<< "$selected_joined"
         for entry in "${selected_entries[@]}"; do
-          [[ "$entry" == *.md ]] || continue
-          agent_slug="$(basename "$entry" .md)"
+          [[ "$entry" == *"$agent_extension" ]] || continue
+          agent_slug="$(agent_slug_from_file "$platform" "$entry")"
           print_divider
           printf '%sAgent:%s %s%s%s\n' "$color_magenta" "$color_reset" "$color_bold" "$agent_slug" "$color_reset"
           printf '%sOverride this agent? [y/N]:%s ' "$color_magenta" "$color_reset"
