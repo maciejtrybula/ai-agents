@@ -246,7 +246,7 @@ render_platform_file() {
       printf 'description = "%s"\n' "$(toml_escape_scalar "$canonical_description")"
       printf 'model = "%s"\n' "$(toml_escape_scalar "$platform_model")"
       printf 'developer_instructions = """\n'
-      awk 'BEGIN{f=0} /^---$/{f++; next} f>=2{print}' "$canonical_file" | toml_escape_multiline_body
+      awk 'BEGIN{f=0} /^---$/ && f<2{f++; next} f>=2{print}' "$canonical_file" | toml_escape_multiline_body
       printf '"""\n'
     } >"$out_file"
 
@@ -286,7 +286,7 @@ render_platform_file() {
     fi
     printf -- '---\n'
     # Body = everything after the closing frontmatter delimiter (starts with a blank line).
-    awk 'BEGIN{f=0} /^---$/{f++; next} f>=2{print}' "$canonical_file"
+    awk 'BEGIN{f=0} /^---$/ && f<2{f++; next} f>=2{print}' "$canonical_file"
   } >"$out_file"
 
   printf '%s\n' "$out_file"

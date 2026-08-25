@@ -48,7 +48,7 @@ assert_file_contains_line() {
     exit 1
   fi
 
-  if ! grep -Fxq "$expected_line" "$file_path"; then
+  if ! grep -Fxq -- "$expected_line" "$file_path"; then
     printf 'Expected %s to contain exact line: %s\n' "$file_path" "$expected_line" >&2
     printf 'Actual contents:\n' >&2
     cat "$file_path" >&2
@@ -215,6 +215,10 @@ for key in name description model developer_instructions; do
 done
 assert_file_contains_line "$folded_codex_file" "description = \"$folded_codex_description\""
 assert_file_not_contains "$folded_codex_file" 'description = ">"'
+
+# Body horizontal rules must survive after the frontmatter close.
+three_d_codex_file="$repo_root/.codex/agents/3d-modeling-artist.toml"
+assert_file_contains_line "$three_d_codex_file" '---'
 
 # ux-ui-architect claude override.
 assert_file_contains "$repo_root/.claude/agents/ux-ui-architect.md" "model: opus"
