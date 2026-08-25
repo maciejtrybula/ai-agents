@@ -82,6 +82,46 @@ if (entry && entry[field] !== undefined && entry[field] !== null) {
 NODE
 }
 
+toml_escape_scalar() {
+  node -e '
+const value = process.argv[1] ?? ""
+const escapes = {"\b": "\\b", "\t": "\\t", "\n": "\\n", "\f": "\\f", "\r": "\\r"}
+const escaped = value
+  .replace(/\\/g, "\\\\")
+  .replace(/"/g, "\\\"")
+  .replace(/[\u0000-\u001f\u007f]/g, (character) => {
+    return escapes[character] ?? `\\u${character.codePointAt(0).toString(16).padStart(4, "0")}`
+  })
+process.stdout.write(escaped)
+' "$1"
+}
+
+toml_escape_multiline_body() {
+  node -e '
+const fs = require("fs")
+const value = fs.readFileSync(0, "utf8")
+let escaped = ""
+for (const character of value) {
+  if (character === "\\") escaped += "\\\\"
+  else if (character === "\r") escaped += "\\r"
+  else if (character === "\n") escaped += "\n"
+  else if (character === "\b") escaped += "\\b"
+  else if (character === "\f") escaped += "\\f"
+  else if (character === "\t") escaped += "\t"
+  else if (character.codePointAt(0) < 0x20 || character.codePointAt(0) === 0x7f) {
+    escaped += `\\u${character.codePointAt(0).toString(16).padStart(4, "0")}`
+  } else {
+    escaped += character
+  }
+}
+
+// A quote run of three or more would close the multiline basic string. Escape
+// only those runs so ordinary canonical body text remains readable.
+escaped = escaped.replace(/"{3,}/g, (run) => "\\\"".repeat(run.length))
+process.stdout.write(escaped)
+'
+}
+
 # Read the canonical `platforms:` frontmatter list (e.g. "platforms: [codex, opencode]").
 # Prints each platform slug on its own line; prints nothing if absent (meaning all platforms).
 # $1 = canonical file
@@ -137,12 +177,41 @@ render_platform_file() {
   fi
 
   local out_dir="$out_base/$out_platform_dir"
-  local out_file="$out_dir/$slug.md"
-  mkdir -p "$out_dir"
 
   # Frontmatter = lines between the opening `---` (line 1) and the closing `---`.
   local frontmatter_block
   frontmatter_block="$(sed -n '2,/^---$/p' "$canonical_file" | sed '$d')"
+
+  if [[ "$platform" == "codex" ]]; then
+    local canonical_name canonical_description
+    canonical_name="$(printf '%s\n' "$frontmatter_block" | awk '/^name:/{sub(/^name:[ \t]*/, ""); print; exit}')"
+    canonical_description="$(printf '%s\n' "$frontmatter_block" | awk '/^description:/{sub(/^description:[ \t]*/, ""); print; exit}')"
+    if [[ -z "$canonical_name" || -z "$canonical_description" ]]; then
+      printf 'Error: canonical agent is missing name or description: %s\n' "$canonical_file" >&2
+      exit 1
+    fi
+    if [[ -n "$agent_description" ]]; then
+      canonical_description="$agent_description"
+    fi
+
+    local out_file="$out_dir/$slug.toml"
+    mkdir -p "$out_dir"
+    rm -f "$out_dir/$slug.md"
+    {
+      printf 'name = "%s"\n' "$(toml_escape_scalar "$canonical_name")"
+      printf 'description = "%s"\n' "$(toml_escape_scalar "$canonical_description")"
+      printf 'model = "%s"\n' "$(toml_escape_scalar "$platform_model")"
+      printf 'developer_instructions = """\n'
+      awk 'BEGIN{f=0} /^---$/{f++; next} f>=2{print}' "$canonical_file" | toml_escape_multiline_body
+      printf '"""\n'
+    } >"$out_file"
+
+    printf '%s\n' "$out_file"
+    return
+  fi
+
+  local out_file="$out_dir/$slug.md"
+  mkdir -p "$out_dir"
 
   {
     printf -- '---\n'

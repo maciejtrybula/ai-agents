@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Per-platform frontmatter defaults and per-agent overrides applied by generate-agents.sh when materializing agents from the canonical .agents/ sources. Every canonical agent is listed explicitly per platform with its effective model and (where the platform has a temperature concept) temperature; description appears only where it diverges from the canonical .agents/*.md description. claude intentionally omits temperature, as it has no temperature concept. These are default values; the model-override machinery in sync-local-agents.sh applies on top at sync time.",
+  "description": "Per-platform frontmatter defaults and per-agent overrides applied by generate-agents.sh when materializing agents from the canonical .agents/ sources. Every canonical agent is listed explicitly per platform with its effective model and (where supported) temperature; description appears only where it diverges from the canonical .agents/*.md description. claude and codex intentionally omit temperature because they have no supported temperature field here. These are default values; the model-override machinery in sync-local-agents.sh applies on top at sync time.",
   "platforms": {
     "claude": {
       "dir": ".claude/agents",
@@ -72,88 +72,67 @@
     "codex": {
       "dir": ".codex/agents",
       "model": "openai/gpt-5.4",
-      "temperature": 0.4,
       "color": true,
       "agents": {
         "3d-modeling-artist": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.4"
         },
         "backend-architect": {
-          "model": "openai/gpt-5.3-codex",
-          "temperature": "0.1"
+          "model": "openai/gpt-5.3-codex"
         },
         "backend-engineer": {
-          "model": "openai/gpt-5.3-codex",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.3-codex"
         },
         "content-writer": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.3"
+          "model": "openai/gpt-5.4"
         },
         "developer-tooling-engineer": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.4"
         },
         "devops-engineer": {
-          "model": "openai/gpt-5.3-codex",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.3-codex"
         },
         "e2e-test-engineer": {
-          "model": "openai/gpt-5.3-codex",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.3-codex"
         },
         "electrical-domain-specialist": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.2"
+          "model": "openai/gpt-5.4"
         },
         "frontend-architect": {
-          "model": "openai/gpt-5.3-codex",
-          "temperature": "0.1"
+          "model": "openai/gpt-5.3-codex"
         },
         "frontend-engineer": {
-          "model": "openai/gpt-5.3-codex",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.3-codex"
         },
         "it-task-master": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.4"
         },
         "native-mobile-engineer": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.4"
         },
         "principal-engineer": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.4"
         },
         "secops-auditor": {
-          "model": "openai/gpt-5.3-codex",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.3-codex"
         },
         "seo-inspector": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.1"
+          "model": "openai/gpt-5.4"
         },
         "staff-engineer": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.4"
         },
         "tax-advisor": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.1"
+          "model": "openai/gpt-5.4"
         },
         "team-manager": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.4"
+          "model": "openai/gpt-5.4"
         },
         "unity-gameplay-engineer": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.2"
+          "model": "openai/gpt-5.4"
         },
         "ux-ui-architect": {
-          "model": "openai/gpt-5.4",
-          "temperature": "0.7"
+          "model": "openai/gpt-5.4"
         }
       }
     },
