@@ -903,13 +903,9 @@ process_model_override_files() {
     effective_model_value="$(resolve_effective_model_override "$platform" "$agent_slug" "$platform_model_value")"
     [[ -n "$effective_model_value" ]] || continue
 
-    if [[ "$selection" == "*" ]]; then
-      output_file="$file"
-    else
-      relative_path="${file#"$source_agents_dir/"}"
-      output_file="$target_agents_dir/$relative_path"
-      [[ "$mode" == "preview" || -f "$output_file" ]] || continue
-    fi
+    relative_path="${file#"$source_agents_dir/"}"
+    output_file="$target_agents_dir/$relative_path"
+    [[ "$mode" == "preview" || -f "$output_file" ]] || continue
 
     if [[ "$mode" == "preview" ]]; then
       printf 'Would override model in synced copy of %s -> %s\n' "$output_file" "$effective_model_value"
@@ -954,12 +950,13 @@ process_model_override_files() {
 
 apply_model_override() {
   local platform="$1"
-  local target_dir="$2"
-  local platform_model_value="$3"
+  local source_dir="$2"
+  local target_dir="$3"
+  local platform_model_value="$4"
 
-  [[ -d "$target_dir" ]] || return 0
+  [[ -d "$source_dir" && -d "$target_dir" ]] || return 0
 
-  process_model_override_files "apply" "$platform" "$target_dir" "$target_dir" "*" "$platform_model_value"
+  process_model_override_files "apply" "$platform" "$source_dir" "$target_dir" "*" "$platform_model_value"
 }
 
 resolve_effective_model_override() {
@@ -2846,7 +2843,7 @@ sync_platform() {
       if [[ "$dry_run" == true ]]; then
         preview_model_override "$platform" "$source_base/agents" "$model_override"
       else
-        apply_model_override "$platform" "$target_base/agents" "$model_override"
+        apply_model_override "$platform" "$source_base/agents" "$target_base/agents" "$model_override"
       fi
     elif [[ -n "$agent_selection" ]]; then
       expand_selection "$source_base/agents" "$agent_selection" selection_joined

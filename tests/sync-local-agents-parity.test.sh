@@ -29,14 +29,20 @@ readonly CODEX_TREE="$repo_root/.codex"
 #   - Otherwise (no frontmatter) the body is the whole file.
 md_body() {
   local file="$1"
-  awk '
-    BEGIN { delim=0; has_fm=0 }
-    {
-      if (delim == 0 && $0 == "---") { delim=1; has_fm=1; next }
-      if (delim == 1 && $0 == "---") { delim=2; next }
-      if (delim >= 2) print
-      if (delim == 0) print
+  perl -0e '
+    my $text = <>;
+    my $body_start = 0;
+
+    if ($text =~ /\A---(?:\r?\n|\z)/) {
+      $body_start = $+[0];
+      my $frontmatter = substr($text, $body_start);
+      if ($frontmatter =~ /^---(?:\r?\n|\z)/m) {
+        print substr($text, $body_start + $+[0]);
+        exit 0;
+      }
     }
+
+    print $text;
   ' "$file"
 }
 
@@ -110,8 +116,9 @@ check_parity() {
   local ref_file=""
   local other=""
   local codex_rel=""
-  local ref_body=""
-  local other_body=""
+  local body_dir=""
+
+  body_dir="$(mktemp -d)"
 
   while IFS= read -r ref_file; do
     rel="${ref_file#"$ref_dir"/}"
@@ -121,20 +128,12 @@ check_parity() {
       printf 'FAIL: %s not present in %s (missing shared file)\n' "$rel" "$other" >&2
       failures=$((failures + 1))
     else
-      if [[ "$subdir" == "agents" ]]; then
-        if ! cmp -s <(md_body "$ref_file") <(md_body "$other"); then
-          printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
-            "$rel" "$ref_file" "$other" >&2
-          failures=$((failures + 1))
-        fi
-      else
-        ref_body="$(md_body "$ref_file")"
-        other_body="$(md_body "$other")"
-        if [[ "$ref_body" != "$other_body" ]]; then
-          printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
-            "$rel" "$ref_file" "$other" >&2
-          failures=$((failures + 1))
-        fi
+      md_body "$ref_file" >"$body_dir/reference"
+      md_body "$other" >"$body_dir/other"
+      if ! cmp -s "$body_dir/reference" "$body_dir/other"; then
+        printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
+          "$rel" "$ref_file" "$other" >&2
+        failures=$((failures + 1))
       fi
     fi
 
@@ -150,21 +149,23 @@ check_parity() {
     fi
 
     if [[ "$subdir" == "agents" ]]; then
-      if ! cmp -s <(md_body "$ref_file") <(codex_body "$other"); then
+      if ! codex_body "$other" >"$body_dir/codex"; then
+        printf 'FAIL: could not decode Codex body for %s\n  file: %s\n' \
+          "$rel" "$other" >&2
+        failures=$((failures + 1))
+      elif ! cmp -s "$body_dir/reference" "$body_dir/codex"; then
         printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
           "$rel" "$ref_file" "$other" >&2
         failures=$((failures + 1))
       fi
-    else
-      ref_body="$(md_body "$ref_file")"
-      other_body="$(md_body "$other")"
-      if [[ "$ref_body" != "$other_body" ]]; then
-        printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
-          "$rel" "$ref_file" "$other" >&2
-        failures=$((failures + 1))
-      fi
+    elif ! cmp -s "$body_dir/reference" "$body_dir/other"; then
+      printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
+        "$rel" "$ref_file" "$other" >&2
+      failures=$((failures + 1))
     fi
   done < <(find "$ref_dir" -type f -name '*.md' | sort)
+
+  rm -rf "$body_dir"
 }
 
 check_parity "$CLAUDE_TREE" "$OPENCODE_TREE" "$CODEX_TREE" "agents"
@@ -246,6 +247,24 @@ cp -a "$CLAUDE_TREE/agents/backend-architect.md" "$neg_ref/agents/backend-archit
 cp -a "$CLAUDE_TREE/agents/backend-architect.md" "$neg_opencode/agents/backend-architect.md"
 cp -a "$CODEX_TREE/agents/backend-architect.toml" "$neg_codex/agents/backend-architect.toml"
 
+cat >"$neg_ref/agents/invalid-body.md" <<'EOF'
+---
+name: invalid-body
+description: invalid decoder fixture
+---
+decoder failure must not be reported as body drift
+EOF
+cp -a "$neg_ref/agents/invalid-body.md" "$neg_opencode/agents/invalid-body.md"
+cat >"$neg_codex/agents/invalid-body.toml" <<'EOF'
+name = "invalid-body"
+description = "invalid decoder fixture"
+model = "test-model"
+EOF
+
+printf '%s\n' 'skill body' >"$neg_ref/skills/trailing-newline.md"
+cp -a "$neg_ref/skills/trailing-newline.md" "$neg_codex/skills/trailing-newline.md"
+printf '%s\n\n' 'skill body' >"$neg_opencode/skills/trailing-newline.md"
+
 # Corrupt the Codex developer-instructions body while leaving its TOML fields
 # and delimiters intact.
 perl -0pi -e 's/(developer_instructions = """\n.*?)(\n""")/$1\n# DRIFTED BODY LINE$2/s' \
@@ -262,4 +281,14 @@ if [[ "$neg_failures" -eq 0 ]]; then
 fi
 
 printf 'Negative test confirmed: parity check detects body drift (%d drift(s) flagged).\n' "$neg_failures"
+
+failures=0
+check_parity "$neg_ref" "$neg_opencode" "$neg_codex" "skills"
+skill_neg_failures="$failures"
+if [[ "$skill_neg_failures" -eq 0 ]]; then
+  printf 'FAIL: negative skill test did not detect the deliberate trailing-newline drift\n' >&2
+  exit 1
+fi
+
+printf 'Negative test confirmed: parity check detects trailing-newline drift (%d drift(s) flagged).\n' "$skill_neg_failures"
 printf 'Parity checks passed.\n'

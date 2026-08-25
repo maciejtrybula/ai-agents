@@ -86,6 +86,14 @@ assert_contains "$codex_openai_output" ".codex/agents/backend-architect.toml -> 
 
 codex_sync_target_dir="$(mktemp -d)"
 codex_sync_home="$(mktemp -d)"
+mkdir -p "$codex_sync_target_dir/.codex/agents"
+cat >"$codex_sync_target_dir/.codex/agents/user-managed.toml" <<'EOF'
+name = "user-managed"
+description = "A preserved target-only Codex agent"
+developer_instructions = """
+This file is not part of the repository source set.
+"""
+EOF
 HOME="$codex_sync_home" bash "$repo_root/sync-local-agents.sh" \
   --sync agents --platform codex --target-dir "$codex_sync_target_dir" \
   --codex-model openai/gpt-5.6-luna \
@@ -95,6 +103,7 @@ codex_synced_file="$codex_sync_target_dir/.codex/agents/backend-architect.toml"
 codex_synced_content="$(cat "$codex_synced_file")"
 assert_contains "$codex_synced_content" 'model = "openai/gpt-5.6-sol"'
 assert_contains "$codex_synced_content" 'developer_instructions = """'
+assert_contains "$(cat "$codex_sync_target_dir/.codex/agents/user-managed.toml")" 'user-managed'
 if [[ -e "$codex_sync_target_dir/.codex/agents/backend-architect.md" ]]; then
   printf 'Expected Codex sync to preserve native TOML output, not create Markdown\n' >&2
   exit 1
