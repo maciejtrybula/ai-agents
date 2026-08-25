@@ -206,6 +206,16 @@ assert_file_contains "$repo_root/.claude/agents/devops-engineer.md" "model: sonn
 # default `openai/gpt-5.4`.
 assert_file_contains_line "$repo_root/.codex/agents/content-writer.toml" 'model = "openai/gpt-5.4"'
 
+# Folded YAML descriptions must be resolved into one TOML scalar, not emitted
+# as the block-scalar marker itself.
+folded_codex_file="$repo_root/.codex/agents/unity-gameplay-engineer.toml"
+folded_codex_description="Use this agent for Unity gameplay implementation, debugging, and code review across C#, MonoBehaviour, ScriptableObject, prefabs, scenes, input, physics, animation-state coordination, AI behaviors, combat, progression systems, and gameplay system boundaries."
+for key in name description model developer_instructions; do
+  assert_file_contains_toml_key "$folded_codex_file" "$key"
+done
+assert_file_contains_line "$folded_codex_file" "description = \"$folded_codex_description\""
+assert_file_not_contains "$folded_codex_file" 'description = ">"'
+
 # ux-ui-architect claude override.
 assert_file_contains "$repo_root/.claude/agents/ux-ui-architect.md" "model: opus"
 

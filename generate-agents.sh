@@ -133,6 +133,50 @@ read_agent_platforms() {
   }' "$1"
 }
 
+# Read a canonical description while resolving plain and block scalar forms.
+# Markdown keeps the original frontmatter block; Codex needs the scalar value.
+read_agent_description() {
+  awk '
+    BEGIN { frontmatter=0; in_description=0; description_style=""; description="" }
+    /^---$/ {
+      frontmatter++
+      if (frontmatter == 2) exit
+      next
+    }
+    frontmatter != 1 { next }
+    !in_description && /^description:[[:space:]]*/ {
+      value=$0
+      sub(/^description:[[:space:]]*/, "", value)
+      if (value ~ /^[>|][+-]?[[:space:]]*$/) {
+        in_description=1
+        description_style=substr(value, 1, 1)
+        next
+      }
+      print value
+      exit
+    }
+    in_description {
+      if ($0 != "" && $0 !~ /^[[:space:]]+/) exit
+      line=$0
+      sub(/^[[:space:]]+/, "", line)
+      if (description_style == ">") {
+        if (line == "") {
+          if (description != "") description=description "\n"
+        } else {
+          if (description != "" && description !~ /\n$/) description=description " "
+          description=description line
+        }
+      } else {
+        if (description != "") description=description "\n"
+        description=description line
+      }
+    }
+    END {
+      if (in_description) print description
+    }
+  ' "$1"
+}
+
 # Render one platform file from a canonical source and its platform config.
 # $1 = slug, $2 = canonical file, $3 = platform slug, $4 = platform dir, $5 = platform project dir, $6 = platform model, $7 = include color (1/0), $8 = platform temperature (may be empty)
 render_platform_file() {
@@ -185,7 +229,7 @@ render_platform_file() {
   if [[ "$platform" == "codex" ]]; then
     local canonical_name canonical_description
     canonical_name="$(printf '%s\n' "$frontmatter_block" | awk '/^name:/{sub(/^name:[ \t]*/, ""); print; exit}')"
-    canonical_description="$(printf '%s\n' "$frontmatter_block" | awk '/^description:/{sub(/^description:[ \t]*/, ""); print; exit}')"
+    canonical_description="$(read_agent_description "$canonical_file")"
     if [[ -z "$canonical_name" || -z "$canonical_description" ]]; then
       printf 'Error: canonical agent is missing name or description: %s\n' "$canonical_file" >&2
       exit 1
