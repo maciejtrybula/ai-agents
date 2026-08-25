@@ -915,7 +915,36 @@ process_model_override_files() {
       printf 'Would override model in synced copy of %s -> %s\n' "$output_file" "$effective_model_value"
     else
       if [[ "$platform" == "codex" ]]; then
-        MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model[ \t]*=[ \t]*".*"[ \t]*$/model = "$ENV{MODEL_OVERRIDE}"/m' "$output_file"
+        if ! perl -0e '
+          my $in_developer_instructions = 0;
+          my $in_table = 0;
+          my $matches = 0;
+          my $text = <>;
+
+          for my $line (split /(?<=\n)/, $text) {
+            if ($in_developer_instructions) {
+              next;
+            }
+            if ($line =~ /^developer_instructions[ \t]*=[ \t]*"""/) {
+              $in_developer_instructions = 1;
+              next;
+            }
+            if ($line =~ /^[ \t]*\[/) {
+              $in_table = 1;
+              next;
+            }
+            if (!$in_table && $line =~ /^model[ \t]*=[ \t]*"[^"\r\n]*"[ \t]*(?:\r?\n)?$/) {
+              $matches++;
+            }
+          }
+
+          exit($matches == 1 ? 0 : 1);
+        ' "$output_file"; then
+          print_error "Codex agent does not contain exactly one top-level model key: $output_file"
+          exit 1
+        fi
+
+        MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model[ \t]*=[ \t]*"[^"\r\n]*"([ \t]*\r?)$/model = "$ENV{MODEL_OVERRIDE}"$1/m' "$output_file"
       else
         MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$output_file"
       fi
@@ -2752,6 +2781,7 @@ sync_platform() {
   local config_source=""
   local config_target=""
   local mcp_root_key=""
+  local agent_extension="$(agent_file_extension "$platform")"
   local agent_selection='*'
   local skill_selection='*'
   local selection_joined=""
@@ -2822,7 +2852,9 @@ sync_platform() {
       expand_selection "$source_base/agents" "$agent_selection" selection_joined
       IFS='|' read -r -a selected_entries <<< "$selection_joined"
       for entry in "${selected_entries[@]}"; do
-        run_rsync_entry "$source_base/agents/$entry" "$target_base/agents/$entry"
+        if [[ -d "$source_base/agents/$entry" || "$entry" == *"$agent_extension" ]]; then
+          run_rsync_entry "$source_base/agents/$entry" "$target_base/agents/$entry"
+        fi
       done
 
       if [[ "$dry_run" == true ]]; then

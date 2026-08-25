@@ -44,10 +44,48 @@ md_body() {
 codex_body() {
   local file="$1"
 
-  awk '
-    $0 == "developer_instructions = \"\"\"" { in_body=1; next }
-    in_body && $0 == "\"\"\"" { exit }
-    in_body { print }
+  perl -0e '
+    use Encode qw(encode);
+
+    my $text = <>;
+    my ($encoded_body) = $text =~ /^[ \t]*developer_instructions[ \t]*=[ \t]*"""\r?\n(.*?)^"""/ms;
+    die "Missing developer_instructions multiline string\n" unless defined $encoded_body;
+
+    my $decoded_body = "";
+    while (length $encoded_body) {
+      my $character = substr($encoded_body, 0, 1, "");
+      if ($character ne "\\") {
+        $decoded_body .= $character;
+        next;
+      }
+
+      die "Invalid TOML escape at end of developer_instructions\n" unless length $encoded_body;
+      my $escape = substr($encoded_body, 0, 1, "");
+      if ($escape eq "\\") {
+        $decoded_body .= "\\";
+      } elsif ($escape eq "\"") {
+        $decoded_body .= "\"";
+      } elsif ($escape eq "b") {
+        $decoded_body .= "\b";
+      } elsif ($escape eq "f") {
+        $decoded_body .= "\f";
+      } elsif ($escape eq "n") {
+        $decoded_body .= "\n";
+      } elsif ($escape eq "r") {
+        $decoded_body .= "\r";
+      } elsif ($escape eq "t") {
+        $decoded_body .= "\t";
+      } elsif ($escape eq "u" || $escape eq "U") {
+        my $hex_length = $escape eq "u" ? 4 : 8;
+        die "Invalid TOML Unicode escape in developer_instructions\n"
+          unless $encoded_body =~ s/\A([0-9A-Fa-f]{$hex_length})//;
+        $decoded_body .= encode("UTF-8", chr(hex($1)));
+      } else {
+        die "Unsupported TOML escape in developer_instructions: $escape\n";
+      }
+    }
+
+    print $decoded_body;
   ' "$file"
 }
 
@@ -77,18 +115,26 @@ check_parity() {
 
   while IFS= read -r ref_file; do
     rel="${ref_file#"$ref_dir"/}"
-    ref_body="$(md_body "$ref_file")"
 
     other="$other_root_a/$subdir/$rel"
     if [[ ! -f "$other" ]]; then
       printf 'FAIL: %s not present in %s (missing shared file)\n' "$rel" "$other" >&2
       failures=$((failures + 1))
     else
-      other_body="$(md_body "$other")"
-      if [[ "$ref_body" != "$other_body" ]]; then
-        printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
-          "$rel" "$ref_file" "$other" >&2
-        failures=$((failures + 1))
+      if [[ "$subdir" == "agents" ]]; then
+        if ! cmp -s <(md_body "$ref_file") <(md_body "$other"); then
+          printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
+            "$rel" "$ref_file" "$other" >&2
+          failures=$((failures + 1))
+        fi
+      else
+        ref_body="$(md_body "$ref_file")"
+        other_body="$(md_body "$other")"
+        if [[ "$ref_body" != "$other_body" ]]; then
+          printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
+            "$rel" "$ref_file" "$other" >&2
+          failures=$((failures + 1))
+        fi
       fi
     fi
 
@@ -104,14 +150,19 @@ check_parity() {
     fi
 
     if [[ "$subdir" == "agents" ]]; then
-      other_body="$(codex_body "$other")"
+      if ! cmp -s <(md_body "$ref_file") <(codex_body "$other"); then
+        printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
+          "$rel" "$ref_file" "$other" >&2
+        failures=$((failures + 1))
+      fi
     else
+      ref_body="$(md_body "$ref_file")"
       other_body="$(md_body "$other")"
-    fi
-    if [[ "$ref_body" != "$other_body" ]]; then
-      printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
-        "$rel" "$ref_file" "$other" >&2
-      failures=$((failures + 1))
+      if [[ "$ref_body" != "$other_body" ]]; then
+        printf 'FAIL: body drift for %s\n  reference: %s\n  drift:     %s\n' \
+          "$rel" "$ref_file" "$other" >&2
+        failures=$((failures + 1))
+      fi
     fi
   done < <(find "$ref_dir" -type f -name '*.md' | sort)
 }
@@ -126,14 +177,59 @@ fi
 
 printf 'Body parity check passed for shared agents and skills.\n'
 
+neg_dir="$(mktemp -d)"
+trap 'rm -rf "$neg_dir"' EXIT
+
+# -----------------------------------------------------------------------------
+# Positive fixture: parity must decode the escapes used by the generated Codex
+# multiline basic string without losing carriage returns or trailing newlines.
+# -----------------------------------------------------------------------------
+
+complex_ref="$neg_dir/complex-ref/.claude"
+complex_opencode="$neg_dir/complex-opencode"
+complex_codex="$neg_dir/complex-codex"
+
+mkdir -p "$complex_ref/agents" "$complex_opencode/agents" "$complex_codex/agents"
+
+for complex_file in "$complex_ref/agents/escaped-body.md" "$complex_opencode/agents/escaped-body.md"; do
+  {
+    printf '%s\n' '---'
+    printf '%s\n' 'name: escaped-body'
+    printf '%s\n' 'description: escaped body fixture'
+    printf '%s\n' '---'
+    printf '\n%s\n' 'literal \path'
+    printf '%s' 'carriage' $'\r' 'return' $'\n'
+    printf '%s\n' 'quote """'
+    printf '%s\n' ''
+  } >"$complex_file"
+done
+
+{
+  printf '%s\n' 'name = "escaped-body"'
+  printf '%s\n' 'description = "escaped body fixture"'
+  printf '%s\n' 'model = "test-model"'
+  printf '%s\n' 'developer_instructions = """'
+  printf '%s\n' ''
+  printf '%s\n' 'literal \\path'
+  printf '%s\n' 'carriage\rreturn'
+  printf '%s\n' 'quote \"""'
+  printf '%s\n' ''
+  printf '%s\n' '"""'
+} >"$complex_codex/agents/escaped-body.toml"
+
+failures=0
+check_parity "$complex_ref" "$complex_opencode" "$complex_codex" "agents"
+if [[ "$failures" -ne 0 ]]; then
+  printf 'FAIL: Codex escaped-body fixture did not round-trip (%d drift(s)).\n' "$failures" >&2
+  exit 1
+fi
+printf 'Codex escaped-body parity fixture passed.\n'
+
 # -----------------------------------------------------------------------------
 # Negative test: the check above must actually catch drift. Build a trio of temp
 # trees where one shared agent body is deliberately drifted, then assert the full
 # parity check FAILS.
 # -----------------------------------------------------------------------------
-
-neg_dir="$(mktemp -d)"
-trap 'rm -rf "$neg_dir"' EXIT
 
 neg_ref="$neg_dir/ref/.claude"
 neg_opencode="$neg_dir/opencode"

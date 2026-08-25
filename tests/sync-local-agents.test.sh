@@ -115,6 +115,40 @@ if [[ "$codex_source_body" != "$codex_synced_body" ]]; then
   exit 1
 fi
 
+codex_invalid_source_file="$repo_root/.codex/agents/backend-architect.toml"
+codex_invalid_source_backup="$(mktemp)"
+codex_invalid_target_dir="$(mktemp -d)"
+cp "$codex_invalid_source_file" "$codex_invalid_source_backup"
+{
+  printf '%s\n' 'name = "backend-architect"'
+  printf '%s\n' 'description = "invalid test fixture"'
+  printf '%s\n' '[nested]'
+  printf '%s\n' 'model = "nested-model"'
+  printf '%s\n' 'developer_instructions = """'
+  printf '%s\n' 'model = "body-model"'
+  printf '%s\n' '"""'
+} >"$codex_invalid_source_file"
+
+codex_invalid_output=""
+if codex_invalid_output="$(run_and_capture_failure bash "$repo_root/sync-local-agents.sh" \
+  --sync agents --platform codex --target-dir "$codex_invalid_target_dir" \
+  --codex-model openai/gpt-5.6-luna)"; then
+  codex_invalid_command_failed=true
+else
+  codex_invalid_command_failed=false
+fi
+mv "$codex_invalid_source_backup" "$codex_invalid_source_file"
+
+if [[ "$codex_invalid_command_failed" != true ]]; then
+  printf 'Expected Codex sync to fail when the top-level model key is missing\n' >&2
+  exit 1
+fi
+assert_contains "$codex_invalid_output" "top-level model key"
+codex_invalid_synced_content="$(cat "$codex_invalid_target_dir/.codex/agents/backend-architect.toml")"
+assert_contains "$codex_invalid_synced_content" 'model = "nested-model"'
+assert_contains "$codex_invalid_synced_content" 'model = "body-model"'
+rm -rf "$codex_sync_target_dir" "$codex_sync_home" "$codex_invalid_target_dir" "$codex_invalid_source_backup"
+
 invalid_usage_output="$(run_and_capture_failure bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform opencode --recommended-provider openai)"
 assert_contains "$invalid_usage_output" "--recommended-provider requires --use-recommended-models or --use-recommended-fallback-models."
 
