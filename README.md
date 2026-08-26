@@ -308,8 +308,9 @@ skills into your local tool directories.
   - defaults to syncing all entries, with optional narrowing to
     selected items
   - requires a TTY; otherwise it exits with a clear error
-- `--claude-model`, `--opencode-model`, and `--codex-model` set
-  per-platform fallback models for synced agent frontmatter.
+- `--claude-model` and `--opencode-model` set per-platform fallback models
+  for synced agent frontmatter; `--codex-model` sets the Codex TOML
+  `model =` field.
 - `--agent-model platform:agent-slug:provider/model` is repeatable and
   applies a catalog-validated per-agent override for that platform.
 - `--use-recommended-models` requires explicit `--platform`, supports
