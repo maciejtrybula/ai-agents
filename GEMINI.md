@@ -11,12 +11,12 @@ This repository stores Claude agents, OpenCode agents, Codex agents, and shared 
 ## Key Directories and Files
 
 ### 🤖 Agent Definitions
-- **`.claude/agents/`**: Core definitions for Claude.
+- **`.claude/agents/`**: Generated Markdown definitions for Claude.
   - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `tax-advisor.md`, `team-manager.md`, `ux-ui-architect.md`.
-- **`.config/opencode/agents/`**: Definitions for OpenCode.
+- **`.config/opencode/agents/`**: Generated Markdown definitions for OpenCode.
   - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `tax-advisor.md`, `team-manager.md`, `ux-ui-architect.md`.
-- **`.codex/agents/`**: Definitions for Codex.
-  - `backend-architect.md`, `backend-engineer.md`, `content-writer.md`, `devops-engineer.md`, `e2e-test-engineer.md`, `frontend-architect.md`, `frontend-engineer.md`, `it-task-master.md`, `principal-engineer.md`, `secops-auditor.md`, `seo-inspector.md`, `staff-engineer.md`, `tax-advisor.md`, `team-manager.md`, `ux-ui-architect.md`.
+- **`.codex/agents/`**: Generated native TOML definitions for Codex. Each
+  file uses `name`, `description`, `model`, and `developer_instructions`.
 
 ### 🛠️ Skill Definitions
 - **`.claude/skills/`**: Specialized skills for Claude including `code-review`, `tech-arch-research`, `java`, `polish-tax-law`, the SEO skill set, and the writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
@@ -30,7 +30,13 @@ This repository stores Claude agents, OpenCode agents, Codex agents, and shared 
 
 ## Usage
 
-The contents of this directory are used to configure and provision AI agents. When creating or modifying agents, follow the established format (YAML frontmatter + structured sections) and guidelines outlined in `AGENTS.md`. Check the shared skills before starting specialized work, and use the relevant ones when they materially improve the result.
+The contents of this directory are used to configure and provision AI agents.
+When creating or modifying canonical agents, follow the established format
+(Markdown with YAML frontmatter plus structured sections) and the guidelines
+outlined in `AGENTS.md`. Generated Claude and OpenCode agents remain Markdown;
+generated Codex agents use native TOML. Check the shared skills before
+starting specialized work, and use the relevant ones when they materially
+improve the result.
 
 When working with a specific tool, library, or framework, first check whether documentation is available via Context7 MCP. If available, use Context7 docs to verify APIs and usage patterns, and rely on them during implementation decisions.
 

@@ -150,10 +150,12 @@ wiki layout (`2-Inbox/`, `4-Knowledge/`, `5-Raw/`, `9-Outputs/`,
 ## Locations
 
 - `.agents/` - **Canonical agent sources** (single source of truth):
-  Markdown files with optional shared frontmatter fields such as `name`,
-  `description`, and `color`, plus the full body. Frontmatter may also include
-  platform-specific metadata. Per-platform `model` and supported
-  platform-specific fields are injected at generation time.
+  Markdown files with required canonical `name` and `description` frontmatter
+  fields. Optional shared metadata such as `color` and platform-specific
+  metadata such as `mode`, `permission`, and `platforms` may also be present,
+  followed by the full body. Per-platform `model` and supported
+  platform-specific fields are injected at generation time. Codex generation
+  requires the canonical `name` and `description` values.
 - `.claude/agents/` - Claude agent definitions (generated Markdown,
   git-ignored)
 - `.claude/skills/` - Claude skill definitions

@@ -8,11 +8,20 @@ This repository stores Claude, OpenCode, and Codex agents for different engineer
 
 ## Agent Structure
 
-All agents are stored in `.claude/agents/` (for Claude), `.config/opencode/agents/` (for OpenCode), and `.codex/agents/` (for Codex) as markdown files with YAML frontmatter containing:
+Canonical agent sources live in `.agents/` as Markdown files with YAML
+frontmatter. Generated Claude and OpenCode agents remain Markdown files with
+YAML frontmatter, while generated Codex agents are native TOML files using
+`name`, `description`, `model`, and `developer_instructions`.
+
+Canonical agents require `name` and `description` for Codex generation.
+Optional metadata such as `color`, `mode`, `permission`, and `platforms` may
+also appear in canonical frontmatter where supported.
+
 - `name`: Agent identifier
 - `description`: When and how to use the agent with examples
-- `model`: Claude model to use (typically sonnet)
-- `color`: UI color for the agent
+- `model`: Generated per-platform model; a frontmatter field for Claude and
+  OpenCode, and a TOML field for Codex
+- `color`: Optional UI metadata for Markdown-based agent definitions
 
 ## Default Orchestration
 
@@ -72,7 +81,8 @@ Use `content-writer.md` when the task involves blog posts, thought leadership, t
 ## Agent Development Guidelines
 
 When creating or modifying agents:
-- Follow the established YAML frontmatter format.
+- Follow the established Markdown and YAML frontmatter format for canonical
+  sources.
 - Include clear descriptions with practical usage examples.
 - Define specific expertise areas and responsibilities.
 - Maintain consistent communication style and quality standards.

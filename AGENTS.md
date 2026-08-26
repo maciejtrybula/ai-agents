@@ -60,9 +60,11 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 
 ### Project Structure
 - `.agents/`: Canonical Markdown agent sources (single source of truth) —
-  optional shared frontmatter fields such as `name`, `description`, and
-  `color`, plus the full body. Frontmatter may also include platform-specific
-  metadata. No `model`/`temperature` here.
+  frontmatter with required canonical `name` and `description` fields, plus
+  optional shared metadata such as `color` and platform-specific metadata such
+  as `mode`, `permission`, and `platforms`. The full agent body follows. No
+  `model`/`temperature` here; Codex generation requires `name` and
+  `description`.
 - `.claude/agents/`: Claude agent definitions (generated Markdown by
   `generate-agents.sh` from `.agents/`, git-ignored).
 - `.claude/skills/`: Specialized skills for Claude.
@@ -74,8 +76,9 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 
 ### Development Workflow
 1. **Persona Consistency**: Agents are authored once in `.agents/` (YAML
-   frontmatter with optional shared fields such as `name`, `description`, and
-   `color`). Run `./generate-agents.sh` to materialize the per-platform
+   frontmatter with required `name` and `description` fields plus optional
+   shared or platform-specific metadata such as `color`, `mode`, and
+   `permission`). Run `./generate-agents.sh` to materialize the per-platform
    copies. Claude and OpenCode copies remain
    Markdown; Codex copies are native TOML with `name`, `description`,
    `model`, and `developer_instructions`. Codex `temperature` is not emitted
