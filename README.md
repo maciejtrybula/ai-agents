@@ -150,21 +150,29 @@ wiki layout (`2-Inbox/`, `4-Knowledge/`, `5-Raw/`, `9-Outputs/`,
 ## Locations
 
 - `.agents/` - **Canonical agent sources** (single source of truth):
-  shared frontmatter (`name`, `description`, `color`) plus the full body.
-  Per-platform `model`/`temperature` are injected at generation time.
-- `.claude/agents/` - Claude agent definitions (generated, git-ignored)
+  Markdown files with shared frontmatter (`name`, `description`, `color`)
+  plus the full body. Per-platform `model` and supported platform-specific
+  fields are injected at generation time.
+- `.claude/agents/` - Claude agent definitions (generated Markdown,
+  git-ignored)
 - `.claude/skills/` - Claude skill definitions
-- `.config/opencode/agents/` - OpenCode agent definitions (generated, git-ignored)
+- `.config/opencode/agents/` - OpenCode agent definitions (generated
+  Markdown, git-ignored)
 - `.config/opencode/skills/` - OpenCode skill definitions
-- `.codex/agents/` - Codex agent definitions (generated, git-ignored)
+- `.codex/agents/` - Codex agent definitions (generated native TOML with
+  `name`, `description`, `model`, and `developer_instructions`, git-ignored)
 - `.codex/skills/` - Codex skill definitions
 
 ### Authoring Agents
 
 The `.claude/agents/`, `.config/opencode/agents/`, and `.codex/agents/`
 directories are **generated outputs**, git-ignored and created by
-`generate-agents.sh` from the canonical sources in `.agents/`. Do not
-hand-edit those files. To author or update a shared agent:
+`generate-agents.sh` from the canonical Markdown sources in `.agents/`.
+Claude and OpenCode outputs remain Markdown; Codex outputs are native TOML
+custom-agent files using `name`, `description`, `model`, and
+`developer_instructions`. Codex `temperature` is not emitted because it is
+not a supported custom-agent field. Do not hand-edit generated files. To
+author or update a shared agent:
 
 1. **Edit** the canonical file in `.agents/`.
 2. **Regenerate** the three platform outputs:
@@ -176,16 +184,16 @@ hand-edit those files. To author or update a shared agent:
    ./sync-local-agents.sh
    ```
 
-Per-platform default `model` values (and whether `color` is emitted)
-are wired through `.config/agent-platforms.json`; the existing
-model-override machinery in `sync-local-agents.sh` applies on top of
-those defaults at sync time.
+Per-platform default `model` values and supported output fields are wired
+through `.config/agent-platforms.json`; the existing model-override
+machinery in `sync-local-agents.sh` applies on top of those defaults at sync
+time. OpenCode may emit `temperature`; Claude and Codex do not.
 
 **.config/agent-platforms.json** lists every canonical agent explicitly
 per platform (`platforms.<name>.agents.<slug>`), each with its effective
-`model` (and, where the platform has a temperature concept,
-`temperature`), and an optional `description` that appears only where it
-diverges from the canonical `.agents/*.md` description. For example,
+`model`, with `temperature` only for platforms that support it (currently
+OpenCode), and an optional `description` that appears only where it diverges
+from the canonical `.agents/*.md` description. For example,
 `backend-architect` → `opus` on Claude, `openai/gpt-5.6-sol` on
 OpenCode, `openai/gpt-5.3-codex` on Codex. No agent currently carries a
 `description` override, so every platform uses the canonical
