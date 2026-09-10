@@ -11,3 +11,9 @@
 .claude/agents/
 .codex/agents/
 .config/opencode/agents/
+
+# Runtime project-local session-handoff output (written by the
+# session-handoff skill under a writable git work tree). The user-global
+# handoff store lives out-of-repo in the user's XDG state dir
+# (~/.local/state/session-handoff/) and needs no entry here.
+.claude/handoff/

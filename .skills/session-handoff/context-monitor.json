@@ -1,0 +1,12 @@
+{
+  "contextWindow": 262144,
+  "warnPercent": 70,
+  "criticalPercent": 85,
+  "blockPercent": 95,
+  "autoHandoffEnabled": true,
+  "modelToWindowHint": {
+    "claude-sonnet-4-5": 262144,
+    "claude-opus-4-1": 262144,
+    "claude-haiku-4-5": 262144
+  }
+}

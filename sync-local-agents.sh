@@ -26,6 +26,7 @@ sync_agents=true
 sync_skills=true
 sync_configs=false
 sync_scope="both"
+no_wire=false
 cli_claude_model=""
 cli_opencode_model=""
 cli_codex_model=""
@@ -985,7 +986,7 @@ load_agent_model_overrides_from_environment "codex" "CODEX" env_agent_model_over
 
 usage() {
   cat <<'EOF'
-Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode|codex]
+Usage: ./sync-local-agents.sh [--dry-run] [--no-wire] [--delete] [--platform claude|opencode|codex]
 [--sync both|agents|skills|config|all] [--interactive]
 [--configure-api-keys]
 [--claude-model MODEL]
@@ -1002,6 +1003,11 @@ directories in your home folder.
 
 Options:
 --dry-run Preview changes without writing files
+--no-wire Skip auto-wiring of session-handoff activation (Claude
+hooks / OpenCode plugin entries). The skill files are still
+materialized; no local settings files are modified.
+When --sync config (or all) is used together with --no-wire,
+repo-managed config keys are still synced as usual.
 --delete Remove local files that no longer exist in this repo
 When syncing selected entries, deletion is scoped to those
 selected directories only
@@ -1072,6 +1078,7 @@ Examples:
 ./sync-local-agents.sh --platform opencode --configure-api-keys
 ./sync-local-agents.sh --opencode-model openai/gpt-5.4
 ./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
+./sync-local-agents.sh --sync skills --platform claude --no-wire
 EOF
 }
 
@@ -2433,6 +2440,9 @@ while [[ $# -gt 0 ]]; do
     --dry-run)
       dry_run=true
       ;;
+    --no-wire)
+      no_wire=true
+      ;;
     --delete)
       delete_extra=true
       ;;
@@ -2820,6 +2830,211 @@ sync_platform() {
   if [[ "$sync_configs" == true ]]; then
     sync_platform_config "$platform" "$config_source" "$config_target" "$mcp_root_key"
   fi
+
+  # Materialize the canonical session-handoff skill into this platform's
+  # discovery slot(s) and auto-wire its activation. The skill tree is the single
+  # source of truth under .skills/session-handoff/ (bytes-identical copies),
+  # regardless of how many per-platform copies the normal skills rsync made above.
+  if [[ "$sync_skills" == true && -d "$skill_wire_source" ]]; then
+    case "$platform" in
+      claude)
+        materialize_session_handoff_slot "$target_base/skills/session-handoff"
+        ;;
+      opencode)
+        # OpenCode's discovery base is .config/opencode (user-global) or
+        # <target_dir>/.config/opencode (project install).
+        local opencode_skill_base=""
+        if [[ -n "$target_dir" ]]; then
+          opencode_skill_base="$target_dir/.config/opencode"
+        else
+          opencode_skill_base="$HOME/.config/opencode"
+        fi
+        materialize_session_handoff_slot "$opencode_skill_base/skills/session-handoff"
+        ;;
+      codex)
+        # Codex project slot + repo-root mirror + user-global mirror
+        materialize_session_handoff_slot "$target_base/skills/session-handoff"
+        materialize_session_handoff_slot "$repo_root/.agents/skills/session-handoff"
+        materialize_session_handoff_slot "$HOME/.agents/skills/session-handoff"
+        ;;
+    esac
+    sync_session_handoff "$platform" "$target_base"
+  fi
+}
+
+# --- session-handoff materialization + auto-wiring ------------------------------
+# The canonical session-handoff skill lives once in .skills/session-handoff/.
+# `sync_skills` materializes the normal per-platform skills trees; this block
+# ALSO copies the canonical session-handoff tree (bytes-identical) into each
+# platform's discovery slot, and then auto-wires the activation (Claude hooks,
+# OpenCode plugin entry) into the target config files. Codex needs no config
+# wiring: the skill auto-loads from its .agents/skills slot.
+
+skill_wire_source="$repo_root/.skills/session-handoff"
+skill_wire_sourced=false
+
+# Source lib/wire-settings.sh from the canonical tree exactly once. It is
+# self-locating and defines backup_file/merge_json/ensure_claude_hooks.
+load_skill_wire_lib() {
+  [[ "$skill_wire_sourced" == true ]] && return 0
+  if [[ ! -f "$skill_wire_source/lib/wire-settings.sh" ]]; then
+    print_warning "session-handoff skill tree missing $skill_wire_source/lib/wire-settings.sh; skipping auto-wiring"
+    return 1
+  fi
+  # shellcheck disable=SC1090
+  source "$skill_wire_source/lib/wire-settings.sh"
+  skill_wire_sourced=true
+}
+
+# Materialize the canonical skill tree into a discovery slot (rsync -a the tree,
+# bytes-identical). Under --dry-run we only print the would-copy line: run_rsync
+# would mkdir the target, and dry runs must not write anything.
+materialize_session_handoff_slot() {
+  local slot="$1"
+  if [[ "$dry_run" == true ]]; then
+    printf '# would copy session-handoff skill into %s\n' "$slot"
+    return 0
+  fi
+  run_rsync "$skill_wire_source" "$slot"
+}
+
+# Claude: ensure hooks in the target settings.json. The skill-root prefix is
+# derived from the install mode (user-global $HOME/.claude vs project target).
+wire_claude_session_handoff() {
+  local target_settings="$1"
+  local skill_root_prefix="$2"
+
+  if ! load_skill_wire_lib; then
+    return 0
+  fi
+
+  if [[ "$dry_run" == true ]]; then
+    printf '# would wire hooks into %s\n' "$target_settings"
+    return 0
+  fi
+
+  ensure_claude_hooks "$target_settings" "$skill_root_prefix"
+
+  # When config sync is on and a statusline is configured, mirror how
+  # sync_claude_json merges repo-managed `statusLine`: the statusline carries
+  # the same context-percent signal on the Claude status line.
+  if [[ "$sync_configs" == true && -n "$claude_statusline_command_path" ]]; then
+    backup_file "$target_settings"
+    print_note "session-handoff: merging statusLine $claude_statusline_command_path into $target_settings"
+    python3 - "$target_settings" "$claude_statusline_command_path" <<'PY'
+import json, os, sys
+path, statusline = sys.argv[1], sys.argv[2]
+data = {}
+if os.path.exists(path):
+    try:
+        parsed = json.load(open(path))
+    except Exception:
+        parsed = None
+    if isinstance(parsed, dict):
+        data = parsed
+data["statusLine"] = {"type": "command", "command": f'bash "{statusline}"'}
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
+  fi
+  printf '# wired hooks into %s\n' "$target_settings"
+}
+
+# OpenCode: upsert the plugin entry into the `plugin` array.
+# The remote-path is relative to the config file, mirroring the existing
+# "./plugins/caveman/plugin.js" pattern. The existing top-level `plugin` array
+# (and any other unrelated keys) is preserved.
+wire_opencode_session_handoff() {
+  local target_config="$1"
+
+  # backup_file lives in lib/wire-settings.sh (self-locating; sourced once).
+  if ! load_skill_wire_lib; then
+    return 0
+  fi
+
+  local plugin_entry='./skills/session-handoff/bin/opencode-plugin.js'
+
+  # Idempotent: nothing to do when the entry is already present.
+  if [[ -f "$target_config" ]] && grep -Fq '"\./skills/session-handoff/bin/opencode-plugin\.js"' "$target_config"; then
+    printf '# wired opencode plugin into %s\n' "$target_config"
+    return 0
+  fi
+
+  if [[ "$dry_run" == true ]]; then
+    printf '# would wire opencode plugin into %s\n' "$target_config"
+    return 0
+  fi
+
+  require_node
+  mkdir -p "$(dirname "$target_config")"
+  backup_file "$target_config"
+
+  node - "$target_config" "$plugin_entry" <<'NODE'
+const fs = require("fs")
+
+const [targetConfig, pluginEntry] = process.argv.slice(2)
+
+let data = {}
+if (fs.existsSync(targetConfig)) {
+  try {
+    data = JSON.parse(fs.readFileSync(targetConfig, "utf8"))
+  } catch (_error) {
+    data = {}
+  }
+}
+if (typeof data !== "object" || data === null || Array.isArray(data)) {
+  data = {}
+}
+
+if (!Array.isArray(data.plugin)) {
+  data.plugin = []
+}
+if (!data.plugin.includes(pluginEntry)) {
+  data.plugin.push(pluginEntry)
+}
+
+fs.writeFileSync(targetConfig, `${JSON.stringify(data, null, 2)}\n`)
+NODE
+  printf '# wired opencode plugin into %s\n' "$target_config"
+}
+
+# Codex: no config wiring needed (skill auto-loads from .agents/skills).
+
+# Resolve the OpenCode config target mirroring resolve_platform_settings: a
+# --target-dir install uses <target_dir>/.config/opencode (the platform's
+# discovery base), while the user-local default stays $HOME/.config/opencode.
+opencode_config_target() {
+  if [[ -n "$target_dir" ]]; then
+    printf '%s/.config/opencode/opencode.json' "$target_dir"
+  else
+    printf '%s/.config/opencode/opencode.json' "$HOME"
+  fi
+}
+
+sync_session_handoff() {
+  local platform="$1"
+  local target_base="$2"
+
+  case "$platform" in
+    claude)
+      local claude_settings="$target_base/settings.json"
+      local claude_prefix="$target_base/skills/session-handoff"
+      if [[ "$no_wire" == false ]]; then
+        wire_claude_session_handoff "$claude_settings" "$claude_prefix"
+      fi
+      ;;
+    opencode)
+      local opencode_config=""
+      opencode_config="$(opencode_config_target)"
+      if [[ "$no_wire" == false ]]; then
+        wire_opencode_session_handoff "$opencode_config"
+      fi
+      ;;
+    codex)
+      # Codex needs no config wiring; the skill auto-loads from .agents/skills.
+      ;;
+  esac
 }
 
 sync_claude_support_files() {

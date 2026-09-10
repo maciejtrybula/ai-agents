@@ -53,6 +53,7 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 - **Technical Blog Writing**: Clear, credible, developer-focused article writing with strong structure and examples.
 - **Attention Retention Writing**: Hooks, pacing, transitions, and ethical engagement techniques for stronger read-through.
 - **Blog Editorial Strategy**: Topic framing, audience alignment, internal linking, and content-program planning for technical blogs.
+- **Session Handoff**: Context-usage monitoring and structured session-handoff summaries so work can continue across fresh sessions (portable across Claude, OpenCode, and Codex).
 
 ---
 

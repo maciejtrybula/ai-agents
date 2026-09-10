@@ -343,6 +343,11 @@ Do not commit unless the user explicitly asks for one.
 ## Follow-ups (tracked separately)
 
 - Optionally single-source skills the same way (26/27/27 trees today).
+  **Partial**: the `session-handoff` skill is now single-sourced in
+  `.skills/session-handoff/` and materialized + auto-wired by
+  `sync-local-agents.sh --sync skills` (picked up in Phase 5 of the
+  session-handoff plan). The remaining per-platform skill trees still
+  use the three-copy model.
 - Decide whether `3d-modeling-artist`'s newly-added default models are
   desired (it previously had none on Claude/Codex).
 - Optionally centralize `backend-engineer`'s long description so the

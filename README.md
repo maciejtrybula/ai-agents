@@ -109,6 +109,13 @@ agents are expected to check them before starting specialized work.
   OSS/IOSS basics, JDG/B2B issues, compliance, deadlines, and
   escalation-aware risk framing.
 
+### Session Continuity & Handoff
+
+- **session-handoff**: Portable context-usage monitoring and structured
+  session-handoff summaries (Claude, OpenCode, and Codex). The canonical
+  source lives in `.skills/session-handoff/` and is materialized +
+  auto-wired into each platform by `sync-local-agents.sh --sync skills`.
+
 ### Knowledge Management & Second Brain
 
 A workflow set (from
@@ -367,6 +374,32 @@ Config sync ownership differs by platform:
   `~/.codex/config.toml`. Full Codex config sync also makes a
   best-effort bootstrap attempt for `ponytail` via the native Codex
   plugin commands and for `caveman` via `npx skills add`.
+
+### How new skills are installed (user vs project, by platform)
+
+Platform skills are authored once in `.claude/skills/`,
+`.config/opencode/skills/`, and `.codex/skills/` and copied by
+`sync-local-agents.sh --sync skills`. Skills that must behave
+identically everywhere (like `session-handoff`) live once in
+`.skills/<name>/` and are materialized bytes-identical into every
+platform discovery slot, then auto-wired:
+
+- **Claude**: the skill tree is copied to `~/.claude/skills/<name>`
+  (user) or `<project>/.claude/skills/<name>` (with `--target-dir`), and
+  the activation hooks (`hooks.UserPromptSubmit` /
+  `hooks.PreCompact` in `settings.json`) plus the optional statusline
+  are merged into the matching `settings.json` (backup-first, idempotent).
+- **OpenCode**: copied to `~/.config/opencode/skills/<name>` (user) or
+  `<target-dir>/.config/opencode/skills/<name>`, and the plugin entry
+  `"./skills/<name>/bin/<plugin>.js"` is appended to the `plugin` array
+  in the matching `opencode.json` (existing entries preserved).
+- **Codex**: copied to `~/.agents/skills/<name>` (user),
+  `<repo>/.agents/skills/<name>` (repo discovery), and the legacy
+  `.codex/skills/<name>` slot. No config wiring is needed; Codex loads
+  the skill from its `.agents/skills` walk.
+
+`--no-wire` materializes the skill files but skips all settings
+mutation; `--dry-run` previews both.
 
 ### GitHub MCP Setup
 

@@ -52,4 +52,6 @@
 - Don't log every single step or condition check.
 - Error logs should include context (IDs, operation names) and the error message.
 - Avoid excessive debug/verbose logging that clutters production logs.
-
+# graphify
+- **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
