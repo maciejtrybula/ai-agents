@@ -130,12 +130,10 @@ assert_file_contains "$repo_root/.claude/agents/it-task-master.md" "$body_marker
 assert_codex_toml "$repo_root/.codex/agents/it-task-master.toml"
 assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "$body_marker"
 
-# Shared frontmatter `name` present in Claude and OpenCode.
-for file in \
-  "$repo_root/.claude/agents/it-task-master.md" \
-  "$repo_root/.config/opencode/agents/it-task-master.md"; do
-  assert_file_contains "$file" "name: it-task-master"
-done
+# Claude keeps the canonical name metadata; native V2 OpenCode agents derive
+# their ID from the filename and omit the legacy `name` field.
+assert_file_contains "$repo_root/.claude/agents/it-task-master.md" "name: it-task-master"
+assert_file_not_contains "$repo_root/.config/opencode/agents/it-task-master.md" "name:"
 
 # Shared `color` present in Claude, but NOT in OpenCode (its platform
 # convention omits the color line).
@@ -145,9 +143,10 @@ assert_file_contains "$repo_root/.claude/agents/it-task-master.md" "color: orang
 assert_file_contains "$repo_root/.claude/agents/it-task-master.md" "model: sonnet"
 assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "model: openai/gpt"
 
-# Per-platform temperature present (from platform config) in OpenCode, but
-# NOT in Claude (no temperature defined for Claude).
-assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "temperature: 0.4"
+# Per-platform temperature is nested under the native V2 request body in
+# OpenCode, but NOT in Claude (no temperature defined for Claude).
+assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "request:"
+assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "    temperature: 0.4"
 assert_file_not_contains "$repo_root/.claude/agents/it-task-master.md" "temperature:"
 
 # OpenCode convention: no `color` line.
@@ -187,8 +186,11 @@ for slug in "${shared_agent_slugs[@]}"; do
     if [[ "$dir" == "$repo_root/.codex/agents" ]]; then
       assert_file_contains_line "$dir/$slug.toml" "name = \"$expected_name\""
       assert_file_contains_toml_key "$dir/$slug.toml" "model"
-    else
+    elif [[ "$dir" == "$repo_root/.claude/agents" ]]; then
       assert_file_contains "$dir/$slug.md" "name: $expected_name"
+      assert_file_contains "$dir/$slug.md" "model:"
+    else
+      assert_file_not_contains "$dir/$slug.md" "name:"
       assert_file_contains "$dir/$slug.md" "model:"
     fi
   done
@@ -227,7 +229,6 @@ assert_file_contains "$repo_root/.claude/agents/ux-ui-architect.md" "model: opus
 # canonical name in each platform's native format.
 assert_file_contains "$repo_root/.claude/agents/native-mobile-engineer.md" "name: native-mobile-engineer"
 assert_file_contains_line "$repo_root/.codex/agents/native-mobile-engineer.toml" 'name = "native-mobile-engineer"'
-assert_file_contains "$repo_root/.config/opencode/agents/native-mobile-engineer.md" "name: native-mobile-engineer"
 
 # backend-engineer uses the short canonical description on ALL platforms
 # (no per-platform description override remains in agent-platforms.json).
@@ -244,13 +245,13 @@ for dir in \
   fi
 done
 
-# mode/permission survival: native-mobile-engineer carries both, copied
-# verbatim into the Claude and OpenCode generated outputs.
+# mode/permissions survival: native-mobile-engineer carries both, copied into
+# the native V2 OpenCode output (and retained as shared metadata for Claude).
 for dir in \
   "$repo_root/.claude/agents" \
   "$repo_root/.config/opencode/agents"; do
   assert_file_contains "$dir/native-mobile-engineer.md" "mode: subagent"
-  assert_file_contains "$dir/native-mobile-engineer.md" "permission:"
+  assert_file_contains "$dir/native-mobile-engineer.md" "permissions:"
 done
 
 # --- --target-dir writes into a custom destination ---
@@ -269,8 +270,8 @@ assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "model: sonn
 assert_file_contains "$target_dir/.opencode/agents/it-task-master.md" "model: openai/gpt"
 assert_file_not_contains "$target_dir/.opencode/agents/it-task-master.md" "color:"
 
-# Per-platform temperature also present in the --target-dir OpenCode output.
-assert_file_contains "$target_dir/.opencode/agents/it-task-master.md" "temperature: 0.4"
+# Per-platform temperature is nested in the --target-dir OpenCode output.
+assert_file_contains "$target_dir/.opencode/agents/it-task-master.md" "    temperature: 0.4"
 assert_file_not_contains "$target_dir/.claude/agents/it-task-master.md" "temperature:"
 
 # --- sync-local-agents.sh --target-dir writes into a custom destination ---

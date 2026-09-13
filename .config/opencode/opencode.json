@@ -3,87 +3,298 @@
   "default_agent": "it-task-master",
   "lsp": true,
   "model": "openai/gpt-5.6-luna",
-  "autoupdate": true,
-  "plugin": [
+  "update": "auto",
+  "plugins": [
     "superpowers@git+https://github.com/obra/superpowers.git",
     "@dietrichgebert/ponytail",
-    "./plugins/caveman/plugin.js"
+    "./plugins/caveman"
   ],
-  "permission": {
-    "bash": {
-      "*": "ask",
-      "ls*": "allow",
-      "git log *": "allow",
-      "git status": "allow",
-      "git status *": "allow",
-      "git diff": "allow",
-      "git diff *": "allow",
-      "git show *": "allow",
-      "git branch": "allow",
-      "git branch *": "allow",
-      "git rev-parse": "allow",
-      "git rev-parse *": "allow",
-      "pnpm --filter *": "allow",
-      "pnpm build *": "allow",
-      "pnpm test*": "allow",
-      "pnpm mobile:lint*": "allow",
-      "pnpm format:check *": "allow",
-      "pnpm exec prettier *": "allow",
-      "docker compose build *": "allow",
-      "docker compose up *": "allow",
-      "docker compose restart": "allow",
-      "docker compose restart *": "allow",
-      "docker compose ps": "allow",
-      "docker compose ps*": "allow",
-      "docker compose logs *": "allow",
-      "docker compose version *": "allow",
-      "/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity *": "allow",
-      "grep*": "allow",
-      "cat*": "allow",
-      "rg*": "allow",
-      "sort*": "allow",
-      "find*": "allow",
-      "head*": "allow",
-      "wc*": "allow",
-      "test*": "allow",
-      "true*": "allow",
-      "false*": "allow",
-      "echo*": "allow",
-      "printf *": "allow",
-      "printf*": "allow",
-      "tail*": "allow",
-      "exit*": "allow",
-      "kill*": "allow",
-      "pkill*": "allow",
-      "ps*": "allow",
-      "exit": "allow"
+  "permissions": [
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "ls*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git status",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git branch",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git branch *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git rev-parse",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git rev-parse *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm --filter *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm build *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm test*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm mobile:lint*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm format:check *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm exec prettier *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "docker compose build *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "docker compose up *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "docker compose restart",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "docker compose restart *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "docker compose ps",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "docker compose ps*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "docker compose logs *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "docker compose version *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "grep*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "rg*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "sort*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "head*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "wc*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "test*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "true*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "false*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "echo*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "printf *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "printf*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "tail*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "exit*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "kill*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pkill*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ps*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "exit",
+      "effect": "allow"
     }
-  },
-  "agent": {
+  ],
+  "agents": {
     "it-task-master": {
       "mode": "primary",
-      "tools": {
-        "todowrite": true,
-        "question": true,
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "list": true,
-        "lsp": true
-      },
-      "permission": {
-        "edit": "ask",
-        "write": "ask"
-      }
+      "permissions": [
+        {
+          "action": "todowrite",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "question",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "lsp",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "ask"
+        }
+      ]
     }
   },
-  "provider": {
+  "providers": {
     "nvidia-nim": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "aisdk:@ai-sdk/openai-compatible",
       "name": "NVIDIA NIM",
-      "options": {
+      "settings": {
         "baseURL": "https://integrate.api.nvidia.com/v1",
-        "apiKey": "${NVIDIA_NIM_API_KEY}"
+        "apiKey": "{env:NVIDIA_NIM_API_KEY}"
       },
       "models": {
         "moonshotai/kimi-k2.5": {
@@ -118,78 +329,80 @@
         }
       },
       "name": "Ollama",
-      "npm": "@ai-sdk/openai-compatible",
-      "options": {
+      "package": "aisdk:@ai-sdk/openai-compatible",
+      "settings": {
         "baseURL": "http://127.0.0.1:11434/v1"
       }
     }
   },
   "mcp": {
-    "github": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "-i",
-        "--rm",
-        "-e",
-        "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server",
-        "stdio",
-        "--read-only",
-        "--toolsets",
-        "repos,issues,pull_requests,actions"
-      ],
-      "enabled": true
-    },
-    "stitch": {
-      "type": "remote",
-      "url": "https://stitch.googleapis.com/mcp",
-      "enabled": true,
-      "headers": {
-        "X-Goog-Api-Key": "${STITCH_API_KEY}"
-      }
-    },
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp",
-      "headers": {
-        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+    "servers": {
+      "github": {
+        "type": "local",
+        "command": [
+          "docker",
+          "run",
+          "-i",
+          "--rm",
+          "-e",
+          "GITHUB_PERSONAL_ACCESS_TOKEN",
+          "ghcr.io/github/github-mcp-server",
+          "stdio",
+          "--read-only",
+          "--toolsets",
+          "repos,issues,pull_requests,actions"
+        ],
+        "disabled": false
       },
-      "enabled": true
-    },
-    "linear": {
-      "type": "remote",
-      "url": "https://mcp.linear.app/mcp",
-      "enabled": true
-    },
-    "blender": {
-      "type": "local",
-      "command": [
-        "uvx",
-        "blender-mcp"
-      ],
-      "enabled": true
-    },
-    "playwright": {
-      "type": "local",
-      "command": [
-        "npx",
-        "@playwright/mcp@latest",
-        "--headless",
-        "--isolated"
-      ],
-      "enabled": true
-    },
-    "filesystem": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/Users/maciejtrybula/Projects/ai-agents"
-      ],
-      "enabled": true
+      "stitch": {
+        "type": "remote",
+        "url": "https://stitch.googleapis.com/mcp",
+        "disabled": false,
+        "headers": {
+          "X-Goog-Api-Key": "{env:STITCH_API_KEY}"
+        }
+      },
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp",
+        "headers": {
+          "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+        },
+        "disabled": false
+      },
+      "linear": {
+        "type": "remote",
+        "url": "https://mcp.linear.app/mcp",
+        "disabled": false
+      },
+      "blender": {
+        "type": "local",
+        "command": [
+          "uvx",
+          "blender-mcp"
+        ],
+        "disabled": false
+      },
+      "playwright": {
+        "type": "local",
+        "command": [
+          "npx",
+          "@playwright/mcp@latest",
+          "--headless",
+          "--isolated"
+        ],
+        "disabled": false
+      },
+      "filesystem": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          "/Users/maciejtrybula/Projects/ai-agents"
+        ],
+        "disabled": false
+      }
     }
   }
 }

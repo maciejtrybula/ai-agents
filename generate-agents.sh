@@ -264,6 +264,11 @@ render_platform_file() {
       if [[ "$line" == platforms:* ]]; then
         continue
       fi
+      # OpenCode derives the agent ID from the filename; `name` is canonical
+      # generator metadata, not a native V2 Markdown-agent field.
+      if [[ "$platform" == "opencode" && "$line" == name:* ]]; then
+        continue
+      fi
       if [[ "$line" == color:* && "$include_color" != "1" ]]; then
         continue
       fi
@@ -282,7 +287,13 @@ render_platform_file() {
     done <<<"$frontmatter_block"
     printf 'model: %s\n' "$platform_model"
     if [[ -n "$platform_temperature" ]]; then
-      printf 'temperature: %s\n' "$platform_temperature"
+      if [[ "$platform" == "opencode" ]]; then
+        printf 'request:\n'
+        printf '  body:\n'
+        printf '    temperature: %s\n' "$platform_temperature"
+      else
+        printf 'temperature: %s\n' "$platform_temperature"
+      fi
     fi
     printf -- '---\n'
     # Body = everything after the closing frontmatter delimiter (starts with a blank line).
@@ -304,21 +315,23 @@ if [[ ! -f "$platforms_file" ]]; then
   exit 1
 fi
 
-declare -A platform_dir
-declare -A platform_project_dir
-declare -A platform_model
-declare -A platform_color
-declare -A platform_temperature
+platform_slugs=()
+platform_dirs=()
+platform_project_dirs=()
+platform_models=()
+platform_colors=()
+platform_temperatures=()
 while IFS=$'\t' read -r pslug pdir pprojdir pmodel pcolor ptemperature; do
   [[ -n "$pslug" ]] || continue
-  platform_dir["$pslug"]="$pdir"
   if [[ "$pprojdir" == "-" ]]; then
     pprojdir=""
   fi
-  platform_project_dir["$pslug"]="$pprojdir"
-  platform_model["$pslug"]="$pmodel"
-  platform_color["$pslug"]="$pcolor"
-  platform_temperature["$pslug"]="$ptemperature"
+  platform_slugs+=("$pslug")
+  platform_dirs+=("$pdir")
+  platform_project_dirs+=("$pprojdir")
+  platform_models+=("$pmodel")
+  platform_colors+=("$pcolor")
+  platform_temperatures+=("$ptemperature")
 done < <(read_platforms_config)
 
 generated_count=0
@@ -335,7 +348,8 @@ for canonical_file in "$canonical_dir"/*.md; do
     [[ -n "$p" ]] && local_platforms+=("$p")
   done < <(read_agent_platforms "$canonical_file")
 
-  for pslug in "${!platform_dir[@]}"; do
+  for platform_index in "${!platform_slugs[@]}"; do
+    pslug="${platform_slugs[$platform_index]}"
     # If a platforms list is declared, skip platforms not in it.
     if [[ ${#local_platforms[@]} -gt 0 ]]; then
       included=0
@@ -344,7 +358,7 @@ for canonical_file in "$canonical_dir"/*.md; do
       done
       [[ "$included" == "1" ]] || continue
     fi
-    render_platform_file "$slug" "$canonical_file" "$pslug" "${platform_dir[$pslug]}" "${platform_project_dir[$pslug]}" "${platform_model[$pslug]}" "${platform_color[$pslug]}" "${platform_temperature[$pslug]-}"
+    render_platform_file "$slug" "$canonical_file" "$pslug" "${platform_dirs[$platform_index]}" "${platform_project_dirs[$platform_index]}" "${platform_models[$platform_index]}" "${platform_colors[$platform_index]}" "${platform_temperatures[$platform_index]-}"
     generated_count=$((generated_count + 1))
   done
 done

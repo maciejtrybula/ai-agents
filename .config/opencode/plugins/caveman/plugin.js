@@ -66,30 +66,67 @@ function handleSessionCreated() {
   safeWriteFlag(flagPath, mode);
 }
 
-export const CavemanPlugin = async (_ctx) => {
-  handleSessionCreated();
+const nativePlugin = {
+  id: 'caveman',
+  async setup(ctx) {
+    handleSessionCreated();
 
-  return {
-    event: async ({ event } = {}) => {
-      if (event && event.type === 'session.created') handleSessionCreated();
-    },
-    'chat.message': async (_input, output) => {
-      if (!output || !output.parts) return;
-      for (const part of output.parts) {
-        if (part && part.type === 'text' && part.text) {
-          const change = parseModeChange(part.text, { getDefaultMode, expandedTpl: true, unwrapQuotes: true });
-          if (change) applyModeChange(change);
+    const controller = new AbortController();
+    if (ctx.session?.hook) {
+      await ctx.session.hook('prompt', (event) => {
+        const change = parseModeChange(event.prompt.text, {
+          getDefaultMode,
+          expandedTpl: true,
+          unwrapQuotes: true,
+        });
+        if (change) applyModeChange(change);
+      });
+
+      await ctx.session.hook('context', (event) => {
+        const active = readFlag(flagPath);
+        if (active && !INDEPENDENT_MODES.has(active)) {
+          event.system.push({ type: 'text', text: reinforcementLine(active) });
         }
-      }
-    },
-    'experimental.chat.system.transform': async (_input, output) => {
-      if (!output || !Array.isArray(output.system)) return;
-      const active = readFlag(flagPath);
-      if (active && !INDEPENDENT_MODES.has(active)) {
-        output.system.push(reinforcementLine(active));
-      }
-    },
-  };
+      });
+    }
+
+    if (ctx.event?.subscribe) {
+      void (async () => {
+        for await (const event of ctx.event.subscribe({ signal: controller.signal })) {
+          if (event.type === 'session.created') handleSessionCreated();
+        }
+      })();
+    }
+
+    return () => controller.abort();
+  },
 };
 
-export default CavemanPlugin;
+// Keep a V1 server entrypoint while installations transition. V2 uses the
+// native `id`/`setup` definition above and ignores this compatibility export.
+export default {
+  ...nativePlugin,
+  async server() {
+    return {
+      event: async ({ event } = {}) => {
+        if (event && event.type === 'session.created') handleSessionCreated();
+      },
+      'chat.message': async (_input, output) => {
+        if (!output || !output.parts) return;
+        for (const part of output.parts) {
+          if (part && part.type === 'text' && part.text) {
+            const change = parseModeChange(part.text, { getDefaultMode, expandedTpl: true, unwrapQuotes: true });
+            if (change) applyModeChange(change);
+          }
+        }
+      },
+      'experimental.chat.system.transform': async (_input, output) => {
+        if (!output || !Array.isArray(output.system)) return;
+        const active = readFlag(flagPath);
+        if (active && !INDEPENDENT_MODES.has(active)) {
+          output.system.push(reinforcementLine(active));
+        }
+      }
+    };
+  },
+};

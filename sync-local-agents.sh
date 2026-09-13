@@ -1771,16 +1771,16 @@ substitute_api_keys() {
 		# Copy source to output first, then apply substitutions in-place
 		cp "$input_file" "$output_file"
 
-		# Use perl for reliable ${...} placeholder replacement (macOS sed
-		# struggles with literal dollar-brace patterns in double quotes)
+		# Use perl for reliable placeholder replacement (macOS sed struggles
+		# with literal brace patterns in double quotes).
 		if [[ -n "$nvim_key" ]]; then
-			NVIDIA_NIM_API_KEY="$nvim_key" perl -pi -e 's/\$\{NVIDIA_NIM_API_KEY\}/$ENV{NVIDIA_NIM_API_KEY}/g' "$output_file"
+			NVIDIA_NIM_API_KEY="$nvim_key" perl -pi -e 's/(?:\$\{NVIDIA_NIM_API_KEY\}|\{env:NVIDIA_NIM_API_KEY\})/$ENV{NVIDIA_NIM_API_KEY}/g' "$output_file"
 		fi
 		if [[ -n "$stitch_key" ]]; then
-			STITCH_API_KEY="$stitch_key" perl -pi -e 's/\$\{STITCH_API_KEY\}/$ENV{STITCH_API_KEY}/g' "$output_file"
+			STITCH_API_KEY="$stitch_key" perl -pi -e 's/(?:\$\{STITCH_API_KEY\}|\{env:STITCH_API_KEY\})/$ENV{STITCH_API_KEY}/g' "$output_file"
 		fi
 		if [[ -n "$context7_key" ]]; then
-			CONTEXT7_API_KEY="$context7_key" perl -pi -e 's/\$\{CONTEXT7_API_KEY\}/$ENV{CONTEXT7_API_KEY}/g' "$output_file"
+			CONTEXT7_API_KEY="$context7_key" perl -pi -e 's/(?:\$\{CONTEXT7_API_KEY\}|\{env:CONTEXT7_API_KEY\})/$ENV{CONTEXT7_API_KEY}/g' "$output_file"
 		fi
 
 		echo "✓ API keys substituted successfully"
@@ -1819,7 +1819,7 @@ const fs = require("fs")
 
 const [jsonFile, rootKey] = process.argv.slice(2)
 const data = JSON.parse(fs.readFileSync(jsonFile, "utf8"))
-const value = data?.[rootKey]
+const value = rootKey.split(".").reduce((current, key) => current?.[key], data)
 
 if (!value || typeof value !== "object" || Array.isArray(value)) {
   process.exit(0)
@@ -1963,9 +1963,9 @@ const fs = require("fs")
 
 const [jsonFile, rootKey, selection] = process.argv.slice(2)
 const data = JSON.parse(fs.readFileSync(jsonFile, "utf8"))
-const sourceRoot = data?.[rootKey] ?? {}
+const sourceRoot = rootKey.split(".").reduce((current, key) => current?.[key], data) ?? {}
 const selectedKeys = selection === "*" ? Object.keys(sourceRoot) : selection.split("|").filter(Boolean)
-const placeholderPattern = /^\$\{[A-Z0-9_]+\}$/
+const placeholderPattern = /^(?:\$\{[A-Z0-9_]+\}|\{env:[A-Z0-9_]+\})$/
 
 function hasPlaceholder(value) {
   if (typeof value === "string") {
@@ -2020,9 +2020,10 @@ const source = parseConfigFile(sourceJson)
 const target = fs.existsSync(targetJson)
   ? parseConfigFile(targetJson)
   : {}
-const sourceRoot = source?.[rootKey] ?? {}
+const pathParts = rootKey.split(".")
+const sourceRoot = pathParts.reduce((current, key) => current?.[key], source) ?? {}
 const selectedKeys = selection === "*" ? Object.keys(sourceRoot) : selection.split("|").filter(Boolean)
-const placeholderPattern = /^\$\{[A-Z0-9_]+\}$/
+const placeholderPattern = /^(?:\$\{[A-Z0-9_]+\}|\{env:[A-Z0-9_]+\})$/
 
 function preservePlaceholderValues(sourceValue, targetValue) {
   if (typeof sourceValue === "string") {
@@ -2051,8 +2052,12 @@ function preservePlaceholderValues(sourceValue, targetValue) {
   return sourceValue
 }
 
-if (!target[rootKey] || typeof target[rootKey] !== "object" || Array.isArray(target[rootKey])) {
-  target[rootKey] = {}
+let targetRoot = target
+for (const part of pathParts) {
+  if (!targetRoot[part] || typeof targetRoot[part] !== "object" || Array.isArray(targetRoot[part])) {
+    targetRoot[part] = {}
+  }
+  targetRoot = targetRoot[part]
 }
 
 if (source.$schema && !target.$schema) {
@@ -2063,7 +2068,7 @@ for (const key of selectedKeys) {
   if (!(key in sourceRoot)) {
     continue
   }
-  target[rootKey][key] = preservePlaceholderValues(sourceRoot[key], target[rootKey][key])
+  targetRoot[key] = preservePlaceholderValues(sourceRoot[key], targetRoot[key])
 }
 
 fs.writeFileSync(targetJson, `${JSON.stringify(target, null, 2)}\n`)
@@ -2100,7 +2105,7 @@ const target = fs.existsSync(targetJson)
   ? parseConfigFile(targetJson)
   : {}
 const selectedKeys = selection === "*" ? Object.keys(source) : selection.split("|").filter(Boolean)
-const placeholderPattern = /^\$\{[A-Z0-9_]+\}$/
+const placeholderPattern = /^(?:\$\{[A-Z0-9_]+\}|\{env:[A-Z0-9_]+\})$/
 
 function preservePlaceholderValues(sourceValue, targetValue) {
   if (typeof sourceValue === "string") {
@@ -2203,11 +2208,195 @@ for (const pattern of bashAllow) {
   bashRules[pattern] = "allow"
 }
 
-source.permission = {
-  bash: bashRules,
-}
+const sharedShellRules = [
+  { action: "shell", resource: "*", effect: "ask" },
+  ...Object.entries(bashRules)
+    .filter(([resource]) => resource !== "*")
+    .map(([resource, effect]) => ({ action: "shell", resource, effect })),
+]
+
+// Keep native V2 rules authored in the source config, while ensuring the
+// shared shell allowlist remains projected during sync. The source config is
+// the authority for any additional repo-specific rules.
+const existingPermissions = Array.isArray(source.permissions) ? source.permissions : []
+const existingKeys = new Set(existingPermissions.map((rule) =>
+  `${rule?.action}\u0000${rule?.resource}\u0000${rule?.effect}`,
+))
+source.permissions = [
+  ...existingPermissions,
+  ...sharedShellRules.filter((rule) => !existingKeys.has(
+    `${rule.action}\u0000${rule.resource}\u0000${rule.effect}`,
+  )),
+]
 
 fs.writeFileSync(targetJson, `${JSON.stringify(source, null, 2)}\n`)
+NODE
+}
+
+migrate_opencode_target_config() {
+  local target_json="$1"
+
+  [[ -f "$target_json" ]] || return 0
+
+  require_node
+
+  node - "$target_json" <<'NODE'
+const fs = require("fs")
+
+const [targetJson] = process.argv.slice(2)
+const target = JSON.parse(fs.readFileSync(targetJson, "utf8"))
+
+const actionNames = {
+  bash: "shell",
+  task: "subagent",
+  write: "edit",
+  patch: "edit",
+}
+
+function actionName(action) {
+  return actionNames[action] ?? action
+}
+
+function permissionRules(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return []
+
+  const rules = []
+  for (const [action, configured] of Object.entries(value)) {
+    const normalizedAction = actionName(action)
+    if (typeof configured === "string") {
+      rules.push({ action: normalizedAction, resource: "*", effect: configured })
+      continue
+    }
+    if (!configured || typeof configured !== "object" || Array.isArray(configured)) continue
+    for (const [resource, effect] of Object.entries(configured)) {
+      if (typeof effect === "string") {
+        rules.push({ action: normalizedAction, resource, effect })
+      }
+    }
+  }
+  return rules
+}
+
+function toolRules(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return []
+
+  const rules = []
+  for (const [tool, configured] of Object.entries(value)) {
+    const action = actionName(tool)
+    if (typeof configured === "boolean") {
+      rules.push({ action, resource: "*", effect: configured ? "allow" : "deny" })
+      continue
+    }
+    if (!configured || typeof configured !== "object" || Array.isArray(configured)) continue
+    for (const [resource, effect] of Object.entries(configured)) {
+      if (typeof effect === "string") rules.push({ action, resource, effect })
+    }
+  }
+  return rules
+}
+
+function migrateAgent(agent) {
+  if (!agent || typeof agent !== "object" || Array.isArray(agent)) return agent
+  const migrated = { ...agent }
+
+  if ("prompt" in migrated && !("system" in migrated)) migrated.system = migrated.prompt
+  if ("disable" in migrated && !("disabled" in migrated)) migrated.disabled = migrated.disable
+  if ("maxSteps" in migrated && !("steps" in migrated)) migrated.steps = migrated.maxSteps
+  if (migrated.model && migrated.variant && typeof migrated.model === "string") {
+    migrated.model = `${migrated.model}#${migrated.variant}`
+  }
+  if (migrated.temperature !== undefined || migrated.top_p !== undefined || migrated.options) {
+    migrated.request = { ...(migrated.request ?? {}), body: {
+      ...(migrated.request?.body ?? {}),
+      ...(migrated.temperature !== undefined ? { temperature: migrated.temperature } : {}),
+      ...(migrated.top_p !== undefined ? { topP: migrated.top_p } : {}),
+      ...(migrated.options ?? {}),
+    } }
+  }
+
+  const permissions = [
+    ...permissionRules(migrated.permission),
+    ...toolRules(migrated.tools),
+  ]
+  if (permissions.length && !Array.isArray(migrated.permissions)) migrated.permissions = permissions
+
+  delete migrated.prompt
+  delete migrated.disable
+  delete migrated.maxSteps
+  delete migrated.variant
+  delete migrated.temperature
+  delete migrated.top_p
+  delete migrated.options
+  delete migrated.permission
+  delete migrated.tools
+  return migrated
+}
+
+if (target.autoupdate !== undefined && target.update === undefined) {
+  target.update = target.autoupdate === true ? "auto" : target.autoupdate === false ? "disable" : target.autoupdate
+}
+delete target.autoupdate
+
+if (Array.isArray(target.plugin) && !Array.isArray(target.plugins)) target.plugins = target.plugin
+delete target.plugin
+
+if (target.permission !== undefined && target.permissions === undefined) {
+  target.permissions = permissionRules(target.permission)
+}
+delete target.permission
+
+if (target.agent && !target.agents) {
+  target.agents = Object.fromEntries(
+    Object.entries(target.agent).map(([id, agent]) => [id, migrateAgent(agent)]),
+  )
+}
+delete target.agent
+
+if (target.provider && !target.providers) {
+  target.providers = {}
+  for (const [id, provider] of Object.entries(target.provider)) {
+    if (!provider || typeof provider !== "object" || Array.isArray(provider)) {
+      target.providers[id] = provider
+      continue
+    }
+    const migrated = { ...provider }
+    if (migrated.npm !== undefined && migrated.package === undefined) {
+      migrated.package = typeof migrated.npm === "string" && migrated.npm.startsWith("@ai-sdk/")
+        ? `aisdk:${migrated.npm}`
+        : migrated.npm
+    }
+    migrated.settings = {
+      ...(migrated.settings ?? {}),
+      ...(migrated.api !== undefined ? { baseURL: migrated.api } : {}),
+      ...(migrated.options ?? {}),
+    }
+    delete migrated.npm
+    delete migrated.api
+    delete migrated.options
+    target.providers[id] = migrated
+  }
+}
+delete target.provider
+
+if (target.mcp && typeof target.mcp === "object" && !Array.isArray(target.mcp)) {
+  const legacyServers = {}
+  for (const [id, server] of Object.entries(target.mcp)) {
+    if (id === "servers" || id === "timeout" || id === "enabled") continue
+    if (server && typeof server === "object" && !Array.isArray(server)) {
+      legacyServers[id] = { ...server }
+      if ("enabled" in legacyServers[id] && !("disabled" in legacyServers[id])) {
+        legacyServers[id].disabled = !legacyServers[id].enabled
+      }
+      delete legacyServers[id].enabled
+    }
+  }
+  if (Object.keys(legacyServers).length) {
+    target.mcp.servers = { ...legacyServers, ...(target.mcp.servers ?? {}) }
+    for (const id of Object.keys(legacyServers)) delete target.mcp[id]
+  }
+}
+
+fs.writeFileSync(targetJson, `${JSON.stringify(target, null, 2)}\n`)
 NODE
 }
 
@@ -2726,7 +2915,7 @@ resolve_platform_settings() {
       model_override_value="$opencode_model"
       config_source_value="$source_base_value/opencode.json"
       config_target_value="$target_base_value/opencode.json"
-      mcp_root_key_value="mcp"
+      mcp_root_key_value="mcp.servers"
       ;;
     codex)
       source_base_value="$repo_root/.codex"
@@ -2999,7 +3188,7 @@ sync_opencode_json() {
   substituted_source="$prepared_source"
 
   # Check if opencode.json contains placeholders that need substitution
-  if grep -q '\${NVIDIA_NIM_API_KEY}\|\${STITCH_API_KEY}\|\${CONTEXT7_API_KEY}' "$prepared_source" 2>/dev/null; then
+  if grep -Eq '\$\{(NVIDIA_NIM_API_KEY|STITCH_API_KEY|CONTEXT7_API_KEY)\}|\{env:(NVIDIA_NIM_API_KEY|STITCH_API_KEY|CONTEXT7_API_KEY)\}' "$prepared_source" 2>/dev/null; then
     echo ""
     echo "opencode.json contains API key placeholders."
 
@@ -3017,7 +3206,8 @@ sync_opencode_json() {
     fi
   fi
 
-  merge_selected_json_top_level_keys "$substituted_source" "$json_target" '$schema|default_agent|model|autoupdate|plugin|permission|agent|provider|mcp'
+  migrate_opencode_target_config "$json_target"
+  merge_selected_json_top_level_keys "$substituted_source" "$json_target" '$schema|default_agent|model|update|plugins|permissions|agents|providers|mcp'
   echo "Synced repo-managed OpenCode config into $json_target"
   sync_opencode_support_files "$source_base"
 
@@ -3064,6 +3254,10 @@ sync_selected_mcp_servers() {
   local prepared_source="$source_json"
   local temp_source=""
   local configure_keys=""
+
+  if [[ "$platform" == "opencode" && "$dry_run" != true ]]; then
+    migrate_opencode_target_config "$target_json"
+  fi
 
   if [[ "$platform" == "opencode" ]] && selected_json_object_contains_placeholders "$source_json" "$root_key" "$selection"; then
     echo ""

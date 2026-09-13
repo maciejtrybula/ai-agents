@@ -9,7 +9,8 @@ are generated from.
 
 Each `<slug>.md` in this directory contains only **shared content**:
 
-- Shared YAML frontmatter: `name`, `description`, `color`.
+- Shared YAML frontmatter: `name`, `description`, and `color`, plus optional
+  shared metadata such as `mode`, `permissions`, and `platforms`.
 - The full markdown body (the agent prompt), identical across platforms.
 
 **No `model` or `temperature` here.** Those are platform-specific values

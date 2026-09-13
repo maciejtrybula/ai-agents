@@ -152,7 +152,7 @@ wiki layout (`2-Inbox/`, `4-Knowledge/`, `5-Raw/`, `9-Outputs/`,
 - `.agents/` - **Canonical agent sources** (single source of truth):
   Markdown files with required canonical `name` and `description` frontmatter
   fields. Optional shared metadata such as `color` and platform-specific
-  metadata such as `mode`, `permission`, and `platforms` may also be present,
+  metadata such as `mode`, `permissions`, and `platforms` may also be present,
   followed by the full body. Per-platform `model` and supported
   platform-specific fields are injected at generation time. Codex generation
   requires the canonical `name` and `description` values.
@@ -190,7 +190,8 @@ author or update a shared agent:
 Per-platform default `model` values and supported output fields are wired
 through `.config/agent-platforms.json`; the existing model-override
 machinery in `sync-local-agents.sh` applies on top of those defaults at sync
-time. OpenCode may emit `temperature`; Claude and Codex do not.
+time. OpenCode emits per-agent temperature under the native V2
+`request.body`; Claude and Codex do not emit it.
 
 **.config/agent-platforms.json** lists every canonical agent explicitly
 per platform (`platforms.<name>.agents.<slug>`), each with its effective
@@ -493,11 +494,11 @@ for security. These are substituted with actual values during sync.
 
 **Placeholder Variables:**
 
-- `${NVIDIA_NIM_API_KEY}` - NVIDIA NIM provider API key
+- `{env:NVIDIA_NIM_API_KEY}` - NVIDIA NIM provider API key
   (format: `nvapi-...`)
-- `${STITCH_API_KEY}` - Google Stitch MCP API key
+- `{env:STITCH_API_KEY}` - Google Stitch MCP API key
   (format: `AQ.xxx...`)
-- `${CONTEXT7_API_KEY}` - Context7 MCP API key
+- `{env:CONTEXT7_API_KEY}` - Context7 MCP API key
   (format: `ctx7sk-...`)
 
 **During sync, you will be prompted to configure these keys.**
