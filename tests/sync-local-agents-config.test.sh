@@ -17,6 +17,18 @@ assert_file_contains() {
   fi
 }
 
+assert_file_not_contains() {
+  local file_path="$1"
+  local needle="$2"
+
+  if grep -Fq "$needle" "$file_path"; then
+    printf 'Expected %s not to contain: %s\n' "$file_path" "$needle" >&2
+    printf 'Actual contents:\n' >&2
+    cat "$file_path" >&2
+    exit 1
+  fi
+}
+
 assert_line_order() {
   local file_path="$1"
   local first="$2"
@@ -153,19 +165,23 @@ assert_file_contains "$claude_target" 'mcp__playwright__*'
 
 assert_file_contains "$claude_statusline_script" 'basename_dir="$(basename "$current_dir")"'
 
-assert_file_contains "$opencode_target" '"plugin"'
+assert_file_contains "$opencode_target" '"plugins"'
+assert_file_not_contains "$opencode_target" '"plugin"'
 assert_file_contains "$opencode_target" 'superpowers@git+https://github.com/obra/superpowers.git'
 assert_file_contains "$opencode_target" '@dietrichgebert/ponytail'
-assert_file_contains "$opencode_target" './plugins/caveman/plugin.js'
+assert_file_contains "$opencode_target" './plugins/caveman'
 assert_file_contains "$opencode_target" '"apiKey": "nvapi-existing"'
 assert_file_contains "$opencode_target" '"X-Goog-Api-Key": "AQ.existing"'
 assert_file_contains "$opencode_target" '"CONTEXT7_API_KEY": "ctx7sk-existing"'
-assert_file_contains "$opencode_target" '"permission"'
-assert_file_contains "$opencode_target" '"bash"'
-assert_file_contains "$opencode_target" '"*": "ask"'
-assert_file_contains "$opencode_target" '"git log *": "allow"'
-assert_file_contains "$opencode_target" '"pnpm test*": "allow"'
-assert_file_contains "$opencode_target" '"pnpm mobile:lint*": "allow"'
+assert_file_contains "$opencode_target" '"permissions"'
+assert_file_not_contains "$opencode_target" '"permission"'
+assert_file_contains "$opencode_target" '"action": "shell"'
+assert_file_contains "$opencode_target" '"resource": "*"'
+assert_file_contains "$opencode_target" '"resource": "git log *"'
+assert_file_contains "$opencode_target" '"resource": "pnpm test*"'
+assert_file_contains "$opencode_target" '"resource": "pnpm mobile:lint*"'
+assert_file_contains "$opencode_target" '"action": "todowrite"'
+assert_file_contains "$opencode_target" '"action": "read"'
 assert_file_contains "$opencode_target" '"playwright"'
 assert_file_contains "$opencode_target" '@playwright/mcp@latest'
 assert_file_contains "$opencode_target" '"--headless"'

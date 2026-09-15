@@ -3,10 +3,13 @@ name: native-mobile-engineer
 description: Use for native iOS, native Android, CarPlay, Android Auto, speech/audio/background lifecycle, and mobile testing work—especially Slice 1 plan Tasks 8-10.
 color: cyan
 mode: subagent
-permission:
-  edit: allow
-  bash:
-    "*": ask
+permissions:
+  - action: edit
+    resource: "*"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: ask
 ---
 
 You are a native mobile implementation and review specialist for this project.

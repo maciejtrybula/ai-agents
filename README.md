@@ -150,21 +150,32 @@ wiki layout (`2-Inbox/`, `4-Knowledge/`, `5-Raw/`, `9-Outputs/`,
 ## Locations
 
 - `.agents/` - **Canonical agent sources** (single source of truth):
-  shared frontmatter (`name`, `description`, `color`) plus the full body.
-  Per-platform `model`/`temperature` are injected at generation time.
-- `.claude/agents/` - Claude agent definitions (generated, git-ignored)
+  Markdown files with required canonical `name` and `description` frontmatter
+  fields. Optional shared metadata such as `color` and platform-specific
+  metadata such as `mode`, `permissions`, and `platforms` may also be present,
+  followed by the full body. Per-platform `model` and supported
+  platform-specific fields are injected at generation time. Codex generation
+  requires the canonical `name` and `description` values.
+- `.claude/agents/` - Claude agent definitions (generated Markdown,
+  git-ignored)
 - `.claude/skills/` - Claude skill definitions
-- `.config/opencode/agents/` - OpenCode agent definitions (generated, git-ignored)
+- `.config/opencode/agents/` - OpenCode agent definitions (generated
+  Markdown, git-ignored)
 - `.config/opencode/skills/` - OpenCode skill definitions
-- `.codex/agents/` - Codex agent definitions (generated, git-ignored)
+- `.codex/agents/` - Codex agent definitions (generated native TOML with
+  `name`, `description`, `model`, and `developer_instructions`, git-ignored)
 - `.codex/skills/` - Codex skill definitions
 
 ### Authoring Agents
 
 The `.claude/agents/`, `.config/opencode/agents/`, and `.codex/agents/`
 directories are **generated outputs**, git-ignored and created by
-`generate-agents.sh` from the canonical sources in `.agents/`. Do not
-hand-edit those files. To author or update a shared agent:
+`generate-agents.sh` from the canonical Markdown sources in `.agents/`.
+Claude and OpenCode outputs remain Markdown; Codex outputs are native TOML
+custom-agent files using `name`, `description`, `model`, and
+`developer_instructions`. Codex `temperature` is not emitted because it is
+not a supported custom-agent field. Do not hand-edit generated files. To
+author or update a shared agent:
 
 1. **Edit** the canonical file in `.agents/`.
 2. **Regenerate** the three platform outputs:
@@ -176,16 +187,17 @@ hand-edit those files. To author or update a shared agent:
    ./sync-local-agents.sh
    ```
 
-Per-platform default `model` values (and whether `color` is emitted)
-are wired through `.config/agent-platforms.json`; the existing
-model-override machinery in `sync-local-agents.sh` applies on top of
-those defaults at sync time.
+Per-platform default `model` values and supported output fields are wired
+through `.config/agent-platforms.json`; the existing model-override
+machinery in `sync-local-agents.sh` applies on top of those defaults at sync
+time. OpenCode emits per-agent temperature under the native V2
+`request.body`; Claude and Codex do not emit it.
 
 **.config/agent-platforms.json** lists every canonical agent explicitly
 per platform (`platforms.<name>.agents.<slug>`), each with its effective
-`model` (and, where the platform has a temperature concept,
-`temperature`), and an optional `description` that appears only where it
-diverges from the canonical `.agents/*.md` description. For example,
+`model`, with `temperature` only for platforms that support it (currently
+OpenCode), and an optional `description` that appears only where it diverges
+from the canonical `.agents/*.md` description. For example,
 `backend-architect` → `opus` on Claude, `openai/gpt-5.6-sol` on
 OpenCode, `openai/gpt-5.3-codex` on Codex. No agent currently carries a
 `description` override, so every platform uses the canonical
@@ -297,8 +309,9 @@ skills into your local tool directories.
   - defaults to syncing all entries, with optional narrowing to
     selected items
   - requires a TTY; otherwise it exits with a clear error
-- `--claude-model`, `--opencode-model`, and `--codex-model` set
-  per-platform fallback models for synced agent frontmatter.
+- `--claude-model` and `--opencode-model` set per-platform fallback models
+  for synced agent frontmatter; `--codex-model` sets the Codex TOML
+  `model =` field.
 - `--agent-model platform:agent-slug:provider/model` is repeatable and
   applies a catalog-validated per-agent override for that platform.
 - `--use-recommended-models` requires explicit `--platform`, supports
@@ -481,11 +494,11 @@ for security. These are substituted with actual values during sync.
 
 **Placeholder Variables:**
 
-- `${NVIDIA_NIM_API_KEY}` - NVIDIA NIM provider API key
+- `{env:NVIDIA_NIM_API_KEY}` - NVIDIA NIM provider API key
   (format: `nvapi-...`)
-- `${STITCH_API_KEY}` - Google Stitch MCP API key
+- `{env:STITCH_API_KEY}` - Google Stitch MCP API key
   (format: `AQ.xxx...`)
-- `${CONTEXT7_API_KEY}` - Context7 MCP API key
+- `{env:CONTEXT7_API_KEY}` - Context7 MCP API key
   (format: `ctx7sk-...`)
 
 **During sync, you will be prompted to configure these keys.**

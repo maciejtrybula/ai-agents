@@ -374,7 +374,7 @@ build_recommended_agent_model_overrides() {
   while IFS= read -r file; do
     [[ -n "$file" ]] || continue
 
-    agent_slug="$(basename "$file" .md)"
+    agent_slug="$(agent_slug_from_file "$platform" "$file")"
     recommended_model_id="$(resolve_recommended_model_id_for_agent "$platform" "$agent_slug" "$recommendation_index" "$provider")"
 
     if [[ -z "$recommended_model_id" ]]; then
@@ -384,7 +384,7 @@ build_recommended_agent_model_overrides() {
     fi
 
     current_overrides="$(append_agent_model_override "$current_overrides" "$platform" "$agent_slug" "$recommended_model_id")"
-  done < <(iterate_agent_markdown_files "$source_agents_dir" "$selection")
+  done < <(iterate_agent_files "$platform" "$source_agents_dir" "$selection")
 
   printf -v "$__result_var" '%s' "$current_overrides"
 }
@@ -825,16 +825,43 @@ parse_cli_agent_model_override() {
 # Model override resolution and application helpers
 # -----------------------------------------------------------------------------
 
-iterate_agent_markdown_files() {
-  local source_agents_dir="$1"
-  local selection="$2"
+agent_file_extension() {
+  local platform="$1"
+
+  case "$platform" in
+    claude|opencode)
+      printf '.md'
+      ;;
+    codex)
+      printf '.toml'
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+agent_slug_from_file() {
+  local platform="$1"
+  local file="$2"
+  local extension="$(agent_file_extension "$platform")"
+  local filename="${file##*/}"
+
+  printf '%s' "${filename%"$extension"}"
+}
+
+iterate_agent_files() {
+  local platform="$1"
+  local source_agents_dir="$2"
+  local selection="$3"
   local entry=""
   local file=""
+  local extension="$(agent_file_extension "$platform")"
   local expanded_selection=""
   local selected_entries=()
 
   if [[ "$selection" == "*" ]]; then
-    find "$source_agents_dir" -type f -name '*.md' | sort
+    find "$source_agents_dir" -type f -name "*$extension" | sort
     return 0
   fi
 
@@ -846,8 +873,8 @@ iterate_agent_markdown_files() {
     if [[ -d "$source_agents_dir/$entry" ]]; then
       while IFS= read -r file; do
         printf '%s\n' "$file"
-      done < <(find "$source_agents_dir/$entry" -type f -name '*.md' | sort)
-    elif [[ "$entry" == *.md ]]; then
+      done < <(find "$source_agents_dir/$entry" -type f -name "*$extension" | sort)
+    elif [[ "$entry" == *"$extension" ]]; then
       printf '%s\n' "$source_agents_dir/$entry"
     fi
   done
@@ -872,34 +899,64 @@ process_model_override_files() {
   while IFS= read -r file; do
     [[ -n "$file" ]] || continue
 
-    agent_slug="$(basename "$file" .md)"
+    agent_slug="$(agent_slug_from_file "$platform" "$file")"
     effective_model_value="$(resolve_effective_model_override "$platform" "$agent_slug" "$platform_model_value")"
     [[ -n "$effective_model_value" ]] || continue
 
-    if [[ "$selection" == "*" ]]; then
-      output_file="$file"
-    else
-      relative_path="${file#"$source_agents_dir/"}"
-      output_file="$target_agents_dir/$relative_path"
-      [[ "$mode" == "preview" || -f "$output_file" ]] || continue
-    fi
+    relative_path="${file#"$source_agents_dir/"}"
+    output_file="$target_agents_dir/$relative_path"
+    [[ "$mode" == "preview" || -f "$output_file" ]] || continue
 
     if [[ "$mode" == "preview" ]]; then
       printf 'Would override model in synced copy of %s -> %s\n' "$output_file" "$effective_model_value"
     else
-      MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$output_file"
+      if [[ "$platform" == "codex" ]]; then
+        if ! perl -0e '
+          my $in_developer_instructions = 0;
+          my $in_table = 0;
+          my $matches = 0;
+          my $text = <>;
+
+          for my $line (split /(?<=\n)/, $text) {
+            if ($in_developer_instructions) {
+              next;
+            }
+            if ($line =~ /^developer_instructions[ \t]*=[ \t]*"""/) {
+              $in_developer_instructions = 1;
+              next;
+            }
+            if ($line =~ /^[ \t]*\[/) {
+              $in_table = 1;
+              next;
+            }
+            if (!$in_table && $line =~ /^model[ \t]*=[ \t]*"[^"\r\n]*"[ \t]*(?:\r?\n)?$/) {
+              $matches++;
+            }
+          }
+
+          exit($matches == 1 ? 0 : 1);
+        ' "$output_file"; then
+          print_error "Codex agent does not contain exactly one top-level model key: $output_file"
+          exit 1
+        fi
+
+        MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model[ \t]*=[ \t]*"[^"\r\n]*"([ \t]*\r?)$/model = "$ENV{MODEL_OVERRIDE}"$1/m' "$output_file"
+      else
+        MODEL_OVERRIDE="$effective_model_value" perl -0pi -e 's/^model:\h*.*/model: $ENV{MODEL_OVERRIDE}/m' "$output_file"
+      fi
     fi
-  done < <(iterate_agent_markdown_files "$source_agents_dir" "$selection")
+  done < <(iterate_agent_files "$platform" "$source_agents_dir" "$selection")
 }
 
 apply_model_override() {
   local platform="$1"
-  local target_dir="$2"
-  local platform_model_value="$3"
+  local source_dir="$2"
+  local target_dir="$3"
+  local platform_model_value="$4"
 
-  [[ -d "$target_dir" ]] || return 0
+  [[ -d "$source_dir" && -d "$target_dir" ]] || return 0
 
-  process_model_override_files "apply" "$platform" "$target_dir" "$target_dir" "*" "$platform_model_value"
+  process_model_override_files "apply" "$platform" "$source_dir" "$target_dir" "*" "$platform_model_value"
 }
 
 resolve_effective_model_override() {
@@ -958,7 +1015,7 @@ validate_agent_override_targets_exist() {
 
     [[ "$record_platform" == "$platform" ]] || continue
 
-    if [[ ! -f "$source_agents_dir/$record_agent.md" ]]; then
+    if [[ ! -f "$source_agents_dir/$record_agent$(agent_file_extension "$platform")" ]]; then
       print_error "Unknown $platform agent in model override: $record_agent"
       exit 1
     fi
@@ -1024,7 +1081,7 @@ Override the fallback model used in synced OpenCode agent frontmatter
 Precedence: --opencode-model > OPENCODE_MODEL env var >
 ./.opencode.local.env > repo defaults
 --codex-model
-Override the fallback model used in synced Codex agent frontmatter
+Override the fallback model used in synced Codex agent TOML
 Precedence: --codex-model > CODEX_MODEL env var >
 ./.codex.local.env > repo defaults
 --agent-model
@@ -1483,6 +1540,7 @@ prompt_interactive_model_overrides() {
   local requested_model=""
   local target_value=""
   local platform_cli_model=""
+  local agent_extension="$(agent_file_extension "$platform")"
 
   case "$platform" in
     claude) platform_cli_model="$cli_claude_model" ;;
@@ -1529,8 +1587,8 @@ prompt_interactive_model_overrides() {
       3)
         IFS='|' read -r -a selected_entries <<< "$selected_joined"
         for entry in "${selected_entries[@]}"; do
-          [[ "$entry" == *.md ]] || continue
-          agent_slug="$(basename "$entry" .md)"
+          [[ "$entry" == *"$agent_extension" ]] || continue
+          agent_slug="$(agent_slug_from_file "$platform" "$entry")"
           print_divider
           printf '%sAgent:%s %s%s%s\n' "$color_magenta" "$color_reset" "$color_bold" "$agent_slug" "$color_reset"
           printf '%sOverride this agent? [y/N]:%s ' "$color_magenta" "$color_reset"
@@ -1713,16 +1771,16 @@ substitute_api_keys() {
 		# Copy source to output first, then apply substitutions in-place
 		cp "$input_file" "$output_file"
 
-		# Use perl for reliable ${...} placeholder replacement (macOS sed
-		# struggles with literal dollar-brace patterns in double quotes)
+		# Use perl for reliable placeholder replacement (macOS sed struggles
+		# with literal brace patterns in double quotes).
 		if [[ -n "$nvim_key" ]]; then
-			NVIDIA_NIM_API_KEY="$nvim_key" perl -pi -e 's/\$\{NVIDIA_NIM_API_KEY\}/$ENV{NVIDIA_NIM_API_KEY}/g' "$output_file"
+			NVIDIA_NIM_API_KEY="$nvim_key" perl -pi -e 's/(?:\$\{NVIDIA_NIM_API_KEY\}|\{env:NVIDIA_NIM_API_KEY\})/$ENV{NVIDIA_NIM_API_KEY}/g' "$output_file"
 		fi
 		if [[ -n "$stitch_key" ]]; then
-			STITCH_API_KEY="$stitch_key" perl -pi -e 's/\$\{STITCH_API_KEY\}/$ENV{STITCH_API_KEY}/g' "$output_file"
+			STITCH_API_KEY="$stitch_key" perl -pi -e 's/(?:\$\{STITCH_API_KEY\}|\{env:STITCH_API_KEY\})/$ENV{STITCH_API_KEY}/g' "$output_file"
 		fi
 		if [[ -n "$context7_key" ]]; then
-			CONTEXT7_API_KEY="$context7_key" perl -pi -e 's/\$\{CONTEXT7_API_KEY\}/$ENV{CONTEXT7_API_KEY}/g' "$output_file"
+			CONTEXT7_API_KEY="$context7_key" perl -pi -e 's/(?:\$\{CONTEXT7_API_KEY\}|\{env:CONTEXT7_API_KEY\})/$ENV{CONTEXT7_API_KEY}/g' "$output_file"
 		fi
 
 		echo "✓ API keys substituted successfully"
@@ -1761,7 +1819,7 @@ const fs = require("fs")
 
 const [jsonFile, rootKey] = process.argv.slice(2)
 const data = JSON.parse(fs.readFileSync(jsonFile, "utf8"))
-const value = data?.[rootKey]
+const value = rootKey.split(".").reduce((current, key) => current?.[key], data)
 
 if (!value || typeof value !== "object" || Array.isArray(value)) {
   process.exit(0)
@@ -1905,9 +1963,9 @@ const fs = require("fs")
 
 const [jsonFile, rootKey, selection] = process.argv.slice(2)
 const data = JSON.parse(fs.readFileSync(jsonFile, "utf8"))
-const sourceRoot = data?.[rootKey] ?? {}
+const sourceRoot = rootKey.split(".").reduce((current, key) => current?.[key], data) ?? {}
 const selectedKeys = selection === "*" ? Object.keys(sourceRoot) : selection.split("|").filter(Boolean)
-const placeholderPattern = /^\$\{[A-Z0-9_]+\}$/
+const placeholderPattern = /^(?:\$\{[A-Z0-9_]+\}|\{env:[A-Z0-9_]+\})$/
 
 function hasPlaceholder(value) {
   if (typeof value === "string") {
@@ -1962,9 +2020,10 @@ const source = parseConfigFile(sourceJson)
 const target = fs.existsSync(targetJson)
   ? parseConfigFile(targetJson)
   : {}
-const sourceRoot = source?.[rootKey] ?? {}
+const pathParts = rootKey.split(".")
+const sourceRoot = pathParts.reduce((current, key) => current?.[key], source) ?? {}
 const selectedKeys = selection === "*" ? Object.keys(sourceRoot) : selection.split("|").filter(Boolean)
-const placeholderPattern = /^\$\{[A-Z0-9_]+\}$/
+const placeholderPattern = /^(?:\$\{[A-Z0-9_]+\}|\{env:[A-Z0-9_]+\})$/
 
 function preservePlaceholderValues(sourceValue, targetValue) {
   if (typeof sourceValue === "string") {
@@ -1993,8 +2052,12 @@ function preservePlaceholderValues(sourceValue, targetValue) {
   return sourceValue
 }
 
-if (!target[rootKey] || typeof target[rootKey] !== "object" || Array.isArray(target[rootKey])) {
-  target[rootKey] = {}
+let targetRoot = target
+for (const part of pathParts) {
+  if (!targetRoot[part] || typeof targetRoot[part] !== "object" || Array.isArray(targetRoot[part])) {
+    targetRoot[part] = {}
+  }
+  targetRoot = targetRoot[part]
 }
 
 if (source.$schema && !target.$schema) {
@@ -2005,7 +2068,7 @@ for (const key of selectedKeys) {
   if (!(key in sourceRoot)) {
     continue
   }
-  target[rootKey][key] = preservePlaceholderValues(sourceRoot[key], target[rootKey][key])
+  targetRoot[key] = preservePlaceholderValues(sourceRoot[key], targetRoot[key])
 }
 
 fs.writeFileSync(targetJson, `${JSON.stringify(target, null, 2)}\n`)
@@ -2042,7 +2105,7 @@ const target = fs.existsSync(targetJson)
   ? parseConfigFile(targetJson)
   : {}
 const selectedKeys = selection === "*" ? Object.keys(source) : selection.split("|").filter(Boolean)
-const placeholderPattern = /^\$\{[A-Z0-9_]+\}$/
+const placeholderPattern = /^(?:\$\{[A-Z0-9_]+\}|\{env:[A-Z0-9_]+\})$/
 
 function preservePlaceholderValues(sourceValue, targetValue) {
   if (typeof sourceValue === "string") {
@@ -2145,11 +2208,195 @@ for (const pattern of bashAllow) {
   bashRules[pattern] = "allow"
 }
 
-source.permission = {
-  bash: bashRules,
-}
+const sharedShellRules = [
+  { action: "shell", resource: "*", effect: "ask" },
+  ...Object.entries(bashRules)
+    .filter(([resource]) => resource !== "*")
+    .map(([resource, effect]) => ({ action: "shell", resource, effect })),
+]
+
+// Keep native V2 rules authored in the source config, while ensuring the
+// shared shell allowlist remains projected during sync. The source config is
+// the authority for any additional repo-specific rules.
+const existingPermissions = Array.isArray(source.permissions) ? source.permissions : []
+const existingKeys = new Set(existingPermissions.map((rule) =>
+  `${rule?.action}\u0000${rule?.resource}\u0000${rule?.effect}`,
+))
+source.permissions = [
+  ...existingPermissions,
+  ...sharedShellRules.filter((rule) => !existingKeys.has(
+    `${rule.action}\u0000${rule.resource}\u0000${rule.effect}`,
+  )),
+]
 
 fs.writeFileSync(targetJson, `${JSON.stringify(source, null, 2)}\n`)
+NODE
+}
+
+migrate_opencode_target_config() {
+  local target_json="$1"
+
+  [[ -f "$target_json" ]] || return 0
+
+  require_node
+
+  node - "$target_json" <<'NODE'
+const fs = require("fs")
+
+const [targetJson] = process.argv.slice(2)
+const target = JSON.parse(fs.readFileSync(targetJson, "utf8"))
+
+const actionNames = {
+  bash: "shell",
+  task: "subagent",
+  write: "edit",
+  patch: "edit",
+}
+
+function actionName(action) {
+  return actionNames[action] ?? action
+}
+
+function permissionRules(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return []
+
+  const rules = []
+  for (const [action, configured] of Object.entries(value)) {
+    const normalizedAction = actionName(action)
+    if (typeof configured === "string") {
+      rules.push({ action: normalizedAction, resource: "*", effect: configured })
+      continue
+    }
+    if (!configured || typeof configured !== "object" || Array.isArray(configured)) continue
+    for (const [resource, effect] of Object.entries(configured)) {
+      if (typeof effect === "string") {
+        rules.push({ action: normalizedAction, resource, effect })
+      }
+    }
+  }
+  return rules
+}
+
+function toolRules(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return []
+
+  const rules = []
+  for (const [tool, configured] of Object.entries(value)) {
+    const action = actionName(tool)
+    if (typeof configured === "boolean") {
+      rules.push({ action, resource: "*", effect: configured ? "allow" : "deny" })
+      continue
+    }
+    if (!configured || typeof configured !== "object" || Array.isArray(configured)) continue
+    for (const [resource, effect] of Object.entries(configured)) {
+      if (typeof effect === "string") rules.push({ action, resource, effect })
+    }
+  }
+  return rules
+}
+
+function migrateAgent(agent) {
+  if (!agent || typeof agent !== "object" || Array.isArray(agent)) return agent
+  const migrated = { ...agent }
+
+  if ("prompt" in migrated && !("system" in migrated)) migrated.system = migrated.prompt
+  if ("disable" in migrated && !("disabled" in migrated)) migrated.disabled = migrated.disable
+  if ("maxSteps" in migrated && !("steps" in migrated)) migrated.steps = migrated.maxSteps
+  if (migrated.model && migrated.variant && typeof migrated.model === "string") {
+    migrated.model = `${migrated.model}#${migrated.variant}`
+  }
+  if (migrated.temperature !== undefined || migrated.top_p !== undefined || migrated.options) {
+    migrated.request = { ...(migrated.request ?? {}), body: {
+      ...(migrated.request?.body ?? {}),
+      ...(migrated.temperature !== undefined ? { temperature: migrated.temperature } : {}),
+      ...(migrated.top_p !== undefined ? { topP: migrated.top_p } : {}),
+      ...(migrated.options ?? {}),
+    } }
+  }
+
+  const permissions = [
+    ...permissionRules(migrated.permission),
+    ...toolRules(migrated.tools),
+  ]
+  if (permissions.length && !Array.isArray(migrated.permissions)) migrated.permissions = permissions
+
+  delete migrated.prompt
+  delete migrated.disable
+  delete migrated.maxSteps
+  delete migrated.variant
+  delete migrated.temperature
+  delete migrated.top_p
+  delete migrated.options
+  delete migrated.permission
+  delete migrated.tools
+  return migrated
+}
+
+if (target.autoupdate !== undefined && target.update === undefined) {
+  target.update = target.autoupdate === true ? "auto" : target.autoupdate === false ? "disable" : target.autoupdate
+}
+delete target.autoupdate
+
+if (Array.isArray(target.plugin) && !Array.isArray(target.plugins)) target.plugins = target.plugin
+delete target.plugin
+
+if (target.permission !== undefined && target.permissions === undefined) {
+  target.permissions = permissionRules(target.permission)
+}
+delete target.permission
+
+if (target.agent && !target.agents) {
+  target.agents = Object.fromEntries(
+    Object.entries(target.agent).map(([id, agent]) => [id, migrateAgent(agent)]),
+  )
+}
+delete target.agent
+
+if (target.provider && !target.providers) {
+  target.providers = {}
+  for (const [id, provider] of Object.entries(target.provider)) {
+    if (!provider || typeof provider !== "object" || Array.isArray(provider)) {
+      target.providers[id] = provider
+      continue
+    }
+    const migrated = { ...provider }
+    if (migrated.npm !== undefined && migrated.package === undefined) {
+      migrated.package = typeof migrated.npm === "string" && migrated.npm.startsWith("@ai-sdk/")
+        ? `aisdk:${migrated.npm}`
+        : migrated.npm
+    }
+    migrated.settings = {
+      ...(migrated.settings ?? {}),
+      ...(migrated.api !== undefined ? { baseURL: migrated.api } : {}),
+      ...(migrated.options ?? {}),
+    }
+    delete migrated.npm
+    delete migrated.api
+    delete migrated.options
+    target.providers[id] = migrated
+  }
+}
+delete target.provider
+
+if (target.mcp && typeof target.mcp === "object" && !Array.isArray(target.mcp)) {
+  const legacyServers = {}
+  for (const [id, server] of Object.entries(target.mcp)) {
+    if (id === "servers" || id === "timeout" || id === "enabled") continue
+    if (server && typeof server === "object" && !Array.isArray(server)) {
+      legacyServers[id] = { ...server }
+      if ("enabled" in legacyServers[id] && !("disabled" in legacyServers[id])) {
+        legacyServers[id].disabled = !legacyServers[id].enabled
+      }
+      delete legacyServers[id].enabled
+    }
+  }
+  if (Object.keys(legacyServers).length) {
+    target.mcp.servers = { ...legacyServers, ...(target.mcp.servers ?? {}) }
+    for (const id of Object.keys(legacyServers)) delete target.mcp[id]
+  }
+}
+
+fs.writeFileSync(targetJson, `${JSON.stringify(target, null, 2)}\n`)
 NODE
 }
 
@@ -2668,7 +2915,7 @@ resolve_platform_settings() {
       model_override_value="$opencode_model"
       config_source_value="$source_base_value/opencode.json"
       config_target_value="$target_base_value/opencode.json"
-      mcp_root_key_value="mcp"
+      mcp_root_key_value="mcp.servers"
       ;;
     codex)
       source_base_value="$repo_root/.codex"
@@ -2720,6 +2967,7 @@ sync_platform() {
   local config_source=""
   local config_target=""
   local mcp_root_key=""
+  local agent_extension="$(agent_file_extension "$platform")"
   local agent_selection='*'
   local skill_selection='*'
   local selection_joined=""
@@ -2784,13 +3032,15 @@ sync_platform() {
       if [[ "$dry_run" == true ]]; then
         preview_model_override "$platform" "$source_base/agents" "$model_override"
       else
-        apply_model_override "$platform" "$target_base/agents" "$model_override"
+        apply_model_override "$platform" "$source_base/agents" "$target_base/agents" "$model_override"
       fi
     elif [[ -n "$agent_selection" ]]; then
       expand_selection "$source_base/agents" "$agent_selection" selection_joined
       IFS='|' read -r -a selected_entries <<< "$selection_joined"
       for entry in "${selected_entries[@]}"; do
-        run_rsync_entry "$source_base/agents/$entry" "$target_base/agents/$entry"
+        if [[ -d "$source_base/agents/$entry" || "$entry" == *"$agent_extension" ]]; then
+          run_rsync_entry "$source_base/agents/$entry" "$target_base/agents/$entry"
+        fi
       done
 
       if [[ "$dry_run" == true ]]; then
@@ -2938,7 +3188,7 @@ sync_opencode_json() {
   substituted_source="$prepared_source"
 
   # Check if opencode.json contains placeholders that need substitution
-  if grep -q '\${NVIDIA_NIM_API_KEY}\|\${STITCH_API_KEY}\|\${CONTEXT7_API_KEY}' "$prepared_source" 2>/dev/null; then
+  if grep -Eq '\$\{(NVIDIA_NIM_API_KEY|STITCH_API_KEY|CONTEXT7_API_KEY)\}|\{env:(NVIDIA_NIM_API_KEY|STITCH_API_KEY|CONTEXT7_API_KEY)\}' "$prepared_source" 2>/dev/null; then
     echo ""
     echo "opencode.json contains API key placeholders."
 
@@ -2956,7 +3206,8 @@ sync_opencode_json() {
     fi
   fi
 
-  merge_selected_json_top_level_keys "$substituted_source" "$json_target" '$schema|default_agent|model|autoupdate|plugin|permission|agent|provider|mcp'
+  migrate_opencode_target_config "$json_target"
+  merge_selected_json_top_level_keys "$substituted_source" "$json_target" '$schema|default_agent|model|update|plugins|permissions|agents|providers|mcp'
   echo "Synced repo-managed OpenCode config into $json_target"
   sync_opencode_support_files "$source_base"
 
@@ -3003,6 +3254,10 @@ sync_selected_mcp_servers() {
   local prepared_source="$source_json"
   local temp_source=""
   local configure_keys=""
+
+  if [[ "$platform" == "opencode" && "$dry_run" != true ]]; then
+    migrate_opencode_target_config "$target_json"
+  fi
 
   if [[ "$platform" == "opencode" ]] && selected_json_object_contains_placeholders "$source_json" "$root_key" "$selection"; then
     echo ""

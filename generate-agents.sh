@@ -82,6 +82,46 @@ if (entry && entry[field] !== undefined && entry[field] !== null) {
 NODE
 }
 
+toml_escape_scalar() {
+  node -e '
+const value = process.argv[1] ?? ""
+const escapes = {"\b": "\\b", "\t": "\\t", "\n": "\\n", "\f": "\\f", "\r": "\\r"}
+const escaped = value
+  .replace(/\\/g, "\\\\")
+  .replace(/"/g, "\\\"")
+  .replace(/[\u0000-\u001f\u007f]/g, (character) => {
+    return escapes[character] ?? `\\u${character.codePointAt(0).toString(16).padStart(4, "0")}`
+  })
+process.stdout.write(escaped)
+' "$1"
+}
+
+toml_escape_multiline_body() {
+  node -e '
+const fs = require("fs")
+const value = fs.readFileSync(0, "utf8")
+let escaped = ""
+for (const character of value) {
+  if (character === "\\") escaped += "\\\\"
+  else if (character === "\r") escaped += "\\r"
+  else if (character === "\n") escaped += "\n"
+  else if (character === "\b") escaped += "\\b"
+  else if (character === "\f") escaped += "\\f"
+  else if (character === "\t") escaped += "\t"
+  else if (character.codePointAt(0) < 0x20 || character.codePointAt(0) === 0x7f) {
+    escaped += `\\u${character.codePointAt(0).toString(16).padStart(4, "0")}`
+  } else {
+    escaped += character
+  }
+}
+
+// A quote run of three or more would close the multiline basic string. Escape
+// only those runs so ordinary canonical body text remains readable.
+escaped = escaped.replace(/"{3,}/g, (run) => "\\\"".repeat(run.length))
+process.stdout.write(escaped)
+'
+}
+
 # Read the canonical `platforms:` frontmatter list (e.g. "platforms: [codex, opencode]").
 # Prints each platform slug on its own line; prints nothing if absent (meaning all platforms).
 # $1 = canonical file
@@ -91,6 +131,50 @@ read_agent_platforms() {
     n=split($0, a, /[ ,]+/); for (i=1;i<=n;i++) if (a[i] != "") print a[i]
     exit
   }' "$1"
+}
+
+# Read a canonical description while resolving plain and block scalar forms.
+# Markdown keeps the original frontmatter block; Codex needs the scalar value.
+read_agent_description() {
+  awk '
+    BEGIN { frontmatter=0; in_description=0; description_style=""; description="" }
+    /^---$/ {
+      frontmatter++
+      if (frontmatter == 2) exit
+      next
+    }
+    frontmatter != 1 { next }
+    !in_description && /^description:[[:space:]]*/ {
+      value=$0
+      sub(/^description:[[:space:]]*/, "", value)
+      if (value ~ /^[>|][+-]?[[:space:]]*$/) {
+        in_description=1
+        description_style=substr(value, 1, 1)
+        next
+      }
+      print value
+      exit
+    }
+    in_description {
+      if ($0 != "" && $0 !~ /^[[:space:]]+/) exit
+      line=$0
+      sub(/^[[:space:]]+/, "", line)
+      if (description_style == ">") {
+        if (line == "") {
+          if (description != "") description=description "\n"
+        } else {
+          if (description != "" && description !~ /\n$/) description=description " "
+          description=description line
+        }
+      } else {
+        if (description != "") description=description "\n"
+        description=description line
+      }
+    }
+    END {
+      if (in_description) print description
+    }
+  ' "$1"
 }
 
 # Render one platform file from a canonical source and its platform config.
@@ -137,18 +221,52 @@ render_platform_file() {
   fi
 
   local out_dir="$out_base/$out_platform_dir"
-  local out_file="$out_dir/$slug.md"
-  mkdir -p "$out_dir"
 
   # Frontmatter = lines between the opening `---` (line 1) and the closing `---`.
   local frontmatter_block
   frontmatter_block="$(sed -n '2,/^---$/p' "$canonical_file" | sed '$d')"
+
+  if [[ "$platform" == "codex" ]]; then
+    local canonical_name canonical_description
+    canonical_name="$(printf '%s\n' "$frontmatter_block" | awk '/^name:/{sub(/^name:[ \t]*/, ""); print; exit}')"
+    canonical_description="$(read_agent_description "$canonical_file")"
+    if [[ -z "$canonical_name" || -z "$canonical_description" ]]; then
+      printf 'Error: canonical agent is missing name or description: %s\n' "$canonical_file" >&2
+      exit 1
+    fi
+    if [[ -n "$agent_description" ]]; then
+      canonical_description="$agent_description"
+    fi
+
+    local out_file="$out_dir/$slug.toml"
+    mkdir -p "$out_dir"
+    rm -f "$out_dir/$slug.md"
+    {
+      printf 'name = "%s"\n' "$(toml_escape_scalar "$canonical_name")"
+      printf 'description = "%s"\n' "$(toml_escape_scalar "$canonical_description")"
+      printf 'model = "%s"\n' "$(toml_escape_scalar "$platform_model")"
+      printf 'developer_instructions = """\n'
+      awk 'BEGIN{f=0} /^---$/ && f<2{f++; next} f>=2{print}' "$canonical_file" | toml_escape_multiline_body
+      printf '"""\n'
+    } >"$out_file"
+
+    printf '%s\n' "$out_file"
+    return
+  fi
+
+  local out_file="$out_dir/$slug.md"
+  mkdir -p "$out_dir"
 
   {
     printf -- '---\n'
     while IFS= read -r line; do
       # `platforms:` is generator metadata, not agent frontmatter: drop it.
       if [[ "$line" == platforms:* ]]; then
+        continue
+      fi
+      # OpenCode derives the agent ID from the filename; `name` is canonical
+      # generator metadata, not a native V2 Markdown-agent field.
+      if [[ "$platform" == "opencode" && "$line" == name:* ]]; then
         continue
       fi
       if [[ "$line" == color:* && "$include_color" != "1" ]]; then
@@ -169,11 +287,17 @@ render_platform_file() {
     done <<<"$frontmatter_block"
     printf 'model: %s\n' "$platform_model"
     if [[ -n "$platform_temperature" ]]; then
-      printf 'temperature: %s\n' "$platform_temperature"
+      if [[ "$platform" == "opencode" ]]; then
+        printf 'request:\n'
+        printf '  body:\n'
+        printf '    temperature: %s\n' "$platform_temperature"
+      else
+        printf 'temperature: %s\n' "$platform_temperature"
+      fi
     fi
     printf -- '---\n'
     # Body = everything after the closing frontmatter delimiter (starts with a blank line).
-    awk 'BEGIN{f=0} /^---$/{f++; next} f>=2{print}' "$canonical_file"
+    awk 'BEGIN{f=0} /^---$/ && f<2{f++; next} f>=2{print}' "$canonical_file"
   } >"$out_file"
 
   printf '%s\n' "$out_file"
@@ -191,21 +315,23 @@ if [[ ! -f "$platforms_file" ]]; then
   exit 1
 fi
 
-declare -A platform_dir
-declare -A platform_project_dir
-declare -A platform_model
-declare -A platform_color
-declare -A platform_temperature
+platform_slugs=()
+platform_dirs=()
+platform_project_dirs=()
+platform_models=()
+platform_colors=()
+platform_temperatures=()
 while IFS=$'\t' read -r pslug pdir pprojdir pmodel pcolor ptemperature; do
   [[ -n "$pslug" ]] || continue
-  platform_dir["$pslug"]="$pdir"
   if [[ "$pprojdir" == "-" ]]; then
     pprojdir=""
   fi
-  platform_project_dir["$pslug"]="$pprojdir"
-  platform_model["$pslug"]="$pmodel"
-  platform_color["$pslug"]="$pcolor"
-  platform_temperature["$pslug"]="$ptemperature"
+  platform_slugs+=("$pslug")
+  platform_dirs+=("$pdir")
+  platform_project_dirs+=("$pprojdir")
+  platform_models+=("$pmodel")
+  platform_colors+=("$pcolor")
+  platform_temperatures+=("$ptemperature")
 done < <(read_platforms_config)
 
 generated_count=0
@@ -222,7 +348,8 @@ for canonical_file in "$canonical_dir"/*.md; do
     [[ -n "$p" ]] && local_platforms+=("$p")
   done < <(read_agent_platforms "$canonical_file")
 
-  for pslug in "${!platform_dir[@]}"; do
+  for platform_index in "${!platform_slugs[@]}"; do
+    pslug="${platform_slugs[$platform_index]}"
     # If a platforms list is declared, skip platforms not in it.
     if [[ ${#local_platforms[@]} -gt 0 ]]; then
       included=0
@@ -231,7 +358,7 @@ for canonical_file in "$canonical_dir"/*.md; do
       done
       [[ "$included" == "1" ]] || continue
     fi
-    render_platform_file "$slug" "$canonical_file" "$pslug" "${platform_dir[$pslug]}" "${platform_project_dir[$pslug]}" "${platform_model[$pslug]}" "${platform_color[$pslug]}" "${platform_temperature[$pslug]-}"
+    render_platform_file "$slug" "$canonical_file" "$pslug" "${platform_dirs[$platform_index]}" "${platform_project_dirs[$platform_index]}" "${platform_models[$platform_index]}" "${platform_colors[$platform_index]}" "${platform_temperatures[$platform_index]-}"
     generated_count=$((generated_count + 1))
   done
 done

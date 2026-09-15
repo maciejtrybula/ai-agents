@@ -427,4 +427,3 @@ If a task spans multiple layers, implement from the inside out:
 `core -> renderer -> shell`
 
 Never start with toolbar wiring if command semantics are still undefined.
-
