@@ -4,17 +4,20 @@ This file provides guidance to Warp when working with code and agent definitions
 
 ## Repository Purpose
 
-This repository stores Claude, OpenCode, and Codex agents plus shared skills for engineering, SEO, and technical content work. Agents should check the shared skills before proceeding with specialized work and use them when relevant.
+This repository stores Claude, OpenCode, Codex, and OMP agents plus shared
+skills for engineering, SEO, and technical content work. Agents should check
+shared skills before proceeding when relevant.
 
 ## Key Agent Directories
 
 - `.claude/agents/` - Claude agent definitions
 - `.config/opencode/agents/` - OpenCode agent definitions
 - `.codex/agents/` - Codex agent definitions
+- `.omp/agent/agents/` - OMP user-level agent definitions
 
 ## Key Skill Directories
 
-- `.claude/skills/` - Claude skill definitions
+- `.claude/skills/` - Claude skill definitions and shared source for OMP
 - `.config/opencode/skills/` - OpenCode skill definitions
 - `.codex/skills/` - Codex skill definitions
 

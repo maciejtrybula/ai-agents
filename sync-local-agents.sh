@@ -29,17 +29,21 @@ sync_scope="both"
 cli_claude_model=""
 cli_opencode_model=""
 cli_codex_model=""
+cli_omp_model=""
 file_claude_model=""
 file_opencode_model=""
 file_codex_model=""
+file_omp_model=""
 env_claude_model="${CLAUDE_MODEL:-}"
 env_opencode_model="${OPENCODE_MODEL:-}"
 env_codex_model="${CODEX_MODEL:-}"
+env_omp_model="${OMP_MODEL:-}"
 file_claude_statusline_command_path=""
 env_claude_statusline_command_path="${CLAUDE_STATUSLINE_COMMAND_PATH:-}"
 claude_model=""
 opencode_model=""
 codex_model=""
+omp_model=""
 claude_statusline_command_path=""
 cli_agent_model_overrides=""
 # Path to the rsync binary, overridable via SYNC_RSYNC (e.g. for testing/mocking).
@@ -52,6 +56,7 @@ repo_default_agent_model_overrides=""
 interactive_claude_model=""
 interactive_opencode_model=""
 interactive_codex_model=""
+interactive_omp_model=""
 use_recommended_models=false
 use_recommended_fallback_models=false
 cli_recommended_provider=""
@@ -167,6 +172,7 @@ normalize_path_setting_value() {
 env_claude_model="$(normalize_model_catalog_value "$env_claude_model")"
 env_opencode_model="$(normalize_model_catalog_value "$env_opencode_model")"
 env_codex_model="$(normalize_model_catalog_value "$env_codex_model")"
+env_omp_model="$(normalize_model_catalog_value "$env_omp_model")"
 env_claude_statusline_command_path="$(normalize_path_setting_value "$env_claude_statusline_command_path")"
 
 append_override_record() {
@@ -801,7 +807,7 @@ parse_cli_agent_model_override() {
   requested_value="${remaining#*:}"
 
   case "$platform" in
-    claude|opencode|codex)
+    claude|opencode|codex|omp)
       ;;
     *)
       print_error "Unsupported platform in --agent-model: $platform"
@@ -829,7 +835,7 @@ agent_file_extension() {
   local platform="$1"
 
   case "$platform" in
-    claude|opencode)
+    claude|opencode|omp)
       printf '.md'
       ;;
     codex)
@@ -1035,19 +1041,22 @@ preview_model_override() {
 load_model_settings_from_file "$repo_root/.claude.local.env" "claude" "CLAUDE_MODEL" file_claude_model file_agent_model_overrides
 load_model_settings_from_file "$repo_root/.opencode.local.env" "opencode" "OPENCODE_MODEL" file_opencode_model file_agent_model_overrides
 load_model_settings_from_file "$repo_root/.codex.local.env" "codex" "CODEX_MODEL" file_codex_model file_agent_model_overrides
+load_model_settings_from_file "$repo_root/.omp.local.env" "omp" "OMP_MODEL" file_omp_model file_agent_model_overrides
 load_path_setting_from_file "$repo_root/.claude.local.env" "CLAUDE_STATUSLINE_COMMAND_PATH" file_claude_statusline_command_path
 load_agent_model_overrides_from_environment "claude" "CLAUDE" env_agent_model_overrides
 load_agent_model_overrides_from_environment "opencode" "OPENCODE" env_agent_model_overrides
 load_agent_model_overrides_from_environment "codex" "CODEX" env_agent_model_overrides
+load_agent_model_overrides_from_environment "omp" "OMP" env_agent_model_overrides
 
 usage() {
   cat <<'EOF'
-Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode|codex]
+Usage: ./sync-local-agents.sh [--dry-run] [--delete] [--platform claude|opencode|codex|omp]
 [--sync both|agents|skills|config|all] [--interactive]
 [--configure-api-keys]
 [--claude-model MODEL]
 [--opencode-model MODEL]
 [--codex-model MODEL]
+[--omp-model MODEL]
 [--agent-model platform:agent-slug:provider/model]
 [--use-recommended-models]
 [--use-recommended-fallback-models]
@@ -1076,6 +1085,10 @@ ${CONTEXT7_API_KEY} placeholders with actual values.
 Override the fallback model used in synced Claude agent frontmatter
 Precedence: --claude-model > CLAUDE_MODEL env var >
 ./.claude.local.env > repo defaults
+--omp-model
+Override the fallback model used in synced OMP agent frontmatter
+Precedence: --omp-model > OMP_MODEL env var >
+./.omp.local.env > repo defaults
 --opencode-model
 Override the fallback model used in synced OpenCode agent frontmatter
 Precedence: --opencode-model > OPENCODE_MODEL env var >
@@ -1089,12 +1102,12 @@ Repeatable per-agent override.
 Format: platform:agent-slug:provider/model
 Validated against ./.config/model-catalog.json
 --use-recommended-models
-Requires explicit --platform and supports claude/opencode/codex.
+Requires explicit --platform and supports claude/opencode/codex/omp.
 Uses the first model from
 platforms.<platform>.recommendedAgents.<provider>
 for each selected agent and expands it into per-agent overrides.
 --use-recommended-fallback-models
-Requires explicit --platform and supports claude/opencode/codex.
+Requires explicit --platform and supports claude/opencode/codex/omp.
 Uses the second model from
 platforms.<platform>.recommendedAgents.<provider>
 for each selected agent and expands it into per-agent overrides.
@@ -1104,9 +1117,9 @@ Optional provider selector for recommended-model modes.
 Defaults to the platform's configured default recommended provider.
 --target-dir
 Custom destination root. When set, files are copied under
-<path>/.claude, <path>/.config/opencode, and <path>/.codex
-instead of $HOME. Applies to agents, skills, and config.
-When omitted, the default $HOME folders are used.
+<path>/.claude, <path>/.config/opencode, <path>/.codex, and
+<path>/.omp (project agents/skills) instead of $HOME. Default OMP
+user-level files go to $HOME/.omp/agent.
 
 Examples:
 ./sync-local-agents.sh
@@ -1121,14 +1134,15 @@ Examples:
 ./sync-local-agents.sh --sync agents --target-dir /tmp/project-root
 ./sync-local-agents.sh --platform claude --claude-model anthropic/sonnet
 ./sync-local-agents.sh --agent-model claude:backend-engineer:anthropic/sonnet
+./sync-local-agents.sh --platform omp --omp-model openai/gpt-6-luna
 ./sync-local-agents.sh --platform claude --use-recommended-models
 ./sync-local-agents.sh --platform opencode --use-recommended-models
 ./sync-local-agents.sh --platform codex --use-recommended-fallback-models
 ./sync-local-agents.sh --platform opencode --use-recommended-models --recommended-provider openai
 ./sync-local-agents.sh --platform codex --use-recommended-fallback-models --recommended-provider openai
 ./sync-local-agents.sh --platform opencode --configure-api-keys
-./sync-local-agents.sh --opencode-model openai/gpt-5.4
-./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
+./sync-local-agents.sh --opencode-model openai/gpt-6-luna
+./sync-local-agents.sh --platform codex --codex-model openai/gpt-6-luna
 EOF
 }
 
@@ -1546,6 +1560,7 @@ prompt_interactive_model_overrides() {
     claude) platform_cli_model="$cli_claude_model" ;;
     opencode) platform_cli_model="$cli_opencode_model" ;;
     codex) platform_cli_model="$cli_codex_model" ;;
+    omp) platform_cli_model="$cli_omp_model" ;;
   esac
 
   if [[ -n "$platform_cli_model" ]] || overrides_include_platform "$cli_agent_model_overrides" "$platform"; then
@@ -1581,6 +1596,7 @@ prompt_interactive_model_overrides() {
           claude) interactive_claude_model="$target_value" ;;
           opencode) interactive_opencode_model="$target_value" ;;
           codex) interactive_codex_model="$target_value" ;;
+          omp) interactive_omp_model="$target_value" ;;
         esac
         return 0
         ;;
@@ -2726,6 +2742,14 @@ while [[ $# -gt 0 ]]; do
       cli_codex_model="$(normalize_model_catalog_value "$2")"
       shift
       ;;
+    --omp-model)
+      if [[ $# -lt 2 ]]; then
+        print_error "Missing value for --omp-model"
+        exit 1
+      fi
+      cli_omp_model="$(normalize_model_catalog_value "$2")"
+      shift
+      ;;
     --agent-model)
       if [[ $# -lt 2 ]]; then
         print_error "Missing value for --agent-model"
@@ -2790,10 +2814,10 @@ if [[ "$use_recommended_models" == true || "$use_recommended_fallback_models" ==
 
   for platform in "${selected_platforms[@]}"; do
     case "$platform" in
-      claude|opencode|codex)
+      claude|opencode|codex|omp)
         ;;
       *)
-        print_error "Recommended model flags support only claude, opencode, and codex: $platform"
+        print_error "Recommended model flags support only claude, opencode, codex, and omp: $platform"
         exit 1
         ;;
     esac
@@ -2803,9 +2827,10 @@ fi
 claude_model="$(resolve_platform_model_override "claude" "$cli_claude_model" "$env_claude_model" "$file_claude_model")"
 opencode_model="$(resolve_platform_model_override "opencode" "$cli_opencode_model" "$env_opencode_model" "$file_opencode_model")"
 codex_model="$(resolve_platform_model_override "codex" "$cli_codex_model" "$env_codex_model" "$file_codex_model")"
+omp_model="$(resolve_platform_model_override "omp" "$cli_omp_model" "$env_omp_model" "$file_omp_model")"
 
 if [[ ${#selected_platforms[@]} -eq 0 ]]; then
-  selected_platforms=(claude opencode codex)
+  selected_platforms=(claude opencode codex omp)
 fi
 
 if [[ "$use_recommended_models" == true || "$use_recommended_fallback_models" == true ]]; then
@@ -2828,19 +2853,19 @@ claude_statusline_command_path="$(resolve_path_override "$env_claude_statusline_
 # -----------------------------------------------------------------------------
 # Materialize canonical sources before syncing
 # -----------------------------------------------------------------------------
-# Agent sources live in the git-ignored .claude/agents, .codex/agents, and
-# .config/opencode/agents dirs, generated from the canonical .agents/*.md by
-# generate-agents.sh. On a fresh checkout (or after a clean) those dirs are
-# absent; syncing would silently copy nothing. If agent syncing is enabled and
-# any source dir is missing, regenerate the platform outputs first so the sync
-# always has real content to copy.
+# Agent sources live in git-ignored Claude, Codex, OpenCode, and OMP agent
+# directories, generated from canonical .agents/*.md by generate-agents.sh.
+# On a fresh checkout (or after a clean) those dirs are absent; syncing
+# would silently copy nothing. If agent syncing is enabled and any source
+# dir is missing, regenerate the platform outputs first so the sync always
+# has real content to copy.
 ensure_agent_sources() {
   [[ "$sync_agents" == true ]] || return 0
   [[ -f "$repo_root/generate-agents.sh" ]] || return 0
   [[ -d "$repo_root/.agents" ]] || return 0
 
   local missing=0
-  for src in "$repo_root/.claude/agents" "$repo_root/.codex/agents" "$repo_root/.config/opencode/agents"; do
+  for src in "$repo_root/.claude/agents" "$repo_root/.codex/agents" "$repo_root/.config/opencode/agents" "$repo_root/.omp/agent/agents"; do
     [[ -d "$src" ]] || missing=1
   done
   [[ "$missing" -eq 0 ]] && return 0
@@ -2929,6 +2954,19 @@ resolve_platform_settings() {
       config_target_value="$target_base_value/config.toml"
       mcp_root_key_value="mcp_servers"
       ;;
+    omp)
+      source_base_value="$repo_root/.omp/agent"
+      if [[ -n "$target_dir" ]]; then
+        target_base_value="$target_dir/.omp"
+      elif [[ -n "${PI_CODING_AGENT_DIR:-}" ]]; then
+        target_base_value="$(normalize_path_setting_value "$PI_CODING_AGENT_DIR")"
+      elif [[ -n "${OMP_PROFILE:-${PI_PROFILE:-}}" ]]; then
+        target_base_value="$HOME/.omp/profiles/${OMP_PROFILE:-$PI_PROFILE}/agent"
+      else
+        target_base_value="$HOME/.omp/agent"
+      fi
+      model_override_value="$omp_model"
+      ;;
     *)
       print_error "Unsupported platform: $platform"
       exit 1
@@ -2956,6 +2994,9 @@ resolve_interactive_platform_model_override() {
     codex)
       printf '%s' "$interactive_codex_model"
       ;;
+    omp)
+      printf '%s' "$interactive_omp_model"
+      ;;
   esac
 }
 
@@ -2977,7 +3018,12 @@ sync_platform() {
   local recommended_overrides=""
   local recommended_provider=""
 
+  local skill_source_dir=""
   resolve_platform_settings "$platform" source_base target_base model_override config_source config_target mcp_root_key
+  skill_source_dir="$source_base/skills"
+  if [[ "$platform" == "omp" ]]; then
+    skill_source_dir="$repo_root/.claude/skills"
+  fi
 
   # An explicitly requested scope must have a real source: abort rather than
   # silently syncing nothing.
@@ -2986,8 +3032,8 @@ sync_platform() {
     exit 1
   fi
 
-  if [[ "$sync_skills" == true && ! -d "$source_base/skills" ]]; then
-    print_error "No $platform skills found at $source_base/skills."
+  if [[ "$sync_skills" == true && ! -d "$skill_source_dir" ]]; then
+    print_error "No $platform skills found at $skill_source_dir."
     exit 1
   fi
 
@@ -3051,18 +3097,18 @@ sync_platform() {
     fi
   fi
 
-  if [[ "$sync_skills" == true && -d "$source_base/skills" ]]; then
+  if [[ "$sync_skills" == true && -d "$skill_source_dir" ]]; then
     if [[ "$interactive_mode" == true ]]; then
-      collect_selected_entries "$source_base/skills" "skills" "$platform" skill_selection
+      collect_selected_entries "$skill_source_dir" "skills" "$platform" skill_selection
     fi
 
     if [[ "$skill_selection" == "*" ]]; then
-      run_rsync "$source_base/skills" "$target_base/skills"
+      run_rsync "$skill_source_dir" "$target_base/skills"
     elif [[ -n "$skill_selection" ]]; then
-      expand_selection "$source_base/skills" "$skill_selection" selection_joined
+      expand_selection "$skill_source_dir" "$skill_selection" selection_joined
       IFS='|' read -r -a selected_entries <<< "$selection_joined"
       for entry in "${selected_entries[@]}"; do
-        run_rsync_entry "$source_base/skills/$entry" "$target_base/skills/$entry"
+        run_rsync_entry "$skill_source_dir/$entry" "$target_base/skills/$entry"
       done
     fi
   fi

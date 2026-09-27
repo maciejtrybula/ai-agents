@@ -13,21 +13,23 @@ usage() {
   cat <<'EOF'
 Usage: generate-agents.sh [--target-dir <path>]
 
-Materializes the canonical agent definitions from .agents/ into the three
+Materializes the canonical agent definitions from .agents/ into the four
 per-platform agent directories.
 
 Unless --target-dir is given, outputs are written into the repo staging
 dirs that sync-local-agents.sh consumes:
 
-  .claude/agents/, .codex/agents/, .config/opencode/agents/
+  .claude/agents/, .codex/agents/, .config/opencode/agents/,
+  .omp/agent/agents/
 
 With --target-dir <path>, outputs are written under:
 
-  <path>/.claude/agents, <path>/.codex/agents, <path>/.opencode/agents
+  <path>/.claude/agents, <path>/.codex/agents,
+  <path>/.opencode/agents, <path>/.omp/agents
 
 Options:
   --target-dir <path>   Write generated files into an arbitrary destination
-                        (e.g. a project's .claude/, .codex/, .opencode/).
+                        (e.g. a project's .claude/, .codex/, .opencode/, .omp/).
   -h, --help            Show this help.
 EOF
 }

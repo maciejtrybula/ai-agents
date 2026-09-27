@@ -4,14 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-This repository stores Claude, OpenCode, and Codex agents for different engineering and content purposes. Each agent is a specialized expert designed to handle specific domains and tasks, and should check the available shared skills before proceeding with specialized work.
+This repository stores agents for Claude, OpenCode, Codex, and OMP, plus
+shared skills for engineering and content work. Agents should check shared
+skills before proceeding when relevant.
 
 ## Agent Structure
 
 Canonical agent sources live in `.agents/` as Markdown files with YAML
-frontmatter. Generated Claude and OpenCode agents remain Markdown files with
-YAML frontmatter, while generated Codex agents are native TOML files using
-`name`, `description`, `model`, and `developer_instructions`.
+frontmatter. Generated Claude, OpenCode, and OMP agents remain Markdown;
+generated Codex agents use native TOML with `name`, `description`, `model`,
+and `developer_instructions`.
 
 Canonical agents require `name` and `description` for Codex generation.
 Optional metadata such as `color`, `mode`, `permission`, and `platforms` may
@@ -19,8 +21,8 @@ also appear in canonical frontmatter where supported.
 
 - `name`: Agent identifier
 - `description`: When and how to use the agent with examples
-- `model`: Generated per-platform model; a frontmatter field for Claude and
-  OpenCode, and a TOML field for Codex
+- `model`: Generated per-platform model; a frontmatter field for Markdown
+  agent formats and a TOML field for Codex
 - `color`: Optional UI metadata for Markdown-based agent definitions
 
 ## Default Orchestration

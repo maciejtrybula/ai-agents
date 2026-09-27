@@ -125,7 +125,7 @@ cat >"$temp_home/.config/opencode/opencode.json" <<'EOF'
 EOF
 
 cat >"$temp_home/.codex/config.toml" <<'EOF'
-model = "gpt-5.3-codex"
+model = "gpt-6-luna"
 
 [projects."/Users/maciejtrybula/Projects/ai-agents"]
 trust_level = "trusted"
@@ -192,7 +192,7 @@ if [[ ! -f "$opencode_caveman_plugin" ]]; then
   exit 1
 fi
 
-assert_file_contains "$codex_target" 'model = "gpt-5.3-codex"'
+assert_file_contains "$codex_target" 'model = "gpt-6-luna"'
 assert_file_contains "$codex_target" '[projects."/Users/maciejtrybula/Projects/ai-agents"]'
 assert_file_contains "$codex_target" 'default_permissions = "repo-workspace"'
 assert_file_contains "$codex_target" '[permissions.repo-workspace]'

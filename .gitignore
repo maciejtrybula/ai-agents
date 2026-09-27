@@ -2,6 +2,7 @@
 .claude.local.env
 .codex.local.env
 .opencode.local.env
+.omp.local.env
 .DS_Store
 .worktrees/
 
@@ -11,3 +12,4 @@
 .claude/agents/
 .codex/agents/
 .config/opencode/agents/
+.omp/agent/agents/
