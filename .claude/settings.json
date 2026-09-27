@@ -75,6 +75,9 @@
       "mcp__blender__*",
       "mcp__stitch__*",
       "mcp__playwright__*"
+    ],
+    "deny": [
+      "mcp__playwright__browser_run_code_unsafe"
     ]
   },
   "mcpServers": {
@@ -106,7 +109,8 @@
     "playwright": {
       "command": "npx",
       "args": [
-        "@playwright/mcp@latest",
+        "--yes",
+        "@playwright/mcp@0.0.80",
         "--headless",
         "--isolated"
       ]

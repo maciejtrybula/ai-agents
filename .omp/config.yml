@@ -1,0 +1,6 @@
+browser:
+  enabled: false
+
+tools:
+  approval:
+    mcp__playwright_browser_run_code_unsafe: deny

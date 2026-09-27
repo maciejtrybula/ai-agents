@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "workflow": {
+    "eligibleWorkItem": "explicit-ready-state",
+    "planApproval": "every-implementation-plan",
+    "deliveryBoundary": "green-change-request",
+    "mergeApproval": "human",
+    "productionDeployment": "out-of-scope"
+  },
+  "checks": [
+    {
+      "name": "Agent configuration tests",
+      "stage": "test",
+      "command": ["bash", "tests/sync-local-agents-config.test.sh"]
+    },
+    {
+      "name": "Single-source generation tests",
+      "stage": "test",
+      "command": ["bash", "tests/sync-local-agents-single-source.test.sh"]
+    },
+    {
+      "name": "Local agent sync tests",
+      "stage": "test",
+      "command": ["bash", "tests/sync-local-agents.test.sh"]
+    },
+    {
+      "name": "Generated agent parity tests",
+      "stage": "test",
+      "command": ["bash", "tests/sync-local-agents-parity.test.sh"]
+    },
+    {
+      "name": "Codex bootstrap tests",
+      "stage": "test",
+      "command": ["bash", "tests/sync-local-agents-codex-bootstrap.test.sh"]
+    },
+    {
+      "name": "SDLC command tests",
+      "stage": "test",
+      "command": ["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_sdlc.py"]
+    },
+    {
+      "name": "SDLC documentation lint",
+      "stage": "lint",
+      "command": ["markdownlint", "README.md", ".claude/skills/sdlc-workflow/SKILL.md"]
+    }
+  ]
+}
