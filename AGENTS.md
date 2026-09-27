@@ -42,6 +42,8 @@ consistent standards. Agents should check and reuse shared skills when relevant.
 
 Skills are reusable logic modules located in `.claude/skills/`, `.config/opencode/skills/`, and `.codex/skills/`; OMP syncs the shared Agent Skills sources from `.claude/skills/` to its native skill directories. They are shared building blocks, so agents should check the available skills before specialized work and use them when they improve the outcome:
 - **Code Review**: Standards-based analysis of pull requests and code changes.
+- **SDLC Workflow**: Provider-neutral intake, design, approved planning,
+  implementation, quality gates, review, and change-request handoff.
 - **Tech Arch Research**: Deep-dive analysis into technical architectures and patterns.
 - **Java**: Reusable Java engineering guidance for application architecture, Spring-based services, testing, performance, and production reliability.
 - **Konva Diagram Editor**: Guidance for Konva-powered diagram and spatial editors with strict separation between renderer and shared editor logic.
@@ -106,7 +108,9 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 8. **Verification**:
    - Run `markdownlint "**/*.md"` to ensure formatting consistency.
    - Use `rg --files .claude/agents | sort` to verify the agent pool.
-9. **Commits**: Use imperative summaries: `Add [agent-name]` or `Improve [agent-name]`.
+9. **Commits**: Use Conventional Commits v1.0 with imperative
+   descriptions, e.g. `feat(agents): add [agent-name]` or
+   `fix(sync): preserve target-only files`.
 
 ### Security
 - Never embed secrets or sensitive company data in agent prompts.

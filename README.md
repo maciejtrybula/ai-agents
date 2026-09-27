@@ -12,8 +12,9 @@ All current agents are shared across **Claude**, **OpenCode**, **Codex**, and
 
 ### Shared Agents
 
-- **it-task-master**: Default orchestrator that evaluates tasks and
-  routes them to the most relevant specialist agent.
+- **it-task-master**: Default orchestrator and end-to-end SDLC owner;
+  coordinates intake, approved plans, specialist implementation,
+  verification, independent review, and a green pull/merge request.
 - **backend-architect**: DDD, microservices design, and high-level
   backend strategy.
 - **backend-engineer**: Implementation of services, APIs, and domain
@@ -50,10 +51,57 @@ All current agents are shared across **Claude**, **OpenCode**, **Codex**, and
 - **team-manager**: People management, project delivery, and
   organizational health.
 
+### Running a workflow
+
+Start the existing `it-task-master` agent and provide the requested outcome
+or an explicitly ready tracker item. It uses the tracker, design, code-host,
+CI, and agent-runtime tools available in the active host; Linear/Jira,
+GitHub/GitLab (including self-managed GitLab), and Claude Design/Figma/Stitch
+are provider choices, not required dependencies.
+
+Every implementation plan needs human approval before code changes. The
+initial delivery boundary is a green pull/merge request; a human reviews and
+merges it. Missing integrations block only the operation that needs them.
+This is an agent workflow, not a background webhook service.
+
+The shared workflow defines provider-neutral contracts; it does not bundle
+every provider connector. This repo's GitHub MCP is read-only, and Jira,
+GitLab, Figma, and Claude Design connectors are not configured here. Supply
+the selected host integration and required permissions; unsupported writes
+block at that stage.
+
+Any later reduction in approval requires a human-approved policy change;
+risk-based approval is the only future relaxation considered.
+
+Repository checks are declared in `sdlc.json` and run with:
+
+```bash
+python3 scripts/sdlc.py doctor
+python3 scripts/sdlc.py verify
+python3 scripts/sdlc.py commit-range origin/main
+```
+
+`verify` runs configured argument-vector commands without shell expansion.
+The commit-range check enforces Conventional Commit subjects on PR commits.
+
+These commands validate this repository's local gates. A target project must
+provide its own configured executor or use its documented commands; the hub's
+CLI is not installed into other repositories. Configure the selected code host
+to require successful CI and human review; the workflow file alone cannot
+enforce branch protection.
+
+Markdown lint currently covers `README.md` and the shared SDLC skill. Canonical
+agent sources have a repository-wide Markdown lint baseline, including
+`AGENTS.md`; expand the required scope after that baseline is cleaned.
+
 ## 🛠️ Specialized Skills
 
 Skills are shared across **Claude**, **OpenCode**, and **Codex**, and
 agents are expected to check them before starting specialized work.
+
+- **sdlc-workflow**: Provider-neutral task intake, design handoff,
+  implementation-plan approval, quality gates, independent review, and
+  green change-request delivery.
 
 ### Engineering & Architecture
 
@@ -364,12 +412,18 @@ OpenCode, and Codex during config sync.
 
 Those repo-managed configs currently include MCP entries for:
 
-- `github` across Claude, OpenCode, and Codex via the official
+- `github` across Claude, OpenCode, Codex, and OMP via the official
   `ghcr.io/github/github-mcp-server` Docker image
-- `playwright` across Claude, OpenCode, and Codex via
-  `npx @playwright/mcp@latest --headless --isolated`
-- `linear` and `blender` across Claude and OpenCode
-- `stitch` and `context7` in OpenCode
+- `playwright` across Claude, OpenCode, Codex, and OMP via
+  `npx --yes @playwright/mcp@0.0.80 --headless --isolated`
+- `linear` and `blender` across Claude, OpenCode, and OMP
+- `stitch` and `context7` across OpenCode and OMP
+- `filesystem` across Claude, OpenCode, Codex, and OMP
+
+OMP uses native project config in `.omp/mcp.json`; its MCP servers are not
+installed by `sync-local-agents.sh`. `.omp/config.yml` disables OMP's native
+browser tool so the external Playwright MCP server is discoverable, and
+explicitly denies Playwright's unsafe code tool.
 
 Config sync ownership differs by platform:
 
@@ -388,6 +442,9 @@ Config sync ownership differs by platform:
   `~/.codex/config.toml`. Full Codex config sync also makes a
   best-effort bootstrap attempt for `ponytail` via the native Codex
   plugin commands and for `caveman` via `npx skills add`.
+
+- OMP reads its project-native `.omp/mcp.json` and `.omp/config.yml`
+  directly; `sync-local-agents.sh` does not manage these files.
 
 ### GitHub MCP Setup
 
@@ -429,9 +486,17 @@ and Actions data you want to inspect.
 Playwright MCP is configured for headless, isolated local browser
 automation.
 
-- Transport: local `npx @playwright/mcp@latest --headless --isolated`
+- Transport: local `npx --yes @playwright/mcp@0.0.80 --headless --isolated`
 - Local requirement: Node.js and `npx` available on your PATH
 - No repo-managed API key is required for this baseline setup
+
+The managed Claude, OpenCode, Codex, and OMP configs deny
+`browser_run_code_unsafe`, which Playwright documents as arbitrary code
+execution in the MCP server process. OMP also disables its built-in browser
+tool (`browser.enabled: false`) because OMP otherwise filters external browser
+MCP servers from discovery.
+That means OMP uses the configured Playwright MCP instead of its built-in
+browser tool.
 
 If you only want to sync the repo-managed Playwright MCP entry for a
 single platform, use interactive config sync and choose `MCP only`,
@@ -513,6 +578,12 @@ for security. These are substituted with actual values during sync.
   (format: `AQ.xxx...`)
 - `{env:CONTEXT7_API_KEY}` - Context7 MCP API key
   (format: `ctx7sk-...`)
+
+OMP uses native `.omp/mcp.json` environment placeholders for Stitch and
+Context7 and forwards `GITHUB_PERSONAL_ACCESS_TOKEN` to the GitHub container.
+Export those variables in the environment used to launch OMP. OMP does not use
+the OpenCode key-sync prompt; missing variables leave their placeholders
+unresolved. Keep secret values out of the checked-in config.
 
 **During sync, you will be prompted to configure these keys.**
 
@@ -603,3 +674,6 @@ during MCP-only sync.
 - **Codex**: restart Codex after syncing `~/.codex/config.toml`. If the
   ponytail or caveman bootstrap step warns, rerun the native install
   commands it prints after fixing your local Codex or `npx` setup.
+- **OMP**: start a new session after editing `.omp/mcp.json` or
+  `.omp/config.yml`; use `/mcp reload` to reconnect MCP servers in an
+  existing session.

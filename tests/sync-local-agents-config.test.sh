@@ -9,7 +9,7 @@ assert_file_contains() {
   local file_path="$1"
   local needle="$2"
 
-  if ! grep -Fq "$needle" "$file_path"; then
+  if ! grep -Fq -- "$needle" "$file_path"; then
     printf 'Expected %s to contain: %s\n' "$file_path" "$needle" >&2
     printf 'Actual contents:\n' >&2
     cat "$file_path" >&2
@@ -21,7 +21,7 @@ assert_file_not_contains() {
   local file_path="$1"
   local needle="$2"
 
-  if grep -Fq "$needle" "$file_path"; then
+  if grep -Fq -- "$needle" "$file_path"; then
     printf 'Expected %s not to contain: %s\n' "$file_path" "$needle" >&2
     printf 'Actual contents:\n' >&2
     cat "$file_path" >&2
@@ -162,6 +162,9 @@ assert_file_contains "$claude_target" 'Bash(git log *)'
 assert_file_contains "$claude_target" 'mcp__github__*'
 assert_file_contains "$claude_target" 'mcp__stitch__*'
 assert_file_contains "$claude_target" 'mcp__playwright__*'
+assert_file_contains "$claude_target" '"deny"'
+assert_file_contains "$claude_target" 'mcp__playwright__browser_run_code_unsafe'
+assert_file_contains "$claude_target" '--yes'
 
 assert_file_contains "$claude_statusline_script" 'basename_dir="$(basename "$current_dir")"'
 
@@ -183,9 +186,12 @@ assert_file_contains "$opencode_target" '"resource": "pnpm mobile:lint*"'
 assert_file_contains "$opencode_target" '"action": "todowrite"'
 assert_file_contains "$opencode_target" '"action": "read"'
 assert_file_contains "$opencode_target" '"playwright"'
-assert_file_contains "$opencode_target" '@playwright/mcp@latest'
+assert_file_contains "$opencode_target" '@playwright/mcp@0.0.80'
+assert_file_contains "$opencode_target" '"--yes"'
 assert_file_contains "$opencode_target" '"--headless"'
 assert_file_contains "$opencode_target" '"--isolated"'
+assert_file_contains "$opencode_target" '"action": "playwright_browser_run_code_unsafe"'
+assert_file_contains "$opencode_target" '"effect": "deny"'
 
 if [[ ! -f "$opencode_caveman_plugin" ]]; then
   printf 'Expected OpenCode caveman plugin at %s\n' "$opencode_caveman_plugin" >&2
@@ -199,7 +205,39 @@ assert_file_contains "$codex_target" '[permissions.repo-workspace]'
 assert_file_contains "$codex_target" 'extends = ":workspace"'
 assert_file_contains "$codex_target" '[mcp_servers.github]'
 assert_file_contains "$codex_target" '[mcp_servers.playwright]'
-assert_file_contains "$codex_target" '@playwright/mcp@latest'
+assert_file_contains "$codex_target" 'disabled_tools = ["browser_run_code_unsafe"]'
+assert_file_contains "$codex_target" '"--yes"'
 assert_line_order "$codex_target" 'default_permissions = "repo-workspace"' '[projects."/Users/maciejtrybula/Projects/ai-agents"]'
+
+omp_mcp_config="$repo_root/.omp/mcp.json"
+omp_project_config="$repo_root/.omp/config.yml"
+python3 -m json.tool "$omp_mcp_config" >/dev/null
+python3 - "$omp_mcp_config" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as config_file:
+    servers = json.load(config_file)["mcpServers"]
+
+expected_servers = {
+    "github",
+    "stitch",
+    "context7",
+    "linear",
+    "blender",
+    "playwright",
+    "filesystem",
+}
+assert expected_servers <= servers.keys(), "OMP MCP server coverage is incomplete"
+assert "--read-only" in servers["github"]["args"], "GitHub MCP must stay read-only"
+assert "@playwright/mcp@0.0.80" in servers["playwright"]["args"]
+assert "--headless" in servers["playwright"]["args"]
+assert "--isolated" in servers["playwright"]["args"]
+assert servers["stitch"]["headers"]["X-Goog-Api-Key"] == "${STITCH_API_KEY}"
+assert servers["context7"]["headers"]["CONTEXT7_API_KEY"] == "${CONTEXT7_API_KEY}"
+PY
+assert_file_contains "$omp_project_config" "browser:"
+assert_file_contains "$omp_project_config" "  enabled: false"
+assert_file_contains "$omp_project_config" "mcp__playwright_browser_run_code_unsafe: deny"
 
 printf 'Config sync checks passed.\n'

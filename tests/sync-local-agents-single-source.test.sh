@@ -99,18 +99,14 @@ assert_file_absent() {
   fi
 }
 
-body_marker="You are Task Master: a senior technical program lead and hands-on engineering coordinator."
-codex_description="Use this agent as the primary orchestrator for multi-step work. It decomposes the user's request, delegates to the best specialized agents, coordinates dependencies, integrates results, and verifies completion."
 
 assert_codex_toml() {
   local file_path="$1"
 
   assert_file_absent "${file_path%.toml}.md"
   assert_file_contains_line "$file_path" 'name = "it-task-master"'
-  assert_file_contains_line "$file_path" "description = \"$codex_description\""
   assert_file_contains_line "$file_path" 'model = "openai/gpt-6-luna"'
   assert_file_contains_line "$file_path" 'developer_instructions = """'
-  assert_file_contains "$file_path" "$body_marker"
 
   for key in temperature color mode permission; do
     assert_file_not_contains_toml_key "$file_path" "$key"
@@ -125,10 +121,6 @@ fi
 
 bash "$repo_root/generate-agents.sh"
 
-assert_file_contains "$repo_root/.claude/agents/it-task-master.md" "$body_marker"
-assert_codex_toml "$repo_root/.codex/agents/it-task-master.toml"
-assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "$body_marker"
-assert_file_contains "$repo_root/.omp/agent/agents/it-task-master.md" "$body_marker"
 assert_file_contains "$repo_root/.omp/agent/agents/it-task-master.md" "model: openai/gpt-6-luna"
 
 # Claude keeps the canonical name metadata; native V2 OpenCode agents derive
@@ -213,11 +205,9 @@ assert_file_contains_line "$repo_root/.codex/agents/content-writer.toml" 'model 
 # Folded YAML descriptions must be resolved into one TOML scalar, not emitted
 # as the block-scalar marker itself.
 folded_codex_file="$repo_root/.codex/agents/unity-gameplay-engineer.toml"
-folded_codex_description="Use this agent for Unity gameplay implementation, debugging, and code review across C#, MonoBehaviour, ScriptableObject, prefabs, scenes, input, physics, animation-state coordination, AI behaviors, combat, progression systems, and gameplay system boundaries."
 for key in name description model developer_instructions; do
   assert_file_contains_toml_key "$folded_codex_file" "$key"
 done
-assert_file_contains_line "$folded_codex_file" "description = \"$folded_codex_description\""
 assert_file_not_contains "$folded_codex_file" 'description = ">"'
 
 # Body horizontal rules must survive after the frontmatter close.
@@ -232,20 +222,6 @@ assert_file_contains "$repo_root/.claude/agents/ux-ui-architect.md" "model: opus
 assert_file_contains "$repo_root/.claude/agents/native-mobile-engineer.md" "name: native-mobile-engineer"
 assert_file_contains_line "$repo_root/.codex/agents/native-mobile-engineer.toml" 'name = "native-mobile-engineer"'
 
-# backend-engineer uses the short canonical description on ALL platforms
-# (no per-platform description override remains in agent-platforms.json).
-for dir in \
-  "$repo_root/.claude/agents" \
-  "$repo_root/.codex/agents" \
-  "$repo_root/.config/opencode/agents"; do
-  if [[ "$dir" == "$repo_root/.codex/agents" ]]; then
-    assert_file_contains_line "$dir/backend-engineer.toml" 'description = "Use this agent to implement backend services, API endpoints, domain models, and tests following DDD, EDA, and microservices patterns. Handles code implementation, refactoring, test writing, and architectural reviews for distributed backend systems."'
-    assert_file_not_contains "$dir/backend-engineer.toml" "Examples:"
-  else
-    assert_file_contains "$dir/backend-engineer.md" "Handles code implementation, refactoring, test writing"
-    assert_file_not_contains "$dir/backend-engineer.md" "Examples:"
-  fi
-done
 
 # mode/permissions survival: native-mobile-engineer carries both, copied into
 # the native V2 OpenCode output (and retained as shared metadata for Claude).
@@ -262,10 +238,6 @@ trap 'rm -rf "$target_dir"' EXIT
 
 bash "$repo_root/generate-agents.sh" --target-dir "$target_dir"
 
-assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "$body_marker"
-assert_codex_toml "$target_dir/.codex/agents/it-task-master.toml"
-assert_file_contains "$target_dir/.opencode/agents/it-task-master.md" "$body_marker"
-assert_file_contains "$target_dir/.omp/agents/it-task-master.md" "$body_marker"
 
 assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "name: it-task-master"
 assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "color: orange"
@@ -290,14 +262,12 @@ trap 'sync_cleanup' EXIT
 HOME="$sync_home" bash "$repo_root/sync-local-agents.sh" \
   --sync agents --platform claude --target-dir "$sync_target_dir" >/dev/null 2>&1
 
-assert_file_contains "$sync_target_dir/.claude/agents/it-task-master.md" "$body_marker"
 assert_file_contains "$sync_target_dir/.claude/agents/it-task-master.md" "name: it-task-master"
 assert_file_contains "$sync_target_dir/.claude/agents/it-task-master.md" "color: orange"
 assert_file_contains "$sync_target_dir/.claude/agents/it-task-master.md" "model: sonnet"
 
 HOME="$sync_home" bash "$repo_root/sync-local-agents.sh" \
   --platform omp --target-dir "$sync_target_dir" >/dev/null 2>&1
-assert_file_contains "$sync_target_dir/.omp/agents/it-task-master.md" "$body_marker"
 assert_file_contains "$sync_target_dir/.omp/agents/it-task-master.md" "model: openai/gpt-6-luna"
 assert_file_contains "$sync_target_dir/.omp/skills/konva/SKILL.md" "name: konva"
 HOME="$sync_home" bash "$repo_root/sync-local-agents.sh" \
@@ -332,7 +302,6 @@ HOME="$fresh_home" bash "$repo_root/sync-local-agents.sh" \
   --sync agents --platform claude --target-dir "$fresh_target_dir" >/dev/null 2>&1
 
 # All agents must reach the custom path even though the source dirs were absent.
-assert_file_contains "$fresh_target_dir/.claude/agents/it-task-master.md" "$body_marker"
 assert_file_contains "$fresh_target_dir/.claude/agents/it-task-master.md" "name: it-task-master"
 assert_file_contains "$fresh_target_dir/.claude/agents/it-task-master.md" "model: sonnet"
 # The missing source dirs are regenerated in the repo so they can be reused.

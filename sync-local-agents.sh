@@ -2193,6 +2193,7 @@ source.statusLine = {
 }
 
 source.permissions = {
+  ...(source.permissions ?? {}),
   allow: [
     ...bashAllow.map((pattern) => `Bash(${pattern})`),
     ...mcpAllow.map((namespace) => `mcp__${namespace}__*`),

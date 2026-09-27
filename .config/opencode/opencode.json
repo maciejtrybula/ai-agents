@@ -16,6 +16,11 @@
       "effect": "ask"
     },
     {
+      "action": "playwright_browser_run_code_unsafe",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "shell",
       "resource": "ls*",
       "effect": "allow"
@@ -387,7 +392,8 @@
         "type": "local",
         "command": [
           "npx",
-          "@playwright/mcp@latest",
+          "--yes",
+          "@playwright/mcp@0.0.80",
           "--headless",
           "--isolated"
         ],

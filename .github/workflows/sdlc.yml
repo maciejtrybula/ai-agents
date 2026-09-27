@@ -1,0 +1,42 @@
+name: SDLC hub checks
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdlc-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Markdown linter
+        run: npm install --global markdownlint-cli@0.45.0
+
+      - name: Validate SDLC policy
+        run: python3 scripts/sdlc.py doctor
+
+      - name: Run repository test gates
+        run: python3 scripts/sdlc.py verify test
+
+      - name: Lint SDLC documentation
+        run: python3 scripts/sdlc.py verify lint
+
+      - name: Validate pull request commit subjects
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: python3 scripts/sdlc.py commit-range "$BASE_REF"
