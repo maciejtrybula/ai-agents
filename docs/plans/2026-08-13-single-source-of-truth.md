@@ -49,13 +49,13 @@ get consistent, drift-free agents.
     `frontend-architect`→`opus`, `ux-ui-architect`→`opus`,
     `content-writer`→`haiku`, `principal-engineer`→`haiku`,
     `staff-engineer`→`haiku`, `team-manager`→`haiku`.
-  - OpenCode default `openai/gpt-5.6-luna`:
-    `backend-architect`→`gpt-5.6-sol`, `frontend-architect`→`gpt-5.6-sol`,
-    `ux-ui-architect`→`gpt-5.6-sol`.
-  - Codex default `openai/gpt-5.4`: `backend-architect`→`gpt-5.3-codex`,
-    `backend-engineer`→`gpt-5.3-codex`, `devops-engineer`→`gpt-5.3-codex`,
-    `e2e-test-engineer`→`gpt-5.3-codex`, `frontend-architect`→`gpt-5.3-codex`,
-    `frontend-engineer`→`gpt-5.3-codex`, `secops-auditor`→`gpt-5.3-codex`.
+  - OpenCode default `openai/gpt-6-luna`:
+    `backend-architect`→`gpt-6-sol`, `frontend-architect`→`gpt-6-sol`,
+    `ux-ui-architect`→`gpt-6-sol`.
+  - Codex default `openai/gpt-6-luna`: `backend-architect`→`gpt-6-luna`,
+    `backend-engineer`→`gpt-6-luna`, `devops-engineer`→`gpt-6-luna`,
+    `e2e-test-engineer`→`gpt-6-luna`, `frontend-architect`→`gpt-6-luna`,
+    `frontend-engineer`→`gpt-6-luna`, `secops-auditor`→`gpt-6-luna`.
   - `3d-modeling-artist` has no `model:` on Claude/Codex today (only
     OpenCode); it will inherit the platform default after migration.
 - **Description divergence is minimal**: only `backend-engineer`
@@ -95,11 +95,11 @@ per-agent override. Structure:
   "platforms": {
     "claude":  { "dir": ".claude/agents", "model": "sonnet", "color": true,
                  "agents": { "backend-architect": "opus", "frontend-architect": "opus", ... } },
-    "codex":   { "dir": ".codex/agents", "model": "openai/gpt-5.4", "temperature": 0.4, "color": true,
-                 "agents": { "backend-architect": "openai/gpt-5.3-codex", ... } },
+    "codex":   { "dir": ".codex/agents", "model": "openai/gpt-6-luna", "temperature": 0.4, "color": true,
+                 "agents": { "backend-architect": "openai/gpt-6-luna", ... } },
     "opencode":{ "dir": ".config/opencode/agents", "projectDir": ".opencode/agents",
-                 "model": "openai/gpt-5.6-luna", "temperature": 0.4, "color": false,
-                 "agents": { "backend-architect": "openai/gpt-5.6-sol", ... } }
+                 "model": "openai/gpt-6-luna", "temperature": 0.4, "color": false,
+                 "agents": { "backend-architect": "openai/gpt-6-sol", ... } }
   }
 }
 ```
@@ -254,7 +254,7 @@ the existing `it-task-master` assertions).
 - [ ] **Step 2: Assert per-agent model overrides**
 
 Assert e.g. `backend-architect` generates `model: opus` (Claude),
-`openai/gpt-5.6-sol` (OpenCode), `openai/gpt-5.3-codex` (Codex);
+`openai/gpt-6-sol` (OpenCode), `openai/gpt-6-luna` (Codex);
 and a default model agent still gets the platform default.
 
 - [ ] **Step 3: Assert platform-exclusivity**

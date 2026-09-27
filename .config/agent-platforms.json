@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Per-platform frontmatter defaults and per-agent overrides applied by generate-agents.sh when materializing agents from the canonical .agents/ sources. Every canonical agent is listed explicitly per platform with its effective model and (where supported) temperature; description appears only where it diverges from the canonical .agents/*.md description. claude and codex intentionally omit temperature because they have no supported temperature field here. These are default values; the model-override machinery in sync-local-agents.sh applies on top at sync time.",
+  "description": "Per-platform frontmatter defaults and per-agent overrides applied by generate-agents.sh when materializing agents from canonical .agents sources. Every canonical agent is listed explicitly per platform with effective model and supported temperature; description appears only where it differs from canonical source. Claude, Codex, and OMP omit temperature. Model-override machinery in sync-local-agents.sh applies on top at sync time.",
   "platforms": {
     "claude": {
       "dir": ".claude/agents",
@@ -71,159 +71,187 @@
     },
     "codex": {
       "dir": ".codex/agents",
-      "model": "openai/gpt-5.4",
+      "model": "openai/gpt-6-luna",
       "color": true,
       "agents": {
         "3d-modeling-artist": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "backend-architect": {
-          "model": "openai/gpt-5.3-codex"
+          "model": "openai/gpt-6-luna"
         },
         "backend-engineer": {
-          "model": "openai/gpt-5.3-codex"
+          "model": "openai/gpt-6-luna"
         },
         "content-writer": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "developer-tooling-engineer": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "devops-engineer": {
-          "model": "openai/gpt-5.3-codex"
+          "model": "openai/gpt-6-luna"
         },
         "e2e-test-engineer": {
-          "model": "openai/gpt-5.3-codex"
+          "model": "openai/gpt-6-luna"
         },
         "electrical-domain-specialist": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "frontend-architect": {
-          "model": "openai/gpt-5.3-codex"
+          "model": "openai/gpt-6-luna"
         },
         "frontend-engineer": {
-          "model": "openai/gpt-5.3-codex"
+          "model": "openai/gpt-6-luna"
         },
         "it-task-master": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "native-mobile-engineer": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "principal-engineer": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "secops-auditor": {
-          "model": "openai/gpt-5.3-codex"
+          "model": "openai/gpt-6-luna"
         },
         "seo-inspector": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "staff-engineer": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "tax-advisor": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "team-manager": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "unity-gameplay-engineer": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         },
         "ux-ui-architect": {
-          "model": "openai/gpt-5.4"
+          "model": "openai/gpt-6-luna"
         }
       }
     },
     "opencode": {
       "dir": ".config/opencode/agents",
       "projectDir": ".opencode/agents",
-      "model": "openai/gpt-5.6-luna",
+      "model": "openai/gpt-6-luna",
       "temperature": 0.4,
       "color": false,
       "agents": {
         "3d-modeling-artist": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "backend-architect": {
-          "model": "openai/gpt-5.6-sol",
+          "model": "openai/gpt-6-sol",
           "temperature": "0.1"
         },
         "backend-engineer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "content-writer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.3"
         },
         "developer-tooling-engineer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "devops-engineer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "e2e-test-engineer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "electrical-domain-specialist": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.2"
         },
         "frontend-architect": {
-          "model": "openai/gpt-5.6-sol",
+          "model": "openai/gpt-6-sol",
           "temperature": "0.1"
         },
         "frontend-engineer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "it-task-master": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "native-mobile-engineer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "principal-engineer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "secops-auditor": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "seo-inspector": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.1"
         },
         "staff-engineer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "tax-advisor": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.1"
         },
         "team-manager": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.4"
         },
         "unity-gameplay-engineer": {
-          "model": "openai/gpt-5.6-luna",
+          "model": "openai/gpt-6-luna",
           "temperature": "0.2"
         },
         "ux-ui-architect": {
-          "model": "openai/gpt-5.6-sol",
+          "model": "openai/gpt-6-sol",
           "temperature": "0.7"
         }
       }
+    },
+    "omp": {
+      "dir": ".omp/agent/agents",
+      "projectDir": ".omp/agents",
+      "model": "openai/gpt-6-luna",
+      "color": false,
+      "agents": {
+        "3d-modeling-artist": { "model": "openai/gpt-6-luna" },
+        "backend-architect": { "model": "openai/gpt-6-luna" },
+        "backend-engineer": { "model": "openai/gpt-6-luna" },
+        "content-writer": { "model": "openai/gpt-6-luna" },
+        "developer-tooling-engineer": { "model": "openai/gpt-6-luna" },
+        "devops-engineer": { "model": "openai/gpt-6-luna" },
+        "e2e-test-engineer": { "model": "openai/gpt-6-luna" },
+        "electrical-domain-specialist": { "model": "openai/gpt-6-luna" },
+        "frontend-architect": { "model": "openai/gpt-6-luna" },
+        "frontend-engineer": { "model": "openai/gpt-6-luna" },
+        "it-task-master": { "model": "openai/gpt-6-luna" },
+        "native-mobile-engineer": { "model": "openai/gpt-6-luna" },
+        "principal-engineer": { "model": "openai/gpt-6-luna" },
+        "secops-auditor": { "model": "openai/gpt-6-luna" },
+        "seo-inspector": { "model": "openai/gpt-6-luna" },
+        "staff-engineer": { "model": "openai/gpt-6-luna" },
+        "tax-advisor": { "model": "openai/gpt-6-luna" },
+        "team-manager": { "model": "openai/gpt-6-luna" },
+        "unity-gameplay-engineer": { "model": "openai/gpt-6-luna" },
+        "ux-ui-architect": { "model": "openai/gpt-6-luna" }
+      }
     }
-  }
+}
 }

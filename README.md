@@ -1,14 +1,14 @@
 # ai-agents
 
 Centralized hub for AI agent definitions and reusable skills across
-Claude, OpenCode, and Codex. Agents should check the shared skills
-before doing specialized work and use the relevant ones when they add
+Claude, OpenCode, Codex, and OMP (Oh My Pi). Agents should check the shared
+skills before doing specialized work and use the relevant ones when they add
 depth, quality, or verification.
 
 ## 🤖 Available Agents
 
-All current agents are shared across **Claude**, **OpenCode**, and
-**Codex**.
+All current agents are shared across **Claude**, **OpenCode**, **Codex**, and
+**OMP**.
 
 ### Shared Agents
 
@@ -28,7 +28,7 @@ All current agents are shared across **Claude**, **OpenCode**, and
   orchestration.
 - **developer-tooling-engineer**: Shell tooling, local developer
   automation, config sync scripts, CLI UX, provider and model catalogs,
-  and Claude/OpenCode/Codex local tooling integration.
+  and Claude/OpenCode/Codex/OMP local tooling integration.
 - **e2e-test-engineer**: Playwright-based end-to-end testing and
   quality assurance.
 - **secops-auditor**: Security architecture, threat analysis, and
@@ -165,24 +165,31 @@ wiki layout (`2-Inbox/`, `4-Knowledge/`, `5-Raw/`, `9-Outputs/`,
 - `.codex/agents/` - Codex agent definitions (generated native TOML with
   `name`, `description`, `model`, and `developer_instructions`, git-ignored)
 - `.codex/skills/` - Codex skill definitions
+- `.omp/agent/agents/` - OMP user-level agents (generated Markdown,
+  git-ignored)
+- OMP skills use the shared Agent Skills sources in `.claude/skills/` and
+  sync to `$HOME/.omp/agent/skills/` or project `.omp/skills/`.
 
 ### Authoring Agents
 
-The `.claude/agents/`, `.config/opencode/agents/`, and `.codex/agents/`
-directories are **generated outputs**, git-ignored and created by
-`generate-agents.sh` from the canonical Markdown sources in `.agents/`.
-Claude and OpenCode outputs remain Markdown; Codex outputs are native TOML
-custom-agent files using `name`, `description`, `model`, and
+The `.claude/agents/`, `.config/opencode/agents/`, `.codex/agents/`, and
+`.omp/agent/agents/` directories are **generated outputs**, git-ignored and
+created by `generate-agents.sh` from the canonical Markdown sources in
+`.agents/`. Claude, OpenCode, and OMP outputs remain Markdown; Codex outputs
+are native TOML custom-agent files using `name`, `description`, `model`, and
 `developer_instructions`. Codex `temperature` is not emitted because it is
 not a supported custom-agent field. Do not hand-edit generated files. To
 author or update a shared agent:
 
 1. **Edit** the canonical file in `.agents/`.
-2. **Regenerate** the three platform outputs:
+2. **Regenerate** the four platform outputs:
+
    ```bash
    ./generate-agents.sh
    ```
+
 3. **Sync** to your local tool directories (model overrides applied):
+
    ```bash
    ./sync-local-agents.sh
    ```
@@ -191,25 +198,25 @@ Per-platform default `model` values and supported output fields are wired
 through `.config/agent-platforms.json`; the existing model-override
 machinery in `sync-local-agents.sh` applies on top of those defaults at sync
 time. OpenCode emits per-agent temperature under the native V2
-`request.body`; Claude and Codex do not emit it.
+`request.body`; Claude, Codex, and OMP do not emit it.
 
 **.config/agent-platforms.json** lists every canonical agent explicitly
 per platform (`platforms.<name>.agents.<slug>`), each with its effective
 `model`, with `temperature` only for platforms that support it (currently
 OpenCode), and an optional `description` that appears only where it diverges
 from the canonical `.agents/*.md` description. For example,
-`backend-architect` → `opus` on Claude, `openai/gpt-5.6-sol` on
-OpenCode, `openai/gpt-5.3-codex` on Codex. No agent currently carries a
-`description` override, so every platform uses the canonical
-`.agents/*.md` description.
+`backend-architect` → `opus` on Claude, `openai/gpt-6-sol` on
+OpenCode, `openai/gpt-6-luna` on Codex, and `openai/gpt-6-luna` on OMP.
+No agent currently carries a `description` override, so every platform
+uses the canonical `.agents/*.md` description.
 
 **Platform-exclusive agents** are handled with a `platforms:` list in
 the canonical frontmatter. For example, declaring
 `platforms: [codex, opencode]` makes the generator emit that agent only
-to Codex and OpenCode and never to Claude. An agent with no `platforms:`
-line is emitted to all three platforms. Most agents are shared across
-all platforms; only those that genuinely need platform exclusivity
-declare a `platforms:` list.
+to Codex and OpenCode and never to Claude or OMP. An agent with no `platforms:`
+line is emitted to all four platforms. Most agents are shared across all
+platforms; only those that genuinely need platform exclusivity declare a
+`platforms:` list.
 
 `generate-agents.sh` also supports `--target-dir <path>` to write the
 generated platform files directly into an arbitrary destination, e.g. a
@@ -220,10 +227,10 @@ project checkout:
 ```
 
 This writes them under `/path/to/project/.claude/agents`,
-`/path/to/project/.codex/agents`, and
-`/path/to/project/.opencode/agents`. For OpenCode, a custom project
-destination uses `.opencode/` (a project root's local config dir), while
-the user-local default remains `$HOME/.config/opencode`.
+`/path/to/project/.codex/agents`, `/path/to/project/.opencode/agents`, and
+`/path/to/project/.omp/agents`. For OpenCode, the custom destination uses
+`.opencode/`; OMP uses `.omp/agents` for project agents and
+`$HOME/.omp/agent/agents` for user-level agents.
 
 `sync-local-agents.sh` also supports `--target-dir <path>` to direct the
 full sync (agents, skills, and config) into an arbitrary destination
@@ -235,12 +242,13 @@ root, applying model overrides exactly as it does for the default
 ```
 
 When set, files are written under `/path/to/project/.claude`,
-`/path/to/project/.opencode`, and `/path/to/project/.codex` instead of
-`$HOME`. For OpenCode, a custom project destination uses `.opencode/`
-(its project-level local config root), while the user-local default
-remains `$HOME/.config/opencode`. In `--interactive` mode you can also choose the
-destination interactively: after the scope prompt, select `user-local`
-(the default) or `custom`, and provide a destination path.
+`/path/to/project/.opencode`, `/path/to/project/.codex`, and
+`/path/to/project/.omp` instead of `$HOME`. OpenCode uses `.opencode/`
+for project config; OMP writes agents and skills to `.omp/agents` and
+`.omp/skills`. OMP user-level agents and skills go under
+`$HOME/.omp/agent/` (or the active `PI_CODING_AGENT_DIR` / named profile).
+In `--interactive` mode you can also choose the destination after the
+scope prompt: `user-local` (default) or `custom`.
 
 ## Local Sync
 
@@ -259,9 +267,9 @@ skills into your local tool directories.
 ./sync-local-agents.sh --interactive
 ./sync-local-agents.sh --platform claude --claude-model anthropic/sonnet
 ./sync-local-agents.sh --agent-model claude:backend-architect:anthropic/opus
-./sync-local-agents.sh --agent-model opencode:backend-engineer:openai/gpt-5.3-codex
+./sync-local-agents.sh --agent-model opencode:backend-engineer:openai/gpt-6-luna
 ./sync-local-agents.sh --platform opencode
-./sync-local-agents.sh --opencode-model openai/gpt-5.4
+./sync-local-agents.sh --opencode-model openai/gpt-6-luna
 ./sync-local-agents.sh --platform claude --use-recommended-models
 ./sync-local-agents.sh --platform opencode --use-recommended-models
 ./sync-local-agents.sh --platform codex --use-recommended-fallback-models
@@ -270,10 +278,10 @@ skills into your local tool directories.
 ./sync-local-agents.sh --platform codex \
   --use-recommended-fallback-models --recommended-provider openai
 ./sync-local-agents.sh --platform codex --codex-model github-copilot/gpt-5.2-codex
-./sync-local-agents.sh --platform codex --codex-model openai/gpt-5.4
+./sync-local-agents.sh --platform codex --codex-model openai/gpt-6-luna
 ```
 
-- Default behavior syncs both `agents/` and `skills/` for all
+- Default behavior syncs both `agents/` and `skills/` for all four
   platforms.
 - `--dry-run` previews changes without writing files.
 - `--delete` removes local files that no longer exist in this
@@ -281,7 +289,7 @@ skills into your local tool directories.
   If you sync selected entries only, for example via interactive
   narrowing, deletion is scoped to those selected directories and does
   not remove unsynced sibling entries.
-- `--platform` limits the sync to `claude`, `opencode`, or `codex`.
+- `--platform` limits the sync to `claude`, `opencode`, `codex`, or `omp`.
 - `--sync` provides non-interactive scope selection: `both` (default),
   `agents`, `skills`, `config`, or `all`.
 - `--interactive` starts an interactive picker:
@@ -309,25 +317,25 @@ skills into your local tool directories.
   - defaults to syncing all entries, with optional narrowing to
     selected items
   - requires a TTY; otherwise it exits with a clear error
-- `--claude-model` and `--opencode-model` set per-platform fallback models
-  for synced agent frontmatter; `--codex-model` sets the Codex TOML
-  `model =` field.
+- `--claude-model`, `--opencode-model`, and `--omp-model` set platform
+  fallback models for agent frontmatter; `--codex-model` sets the Codex
+  TOML `model =` field.
 - `--agent-model platform:agent-slug:provider/model` is repeatable and
   applies a catalog-validated per-agent override for that platform.
 - `--use-recommended-models` requires explicit `--platform`, supports
-  `claude`, `opencode`, and `codex`, and expands the first entry from
+  `claude`, `opencode`, `codex`, and `omp`, and expands the first entry from
   `platforms.<platform>.recommendedAgents.<provider>` into per-agent
   overrides for the selected agents.
 - `--use-recommended-fallback-models` requires explicit `--platform`,
-  supports `claude`, `opencode`, and `codex`, and expands the second
+  supports `claude`, `opencode`, `codex`, and `omp`, and expands the second
   entry from `platforms.<platform>.recommendedAgents.<provider>` into
   per-agent overrides for the selected agents. It fails if any selected
   agent does not have a second recommendation.
 - `--recommended-provider <provider>` only applies with
   recommended-model modes and selects which provider-specific
   recommendation set to use. Current defaults stay unchanged: `claude`
-  uses `anthropic`, `opencode` uses `github-copilot`, and `codex` uses
-  `github-copilot` when this flag is omitted.
+  uses `anthropic`, `opencode` uses `github-copilot`, `codex` uses
+  `github-copilot`, and `omp` uses `openai` when this flag is omitted.
 
 Allowed overrides come from the repo-managed catalog at
 `.config/model-catalog.json`.
@@ -336,7 +344,7 @@ Allowed overrides come from the repo-managed catalog at
   `anthropic/sonnet` and writes the matching Claude frontmatter value
   such as `sonnet`.
 - OpenCode and Codex use provider-prefixed values directly, for example
-  `openai/gpt-5.4` or `github-copilot/gpt-5.2-codex`.
+  `openai/gpt-6-luna` or `github-copilot/gpt-5.2-codex`.
 
 Repo-managed config files currently supported by config sync are:
 
@@ -441,8 +449,8 @@ To keep one model per platform, or set readable per-agent overrides
 without passing flags every time, create the local env files in this
 repository root, next to `sync-local-agents.sh`.
 
-Do not put them in the synced target directories such as `~/.claude/`,
-`~/.config/opencode/`, or `~/.codex/`.
+Do not put them in synced target directories such as `~/.claude/`,
+`~/.config/opencode/`, `~/.codex/`, or `~/.omp/agent/`.
 
 ```bash
 # .claude.local.env
@@ -451,12 +459,16 @@ CLAUDE_AGENT_MODEL_BACKEND_ARCHITECT=anthropic/opus
 CLAUDE_STATUSLINE_COMMAND_PATH=~/.claude/statusline-command.sh
 
 # .opencode.local.env
-OPENCODE_MODEL=openai/gpt-5.4
-OPENCODE_AGENT_MODEL_BACKEND_ENGINEER=openai/gpt-5.3-codex
+OPENCODE_MODEL=openai/gpt-6-luna
+OPENCODE_AGENT_MODEL_BACKEND_ENGINEER=openai/gpt-6-luna
 
 # .codex.local.env
-CODEX_MODEL=openai/gpt-5.4
-CODEX_AGENT_MODEL_DEVELOPER_TOOLING_ENGINEER=openai/gpt-5.3-codex
+CODEX_MODEL=openai/gpt-6-luna
+CODEX_AGENT_MODEL_DEVELOPER_TOOLING_ENGINEER=openai/gpt-6-luna
+
+# .omp.local.env
+OMP_MODEL=openai/gpt-6-luna
+OMP_AGENT_MODEL_BACKEND_ARCHITECT=openai/gpt-6-sol
 ```
 
 Example files are included:
@@ -464,6 +476,7 @@ Example files are included:
 - `.claude.local.env.example`
 - `.opencode.local.env.example`
 - `.codex.local.env.example`
+- `.omp.local.env.example`
 
 Per-agent environment keys use the pattern
 `<PLATFORM>_AGENT_MODEL_<AGENT_NAME_IN_UPPER_SNAKE_CASE>`.

@@ -108,7 +108,7 @@ assert_codex_toml() {
   assert_file_absent "${file_path%.toml}.md"
   assert_file_contains_line "$file_path" 'name = "it-task-master"'
   assert_file_contains_line "$file_path" "description = \"$codex_description\""
-  assert_file_contains_line "$file_path" 'model = "openai/gpt-5.4"'
+  assert_file_contains_line "$file_path" 'model = "openai/gpt-6-luna"'
   assert_file_contains_line "$file_path" 'developer_instructions = """'
   assert_file_contains "$file_path" "$body_marker"
 
@@ -125,10 +125,11 @@ fi
 
 bash "$repo_root/generate-agents.sh"
 
-# Canonical body marker present in all 3 generated platform files.
 assert_file_contains "$repo_root/.claude/agents/it-task-master.md" "$body_marker"
 assert_codex_toml "$repo_root/.codex/agents/it-task-master.toml"
 assert_file_contains "$repo_root/.config/opencode/agents/it-task-master.md" "$body_marker"
+assert_file_contains "$repo_root/.omp/agent/agents/it-task-master.md" "$body_marker"
+assert_file_contains "$repo_root/.omp/agent/agents/it-task-master.md" "model: openai/gpt-6-luna"
 
 # Claude keeps the canonical name metadata; native V2 OpenCode agents derive
 # their ID from the filename and omit the legacy `name` field.
@@ -182,11 +183,12 @@ for slug in "${shared_agent_slugs[@]}"; do
   for dir in \
     "$repo_root/.claude/agents" \
     "$repo_root/.codex/agents" \
-    "$repo_root/.config/opencode/agents"; do
+    "$repo_root/.config/opencode/agents" \
+    "$repo_root/.omp/agent/agents"; do
     if [[ "$dir" == "$repo_root/.codex/agents" ]]; then
       assert_file_contains_line "$dir/$slug.toml" "name = \"$expected_name\""
       assert_file_contains_toml_key "$dir/$slug.toml" "model"
-    elif [[ "$dir" == "$repo_root/.claude/agents" ]]; then
+    elif [[ "$dir" == "$repo_root/.claude/agents" || "$dir" == "$repo_root/.omp/agent/agents" ]]; then
       assert_file_contains "$dir/$slug.md" "name: $expected_name"
       assert_file_contains "$dir/$slug.md" "model:"
     else
@@ -198,15 +200,15 @@ done
 
 # Per-agent model overrides.
 assert_file_contains "$repo_root/.claude/agents/backend-architect.md" "model: opus"
-assert_file_contains "$repo_root/.config/opencode/agents/backend-architect.md" "model: openai/gpt-5.6-sol"
-assert_file_contains_line "$repo_root/.codex/agents/backend-architect.toml" 'model = "openai/gpt-5.3-codex"'
+assert_file_contains "$repo_root/.config/opencode/agents/backend-architect.md" "model: openai/gpt-6-sol"
+assert_file_contains_line "$repo_root/.codex/agents/backend-architect.toml" 'model = "openai/gpt-6-luna"'
 
 # A default-model agent still gets the platform default: devops-engineer has
 # no claude override, so it falls back to the claude default `sonnet`.
 assert_file_contains "$repo_root/.claude/agents/devops-engineer.md" "model: sonnet"
 # content-writer has no codex model override, so it falls back to the codex
-# default `openai/gpt-5.4`.
-assert_file_contains_line "$repo_root/.codex/agents/content-writer.toml" 'model = "openai/gpt-5.4"'
+# default `openai/gpt-6-luna`.
+assert_file_contains_line "$repo_root/.codex/agents/content-writer.toml" 'model = "openai/gpt-6-luna"'
 
 # Folded YAML descriptions must be resolved into one TOML scalar, not emitted
 # as the block-scalar marker itself.
@@ -263,6 +265,7 @@ bash "$repo_root/generate-agents.sh" --target-dir "$target_dir"
 assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "$body_marker"
 assert_codex_toml "$target_dir/.codex/agents/it-task-master.toml"
 assert_file_contains "$target_dir/.opencode/agents/it-task-master.md" "$body_marker"
+assert_file_contains "$target_dir/.omp/agents/it-task-master.md" "$body_marker"
 
 assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "name: it-task-master"
 assert_file_contains "$target_dir/.claude/agents/it-task-master.md" "color: orange"
@@ -292,6 +295,18 @@ assert_file_contains "$sync_target_dir/.claude/agents/it-task-master.md" "name: 
 assert_file_contains "$sync_target_dir/.claude/agents/it-task-master.md" "color: orange"
 assert_file_contains "$sync_target_dir/.claude/agents/it-task-master.md" "model: sonnet"
 
+HOME="$sync_home" bash "$repo_root/sync-local-agents.sh" \
+  --platform omp --target-dir "$sync_target_dir" >/dev/null 2>&1
+assert_file_contains "$sync_target_dir/.omp/agents/it-task-master.md" "$body_marker"
+assert_file_contains "$sync_target_dir/.omp/agents/it-task-master.md" "model: openai/gpt-6-luna"
+assert_file_contains "$sync_target_dir/.omp/skills/konva/SKILL.md" "name: konva"
+HOME="$sync_home" bash "$repo_root/sync-local-agents.sh" \
+  --sync agents --platform omp --target-dir "$sync_target_dir" \
+  --omp-model openai/gpt-6-luna \
+  --agent-model omp:backend-architect:openai/gpt-6-sol >/dev/null 2>&1
+assert_file_contains "$sync_target_dir/.omp/agents/it-task-master.md" "model: openai/gpt-6-luna"
+assert_file_contains "$sync_target_dir/.omp/agents/backend-architect.md" "model: openai/gpt-6-sol"
+
 # Nothing should be written under the sandboxed $HOME.
 if find "$sync_home" -type f -name '*.md' 2>/dev/null | grep -q .; then
   printf 'Expected no agent files under sandboxed $HOME with --target-dir\n' >&2
@@ -303,13 +318,13 @@ fi
 # before ever running generate-agents.sh. It must materialize the sources itself
 # rather than silently copying nothing.
 fresh_cleanup() {
-  rm -rf "$repo_root/.claude/agents" "$repo_root/.codex/agents" "$repo_root/.config/opencode/agents"
+  rm -rf "$repo_root/.claude/agents" "$repo_root/.codex/agents" "$repo_root/.config/opencode/agents" "$repo_root/.omp/agent/agents"
   "$repo_root/generate-agents.sh" >/dev/null 2>&1
 }
 trap 'fresh_cleanup' EXIT
 
 # Simulate a fresh checkout: drop the generated source dirs.
-rm -rf "$repo_root/.claude/agents" "$repo_root/.codex/agents" "$repo_root/.config/opencode/agents"
+rm -rf "$repo_root/.claude/agents" "$repo_root/.codex/agents" "$repo_root/.config/opencode/agents" "$repo_root/.omp/agent/agents"
 
 fresh_target_dir="$(mktemp -d)"
 fresh_home="$(mktemp -d)"
@@ -341,8 +356,8 @@ trap 'precedence_cleanup' EXIT
 #    NOT shadow it).
 HOME="$precedence_home" bash "$repo_root/sync-local-agents.sh" \
   --sync agents --platform opencode --target-dir "$precedence_target_dir" \
-  --opencode-model github-copilot/gpt-5.6-luna >/dev/null 2>&1
-assert_file_contains "$precedence_target_dir/.opencode/agents/it-task-master.md" "model: github-copilot/gpt-5.6-luna"
+  --opencode-model github-copilot/gpt-6-luna >/dev/null 2>&1
+assert_file_contains "$precedence_target_dir/.opencode/agents/it-task-master.md" "model: github-copilot/gpt-6-luna"
 assert_file_not_contains "$precedence_target_dir/.opencode/agents/it-task-master.md" "model: github-copilot/claude-sonnet-4.6"
 
 # 2. With no explicit platform model, the repo_default fallback still applies
