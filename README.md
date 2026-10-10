@@ -90,7 +90,8 @@ CLI is not installed into other repositories. Configure the selected code host
 to require successful CI and human review; the workflow file alone cannot
 enforce branch protection.
 
-Markdown lint currently covers `README.md` and the shared SDLC skill. Canonical
+Markdown lint covers `README.md`, the shared SDLC skill, and all Markdown
+resources for `sales-process-harness` across the shared skill trees. Canonical
 agent sources have a repository-wide Markdown lint baseline, including
 `AGENTS.md`; expand the required scope after that baseline is cleaned.
 
@@ -102,6 +103,9 @@ agents are expected to check them before starting specialized work.
 - **sdlc-workflow**: Provider-neutral task intake, design handoff,
   implementation-plan approval, quality gates, independent review, and
   green change-request delivery.
+- **sales-process-harness**: Evidence-led, stage-by-stage support for
+  composable commerce/ecommerce opportunities, from stalled-deal discovery and
+  RFI/RFP through proposal, decision, outcome, and handover; advisory only.
 
 ### Engineering & Architecture
 

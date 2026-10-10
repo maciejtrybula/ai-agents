@@ -39,9 +39,21 @@
       "command": ["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_sdlc.py"]
     },
     {
+      "name": "Sales process harness contract tests",
+      "stage": "test",
+      "command": ["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_sales_process_harness_contract.py"]
+    },
+    {
       "name": "SDLC documentation lint",
       "stage": "lint",
-      "command": ["markdownlint", "README.md", ".claude/skills/sdlc-workflow/SKILL.md"]
+      "command": [
+        "markdownlint",
+        "README.md",
+        ".claude/skills/sdlc-workflow/SKILL.md",
+        ".claude/skills/sales-process-harness/**/*.md",
+        ".config/opencode/skills/sales-process-harness/**/*.md",
+        ".codex/skills/sales-process-harness/**/*.md"
+      ]
     }
   ]
 }

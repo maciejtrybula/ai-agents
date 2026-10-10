@@ -19,9 +19,9 @@ This repository stores Claude agents, OpenCode agents, Codex agents, and shared 
   file uses `name`, `description`, `model`, and `developer_instructions`.
 
 ### 🛠️ Skill Definitions
-- **`.claude/skills/`**: Specialized skills for Claude including `code-review`, `tech-arch-research`, `java`, `polish-tax-law`, the SEO skill set, and the writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
-- **`.config/opencode/skills/`**: Specialized skills for OpenCode including `java`, `polish-tax-law`, the same SEO skill set, and the writing skill set.
-- **`.codex/skills/`**: Codex-compatible skill definitions including `code-review`, `tech-arch-research`, `java`, `polish-tax-law`, the SEO skill set, and the writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
+- **`.claude/skills/`**: Specialized skills for Claude including `code-review`, `tech-arch-research`, `sales-process-harness`, `java`, `polish-tax-law`, the SEO skill set, and the writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
+- **`.config/opencode/skills/`**: Specialized skills for OpenCode including `sales-process-harness`, `java`, `polish-tax-law`, the same SEO skill set, and the writing skill set.
+- **`.codex/skills/`**: Codex-compatible skill definitions including `code-review`, `tech-arch-research`, `sales-process-harness`, `java`, `polish-tax-law`, the SEO skill set, and the writing skills `technical-blog-writing`, `attention-retention-writing`, and `blog-editorial-strategy`.
 
 ### 📘 Core Documentation
 - **`AGENTS.md`**: Central directory and guidelines for all agents and skills.

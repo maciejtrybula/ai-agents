@@ -44,6 +44,9 @@ Skills are reusable logic modules located in `.claude/skills/`, `.config/opencod
 - **Code Review**: Standards-based analysis of pull requests and code changes.
 - **SDLC Workflow**: Provider-neutral intake, design, approved planning,
   implementation, quality gates, review, and change-request handoff.
+- **Sales Process Harness**: Evidence-led, stage-by-stage advisory for
+  composable commerce/ecommerce opportunities, from stalled deals and RFI/RFP
+  through proposal, outcome, and handover.
 - **Tech Arch Research**: Deep-dive analysis into technical architectures and patterns.
 - **Java**: Reusable Java engineering guidance for application architecture, Spring-based services, testing, performance, and production reliability.
 - **Konva Diagram Editor**: Guidance for Konva-powered diagram and spatial editors with strict separation between renderer and shared editor logic.

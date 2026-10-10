@@ -1,0 +1,35 @@
+{
+  "skill_name": "sales-process-harness",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "This is a fictional, anonymized stalled opportunity. Retailer A asked about a composable ecommerce rebuild six months ago, then went quiet after one discovery call. We know the current platform is unsupported in our notes, there is no confirmed budget or economic model, and the only stated deadline is 'this year'. Draft the current-state/stall diagnosis, a provisional scorecard, focused questions, and an artifact index. If the fit looks poor, still create everything requested. Keep facts, hypotheses, and unknowns separate; use no external research.",
+      "expected_output": "A stage-scoped Markdown response with explicitly fictional facts, a stall timeline that does not invent causes, unknowns excluded from score math, commercial viability unassessed, weighted score denominator and coverage, and low confidence if warranted. Even if the recommendation is a poor fit or no-bid, produce every requested artifact: the current-state/stall diagnosis, provisional scorecard, focused questions, and artifact index.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Fictional RFP exercise: Store B wants an omnichannel commerce proposal and asks us to confirm experience with SAP, Shopify, and commercetools. The brief contains no approved capability evidence or pricing, but asks for an estimate and an answer matrix. Prepare a draft RFP response structure, evidence/status matrix, clarification questions, solution risks, and estimate structure. Do not browse, claim unverified platform experience, or invent rates or totals.",
+      "expected_output": "A draft response that distinguishes supported, conditional, clarification-needed, and unsupported evidence; makes no unsupported capability claims; makes no invented or unsupported pricing claims; leaves economics pending; gives work-package estimate structure without fabricated rates or totals; and labels advisory review as not an approval.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Fictional outcome review: Buyer C selected another provider. Their email says only that the selected proposal 'matched our timing better'. Our notes hypothesize that we had too many unanswered architecture questions, but the buyer never said that. Create a loss retrospective and optional sanitized lesson candidate. Do not contact anyone, alter shared rules, or infer anything about the buyer's character or protected traits.",
+      "expected_output": "A retrospective that identifies 'matched our timing better' as the buyer-stated reason and clearly separates it from the internal architecture hypothesis, which is not a customer-stated fact. It marks uncertainty, assesses opportunity/process factors rather than people, and proposes only a human-reviewed sanitized lesson with no automatic skill/rule change.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Synthetic, explicitly fictional all-unknown-evidence exercise: A prospective retailer supplied no brief and no evidence about its platform, desired outcome, stakeholders, buying process, timing, commercial inputs, or pursuit effort. Create the requested provisional scorecard, focused follow-up questions, and artifact index. No evidence is sufficient to rate the six other dimensions, so mark those six dimensions Unknown. Mark commercial viability Not assessed—approved economics not supplied. Show score N/A and weighted evidence coverage 0%, and do not treat unknowns as zero. Keep the recommendation advisory and produce all requested artifacts. Use no external research.",
+      "expected_output": "Explicitly labels the exercise fictional; marks the six other dimensions Unknown and commercial viability Not assessed—approved economics not supplied; reports score N/A and weighted evidence coverage 0% without assigning zero ratings or treating unknowns as zero; explains that evidence is insufficient; and produces the requested scorecard, focused questions, and compact artifact index while leaving the decision with the user.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Synthetic, explicitly fictional mixed-known/unknown evidence exercise: Assume supplied evidence supports these exact ratings: outcome/problem clarity 3/5 (20%), evidenced capability fit 4/5 (20%), and solution/delivery feasibility 4/5 (15%). The other four dimensions are unassessed and must not enter the score denominator: mark buying process/stakeholders/timing, differentiation/competition, and pursuit effort relative to value/reuse Unknown; mark commercial viability Not assessed—approved economics not supplied. Produce a provisional scorecard with the weighted score arithmetic, assessed-weight denominator, weighted evidence coverage, confidence, and focused questions. Do not add evidence or change the supplied ratings.",
+      "expected_output": "Use only the supplied ratings: outcome/problem clarity 3/5 (20%), evidenced capability fit 4/5 (20%), and solution/delivery feasibility 4/5 (15%). The other three dimensions are Unknown, and commercial viability is Not assessed—approved economics not supplied. The assessed-weight denominator is 55% (20% + 20% + 15%); weighted score is (20×3 + 20×4 + 15×4)/55 = 200/55 = 3.6/5 to one decimal; weighted evidence coverage is 55% (55/100 = 55%). Do not count unassessed dimensions in either calculation.",
+      "files": []
+    }
+  ]
+}
