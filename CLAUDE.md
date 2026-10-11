@@ -53,6 +53,9 @@ Check the available shared skills before starting specialized work, and use the 
 
 - **code-review**: Specialized skill for comprehensive code analysis.
 - **tech-arch-research**: Research-driven technical architecture analysis.
+- **sales-process-harness**: Evidence-led opportunity workflow for composable
+  commerce/ecommerce, including stalled deals, RFI/RFP, proposals, outcomes, and
+  handover; drafts and recommendations only.
 - **java**: Reusable Java engineering guidance for application architecture, Spring-based services, testing, performance, and production reliability.
 - **konva**: Guidance for Konva-powered diagram and spatial editors with strict separation between renderer and shared editor logic.
 - **seo-inspection**: Full-spectrum SEO inspection workflow.
