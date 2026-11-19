@@ -253,7 +253,7 @@ per platform (`platforms.<name>.agents.<slug>`), each with its effective
 `model`, with `temperature` only for platforms that support it (currently
 OpenCode), and an optional `description` that appears only where it diverges
 from the canonical `.agents/*.md` description. For example,
-`backend-architect` → `opus` on Claude, `openai/gpt-6-sol` on
+`backend-architect` → `opus` on Claude, `openai/gpt-6.2-sol` on
 OpenCode, `openai/gpt-6-luna` on Codex, and `openai/gpt-6-luna` on OMP.
 No agent currently carries a `description` override, so every platform
 uses the canonical `.agents/*.md` description.
@@ -533,7 +533,7 @@ CODEX_AGENT_MODEL_DEVELOPER_TOOLING_ENGINEER=openai/gpt-6-luna
 
 # .omp.local.env
 OMP_MODEL=openai/gpt-6-luna
-OMP_AGENT_MODEL_BACKEND_ARCHITECT=openai/gpt-6-sol
+OMP_AGENT_MODEL_BACKEND_ARCHITECT=openai/gpt-6.2-sol
 ```
 
 Example files are included:

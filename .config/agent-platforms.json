@@ -148,7 +148,7 @@
           "temperature": "0.4"
         },
         "backend-architect": {
-          "model": "openai/gpt-6-sol",
+          "model": "openai/gpt-6.2-sol",
           "temperature": "0.1"
         },
         "backend-engineer": {
@@ -176,7 +176,7 @@
           "temperature": "0.2"
         },
         "frontend-architect": {
-          "model": "openai/gpt-6-sol",
+          "model": "openai/gpt-6.2-sol",
           "temperature": "0.1"
         },
         "frontend-engineer": {
@@ -220,7 +220,7 @@
           "temperature": "0.2"
         },
         "ux-ui-architect": {
-          "model": "openai/gpt-6-sol",
+          "model": "openai/gpt-6.2-sol",
           "temperature": "0.7"
         }
       }

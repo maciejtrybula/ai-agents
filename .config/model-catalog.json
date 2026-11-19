@@ -134,7 +134,7 @@
             "github-copilot/gpt-6-luna"
           ],
           "backend-architect": [
-            "github-copilot/gpt-6-sol",
+            "github-copilot/gpt-6.2-sol",
             "github-copilot/gpt-6-luna"
           ],
           "backend-engineer": [
@@ -158,7 +158,7 @@
             "github-copilot/gpt-6-luna"
           ],
           "frontend-architect": [
-            "github-copilot/gpt-6-sol",
+            "github-copilot/gpt-6.2-sol",
             "github-copilot/gpt-6-luna"
           ],
           "frontend-engineer": [
@@ -202,7 +202,7 @@
             "github-copilot/gpt-6-luna"
           ],
           "ux-ui-architect": [
-            "github-copilot/gpt-6-sol",
+            "github-copilot/gpt-6.2-sol",
             "github-copilot/gpt-6-luna"
           ],
           "electrical-domain-specialist": [
@@ -216,8 +216,8 @@
             "openai/gpt-6-luna"
           ],
           "backend-architect": [
-            "openai/gpt-6-sol",
-            "openai/gpt-6-sol"
+            "openai/gpt-6.2-sol",
+            "openai/gpt-6.2-sol"
           ],
           "backend-engineer": [
             "openai/gpt-6-luna",
@@ -240,8 +240,8 @@
             "openai/gpt-6-luna"
           ],
           "frontend-architect": [
-            "openai/gpt-6-sol",
-            "openai/gpt-6-sol"
+            "openai/gpt-6.2-sol",
+            "openai/gpt-6.2-sol"
           ],
           "frontend-engineer": [
             "openai/gpt-6-luna",
@@ -288,8 +288,8 @@
             "openai/gpt-6-luna"
           ],
           "ux-ui-architect": [
-            "openai/gpt-6-sol",
-            "openai/gpt-6-sol"
+            "openai/gpt-6.2-sol",
+            "openai/gpt-6.2-sol"
           ]
         }
       },
@@ -307,8 +307,8 @@
               "description": "Code-focused option for implementation-heavy roles."
             },
             {
-              "id": "openai/gpt-6-sol",
-              "target": "openai/gpt-6-sol",
+              "id": "openai/gpt-6.2-sol",
+              "target": "openai/gpt-6.2-sol",
               "description": "Model dedicated for reasoning, especially for architect-like agents."
             },
             {
@@ -346,8 +346,8 @@
               "description": "Copilot code-focused model name aligned with GPT-6-Luna."
             },
             {
-              "id": "github-copilot/gpt-6-sol",
-              "target": "github-copilot/gpt-6-sol",
+              "id": "github-copilot/gpt-6.2-sol",
+              "target": "github-copilot/gpt-6.2-sol",
               "description": "Model dedicated for reasoning, especially for architect-like agents."
             },
             {
@@ -356,29 +356,19 @@
               "description": "Model dedicated for code tasks"
             },
             {
-              "id": "github-copilot/claude-sonnet-4.5",
-              "target": "github-copilot/claude-sonnet-4.5",
-              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 4.5 support."
+              "id": "github-copilot/claude-sonnet-5.5",
+              "target": "github-copilot/claude-sonnet-5.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 5.5 support."
             },
             {
-              "id": "github-copilot/claude-sonnet-4.6",
-              "target": "github-copilot/claude-sonnet-4.6",
-              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 4.6 support."
+              "id": "github-copilot/claude-opus-5.5",
+              "target": "github-copilot/claude-opus-5.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Opus 5.5 support."
             },
             {
-              "id": "github-copilot/claude-opus-4.6",
-              "target": "github-copilot/claude-opus-4.6",
-              "description": "Conservative Copilot Anthropic naming for Claude Opus 4.6 support."
-            },
-            {
-              "id": "github-copilot/claude-opus-4.7",
-              "target": "github-copilot/claude-opus-4.7",
-              "description": "Conservative Copilot Anthropic naming for Claude Opus 4.7 support."
-            },
-            {
-              "id": "github-copilot/claude-haiku-4.5",
-              "target": "github-copilot/claude-haiku-4.5",
-              "description": "Conservative Copilot Anthropic naming for Claude Haiku 4.5 support."
+              "id": "github-copilot/claude-haiku-5.5",
+              "target": "github-copilot/claude-haiku-5.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Haiku 5.5 support."
             }
           ]
         },
@@ -438,7 +428,7 @@
             "github-copilot/gpt-6-luna"
           ],
           "backend-architect": [
-            "github-copilot/gpt-6-sol",
+            "github-copilot/gpt-6.2-sol",
             "github-copilot/gpt-6-luna"
           ],
           "backend-engineer": [
@@ -462,7 +452,7 @@
             "github-copilot/gpt-6-luna"
           ],
           "frontend-architect": [
-            "github-copilot/gpt-6-sol",
+            "github-copilot/gpt-6.2-sol",
             "github-copilot/gpt-6-luna"
           ],
           "frontend-engineer": [
@@ -506,7 +496,7 @@
             "github-copilot/gpt-6-luna"
           ],
           "ux-ui-architect": [
-            "github-copilot/gpt-6-sol",
+            "github-copilot/gpt-6.2-sol",
             "github-copilot/gpt-6-luna"
           ],
           "electrical-domain-specialist": [
@@ -520,8 +510,8 @@
             "openai/gpt-6-luna"
           ],
           "backend-architect": [
-            "openai/gpt-6-sol",
-            "openai/gpt-6-sol"
+            "openai/gpt-6.2-sol",
+            "openai/gpt-6.2-sol"
           ],
           "backend-engineer": [
             "openai/gpt-6-luna",
@@ -544,8 +534,8 @@
             "openai/gpt-6-luna"
           ],
           "frontend-architect": [
-            "openai/gpt-6-sol",
-            "openai/gpt-6-sol"
+            "openai/gpt-6.2-sol",
+            "openai/gpt-6.2-sol"
           ],
           "frontend-engineer": [
             "openai/gpt-6-luna",
@@ -592,8 +582,8 @@
             "openai/gpt-6-luna"
           ],
           "ux-ui-architect": [
-            "openai/gpt-6-sol",
-            "openai/gpt-6-sol"
+            "openai/gpt-6.2-sol",
+            "openai/gpt-6.2-sol"
           ]
         }
       },
@@ -611,8 +601,8 @@
               "description": "Code-focused option for implementation-heavy roles."
             },
             {
-              "id": "openai/gpt-6-sol",
-              "target": "openai/gpt-6-sol",
+              "id": "openai/gpt-6.2-sol",
+              "target": "openai/gpt-6.2-sol",
               "description": "Model dedicated for reasoning, especially for architect-like agents."
             },
             {
@@ -650,8 +640,8 @@
               "description": "Copilot code-focused model name aligned with GPT-6-Luna."
             },
             {
-              "id": "github-copilot/gpt-6-sol",
-              "target": "github-copilot/gpt-6-sol",
+              "id": "github-copilot/gpt-6.2-sol",
+              "target": "github-copilot/gpt-6.2-sol",
               "description": "Model dedicated for reasoning, especially for architect-like agents."
             },
             {
@@ -660,29 +650,19 @@
               "description": "Model dedicated for code tasks"
             },
             {
-              "id": "github-copilot/claude-sonnet-4.5",
-              "target": "github-copilot/claude-sonnet-4.5",
-              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 4.5 support."
+              "id": "github-copilot/claude-sonnet-5.5",
+              "target": "github-copilot/claude-sonnet-5.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 5.5 support."
             },
             {
-              "id": "github-copilot/claude-sonnet-4.6",
-              "target": "github-copilot/claude-sonnet-4.6",
-              "description": "Conservative Copilot Anthropic naming for Claude Sonnet 4.6 support."
+              "id": "github-copilot/claude-opus-5.5",
+              "target": "github-copilot/claude-opus-5.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Opus 5.5 support."
             },
             {
-              "id": "github-copilot/claude-opus-4.6",
-              "target": "github-copilot/claude-opus-4.6",
-              "description": "Conservative Copilot Anthropic naming for Claude Opus 4.6 support."
-            },
-            {
-              "id": "github-copilot/claude-opus-4.7",
-              "target": "github-copilot/claude-opus-4.7",
-              "description": "Conservative Copilot Anthropic naming for Claude Opus 4.7 support."
-            },
-            {
-              "id": "github-copilot/claude-haiku-4.5",
-              "target": "github-copilot/claude-haiku-4.5",
-              "description": "Conservative Copilot Anthropic naming for Claude Haiku 4.5 support."
+              "id": "github-copilot/claude-haiku-5.5",
+              "target": "github-copilot/claude-haiku-5.5",
+              "description": "Conservative Copilot Anthropic naming for Claude Haiku 5.5 support."
             }
           ]
         }
@@ -699,25 +679,25 @@
       "recommendedAgents": {
         "openai": {
           "3d-modeling-artist": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
-          "backend-architect": ["openai/gpt-6-sol", "openai/gpt-6-luna"],
+          "backend-architect": ["openai/gpt-6.2-sol", "openai/gpt-6-luna"],
           "backend-engineer": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
           "content-writer": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
           "developer-tooling-engineer": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
           "devops-engineer": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
           "e2e-test-engineer": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
           "electrical-domain-specialist": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
-          "frontend-architect": ["openai/gpt-6-sol", "openai/gpt-6-luna"],
+          "frontend-architect": ["openai/gpt-6.2-sol", "openai/gpt-6-luna"],
           "frontend-engineer": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
           "it-task-master": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
           "native-mobile-engineer": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
-          "principal-engineer": ["openai/gpt-6-sol", "openai/gpt-6-luna"],
-          "secops-auditor": ["openai/gpt-6-sol", "openai/gpt-6-luna"],
+          "principal-engineer": ["openai/gpt-6.2-sol", "openai/gpt-6-luna"],
+          "secops-auditor": ["openai/gpt-6.2-sol", "openai/gpt-6-luna"],
           "seo-inspector": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
-          "staff-engineer": ["openai/gpt-6-sol", "openai/gpt-6-luna"],
-          "tax-advisor": ["openai/gpt-6-luna", "openai/gpt-6-sol"],
+          "staff-engineer": ["openai/gpt-6.2-sol", "openai/gpt-6-luna"],
+          "tax-advisor": ["openai/gpt-6-luna", "openai/gpt-6.2-sol"],
           "team-manager": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
           "unity-gameplay-engineer": ["openai/gpt-6-luna", "openai/gpt-6-luna"],
-          "ux-ui-architect": ["openai/gpt-6-sol", "openai/gpt-6-luna"]
+          "ux-ui-architect": ["openai/gpt-6.2-sol", "openai/gpt-6-luna"]
         }
       },
       "providers": {
@@ -734,8 +714,8 @@
               "description": "Code-focused option for implementation-heavy roles."
             },
             {
-              "id": "openai/gpt-6-sol",
-              "target": "openai/gpt-6-sol",
+              "id": "openai/gpt-6.2-sol",
+              "target": "openai/gpt-6.2-sol",
               "description": "Reasoning model for architect-like agents."
             },
             {

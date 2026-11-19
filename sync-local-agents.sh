@@ -547,7 +547,7 @@ append_agent_model_override() {
 # Keep OpenCode's orchestrator on the lighter Copilot Sonnet default unless the
 # caller overrides it via CLI, interactive mode, env, local env file, or
 # recommended-model expansion.
-repo_default_agent_model_overrides="$(append_agent_model_override "$repo_default_agent_model_overrides" "opencode" "it-task-master" "github-copilot/claude-sonnet-4.6")"
+repo_default_agent_model_overrides="$(append_agent_model_override "$repo_default_agent_model_overrides" "opencode" "it-task-master" "github-copilot/claude-sonnet-5.5")"
 
 find_agent_model_override_target() {
   local overrides="$1"
@@ -637,7 +637,7 @@ resolve_agent_model_override() {
   fi
 
   # NOTE: the per-agent repo_default (e.g. opencode/it-task-master ->
-  # claude-sonnet-4.6) is intentionally NOT resolved here. It must only apply as
+  # claude-sonnet-5.5) is intentionally NOT resolved here. It must only apply as
   # a last-resort fallback when neither an explicit agent override nor an
   # explicit platform-model selection was made, so it is handled at the bottom
   # of resolve_effective_model_override rather than shadowing the platform model.
@@ -988,7 +988,7 @@ resolve_effective_model_override() {
   fi
 
   # The per-agent repo_default (e.g. opencode/it-task-master ->
-  # github-copilot/claude-sonnet-4.6) is the last-resort fallback: it applies
+  # github-copilot/claude-sonnet-5.5) is the last-resort fallback: it applies
   # only when the caller provided neither an explicit agent override nor an
   # explicit platform-model selection.
   repo_default_value="$(find_agent_model_override_target "$repo_default_agent_model_overrides" "$platform" "$agent_slug" || true)"

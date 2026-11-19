@@ -82,7 +82,7 @@ assert_contains "$opencode_openai_fallback_output" ".config/opencode/agents/cont
 
 codex_openai_output="$(run_and_capture bash "$repo_root/sync-local-agents.sh" --dry-run --sync agents --platform codex --use-recommended-models --recommended-provider openai)"
 assert_contains "$codex_openai_output" ".codex/agents/backend-engineer.toml -> openai/gpt-6-luna"
-assert_contains "$codex_openai_output" ".codex/agents/backend-architect.toml -> openai/gpt-6-sol"
+assert_contains "$codex_openai_output" ".codex/agents/backend-architect.toml -> openai/gpt-6.2-sol"
 
 codex_sync_target_dir="$(mktemp -d)"
 codex_sync_home="$(mktemp -d)"
@@ -97,11 +97,11 @@ EOF
 HOME="$codex_sync_home" bash "$repo_root/sync-local-agents.sh" \
   --sync agents --platform codex --target-dir "$codex_sync_target_dir" \
   --codex-model openai/gpt-6-luna \
-  --agent-model codex:backend-architect:openai/gpt-6-sol >/dev/null 2>&1
+  --agent-model codex:backend-architect:openai/gpt-6.2-sol >/dev/null 2>&1
 
 codex_synced_file="$codex_sync_target_dir/.codex/agents/backend-architect.toml"
 codex_synced_content="$(cat "$codex_synced_file")"
-assert_contains "$codex_synced_content" 'model = "openai/gpt-6-sol"'
+assert_contains "$codex_synced_content" 'model = "openai/gpt-6.2-sol"'
 assert_contains "$codex_synced_content" 'developer_instructions = """'
 assert_contains "$(cat "$codex_sync_target_dir/.codex/agents/user-managed.toml")" 'user-managed'
 if [[ -e "$codex_sync_target_dir/.codex/agents/backend-architect.md" ]]; then

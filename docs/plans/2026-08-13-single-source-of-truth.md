@@ -50,8 +50,8 @@ get consistent, drift-free agents.
     `content-writer`→`haiku`, `principal-engineer`→`haiku`,
     `staff-engineer`→`haiku`, `team-manager`→`haiku`.
   - OpenCode default `openai/gpt-6-luna`:
-    `backend-architect`→`gpt-6-sol`, `frontend-architect`→`gpt-6-sol`,
-    `ux-ui-architect`→`gpt-6-sol`.
+    `backend-architect`→`gpt-6.2-sol`, `frontend-architect`→`gpt-6.2-sol`,
+    `ux-ui-architect`→`gpt-6.2-sol`.
   - Codex default `openai/gpt-6-luna`: `backend-architect`→`gpt-6-luna`,
     `backend-engineer`→`gpt-6-luna`, `devops-engineer`→`gpt-6-luna`,
     `e2e-test-engineer`→`gpt-6-luna`, `frontend-architect`→`gpt-6-luna`,
@@ -99,7 +99,7 @@ per-agent override. Structure:
                  "agents": { "backend-architect": "openai/gpt-6-luna", ... } },
     "opencode":{ "dir": ".config/opencode/agents", "projectDir": ".opencode/agents",
                  "model": "openai/gpt-6-luna", "temperature": 0.4, "color": false,
-                 "agents": { "backend-architect": "openai/gpt-6-sol", ... } }
+                 "agents": { "backend-architect": "openai/gpt-6.2-sol", ... } }
   }
 }
 ```
@@ -254,7 +254,7 @@ the existing `it-task-master` assertions).
 - [ ] **Step 2: Assert per-agent model overrides**
 
 Assert e.g. `backend-architect` generates `model: opus` (Claude),
-`openai/gpt-6-sol` (OpenCode), `openai/gpt-6-luna` (Codex);
+`openai/gpt-6.2-sol` (OpenCode), `openai/gpt-6-luna` (Codex);
 and a default model agent still gets the platform default.
 
 - [ ] **Step 3: Assert platform-exclusivity**

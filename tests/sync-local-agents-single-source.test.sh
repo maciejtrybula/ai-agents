@@ -192,7 +192,7 @@ done
 
 # Per-agent model overrides.
 assert_file_contains "$repo_root/.claude/agents/backend-architect.md" "model: opus"
-assert_file_contains "$repo_root/.config/opencode/agents/backend-architect.md" "model: openai/gpt-6-sol"
+assert_file_contains "$repo_root/.config/opencode/agents/backend-architect.md" "model: openai/gpt-6.2-sol"
 assert_file_contains_line "$repo_root/.codex/agents/backend-architect.toml" 'model = "openai/gpt-6-luna"'
 
 # A default-model agent still gets the platform default: devops-engineer has
@@ -273,9 +273,9 @@ assert_file_contains "$sync_target_dir/.omp/skills/konva/SKILL.md" "name: konva"
 HOME="$sync_home" bash "$repo_root/sync-local-agents.sh" \
   --sync agents --platform omp --target-dir "$sync_target_dir" \
   --omp-model openai/gpt-6-luna \
-  --agent-model omp:backend-architect:openai/gpt-6-sol >/dev/null 2>&1
+  --agent-model omp:backend-architect:openai/gpt-6.2-sol >/dev/null 2>&1
 assert_file_contains "$sync_target_dir/.omp/agents/it-task-master.md" "model: openai/gpt-6-luna"
-assert_file_contains "$sync_target_dir/.omp/agents/backend-architect.md" "model: openai/gpt-6-sol"
+assert_file_contains "$sync_target_dir/.omp/agents/backend-architect.md" "model: openai/gpt-6.2-sol"
 
 # Nothing should be written under the sandboxed $HOME.
 if find "$sync_home" -type f -name '*.md' 2>/dev/null | grep -q .; then
@@ -313,7 +313,7 @@ fi
 fresh_cleanup
 
 # --- Model-override precedence: explicit platform model wins over the per-agent
-#     repo_default (opencode/it-task-master -> claude-sonnet-4.6) ---
+#     repo_default (opencode/it-task-master -> claude-sonnet-5.5) ---
 precedence_target_dir="$(mktemp -d)"
 precedence_home="$(mktemp -d)"
 precedence_cleanup() {
@@ -327,7 +327,7 @@ HOME="$precedence_home" bash "$repo_root/sync-local-agents.sh" \
   --sync agents --platform opencode --target-dir "$precedence_target_dir" \
   --opencode-model github-copilot/gpt-6-luna >/dev/null 2>&1
 assert_file_contains "$precedence_target_dir/.opencode/agents/it-task-master.md" "model: github-copilot/gpt-6-luna"
-assert_file_not_contains "$precedence_target_dir/.opencode/agents/it-task-master.md" "model: github-copilot/claude-sonnet-4.6"
+assert_file_not_contains "$precedence_target_dir/.opencode/agents/it-task-master.md" "model: github-copilot/claude-sonnet-5.5"
 
 # 2. With no explicit platform model, the repo_default fallback still applies
 #    for opencode/it-task-master.
@@ -340,6 +340,6 @@ trap 'precedence_cleanup_nod' EXIT
 
 HOME="$precedence_home_nod" bash "$repo_root/sync-local-agents.sh" \
   --sync agents --platform opencode --target-dir "$precedence_target_dir_nod" >/dev/null 2>&1
-assert_file_contains "$precedence_target_dir_nod/.opencode/agents/it-task-master.md" "model: github-copilot/claude-sonnet-4.6"
+assert_file_contains "$precedence_target_dir_nod/.opencode/agents/it-task-master.md" "model: github-copilot/claude-sonnet-5.5"
 
 printf 'Single-source agent generation checks passed.\n'
